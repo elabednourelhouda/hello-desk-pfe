@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Contract;
 use App\Models\Payment;
+use App\Notifications\PaymentDueCreatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -69,7 +70,7 @@ class PaymentController extends Controller
 
         $amountPaid = $data['amount_paid'] ?? 0;
 
-        Payment::create([
+        $payment = Payment::create([
             'client_id' => $contract->client_id,
             'contract_id' => $contract->id,
             'reservation_id' => $contract->reservation_id,
@@ -83,6 +84,12 @@ class PaymentController extends Controller
             'recorded_by' => Auth::id(),
             'notes' => $data['notes'] ?? null,
         ]);
+
+        $payment->load('client.user');
+
+        if ($payment->client && $payment->client->user) {
+            $payment->client->user->notify(new PaymentDueCreatedNotification($payment));
+        }
 
         return redirect()
             ->route('admin.payments.index')
@@ -132,5 +139,17 @@ class PaymentController extends Controller
         return redirect()
             ->route('admin.payments.show', $payment)
             ->with('success', 'Paiement mis à jour avec succès.');
+    }
+
+    public function markAsPaid(Payment $payment)
+    {
+        $payment->update([
+            'amount_paid' => $payment->amount_due,
+            'status' => 'paid',
+            'paid_at' => now(),
+            'recorded_by' => Auth::id(),
+        ]);
+
+        return back()->with('success', 'Échéance marquée comme payée avec succès.');
     }
 }

@@ -21,15 +21,17 @@
                 </p>
             </div>
 
-            <a href="{{ route('admin.payments.create', ['contract_id' => $contract->id]) }}"
-            class="rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
-                Ajouter une échéance
-            </a>
+            <div class="flex flex-col gap-3 sm:flex-row">
+                <a href="{{ route('admin.payments.create', ['contract_id' => $contract->id]) }}"
+                   class="inline-flex justify-center rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+                    Ajouter une échéance
+                </a>
 
-            <a href="{{ route('admin.contracts.edit', $contract) }}"
-               class="rounded-xl bg-[#284625] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90">
-                Modifier / Importer PDF
-            </a>
+                <a href="{{ route('admin.contracts.edit', $contract) }}"
+                   class="inline-flex justify-center rounded-xl bg-[#284625] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90">
+                    Modifier / Importer PDF
+                </a>
+            </div>
         </div>
     </div>
 
@@ -40,7 +42,7 @@
     @endif
 
     <div class="grid gap-6 lg:grid-cols-3">
-        <section class="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:col-span-2">
             <h2 class="text-lg font-bold text-gray-900">Informations du contrat</h2>
 
             <dl class="mt-5 grid gap-4 md:grid-cols-2">
@@ -156,5 +158,120 @@
             </div>
         </aside>
     </div>
+
+    @php
+        $payments = $contract->payments ?? collect();
+        $totalDue = $payments->sum('amount_due');
+        $totalPaid = $payments->sum('amount_paid');
+        $remaining = max(0, $totalDue - $totalPaid);
+    @endphp
+
+    <section class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+                <h2 class="text-lg font-bold text-gray-900">Échéances de paiement</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    Suivi des paiements liés à ce contrat.
+                </p>
+            </div>
+
+            <a href="{{ route('admin.payments.create', ['contract_id' => $contract->id]) }}"
+               class="inline-flex justify-center rounded-xl bg-[#284625] px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
+                Ajouter une échéance
+            </a>
+        </div>
+
+        <div class="mt-5 grid gap-4 md:grid-cols-3">
+            <div class="rounded-xl bg-gray-50 p-4">
+                <p class="text-xs font-semibold uppercase text-gray-400">Total à payer</p>
+                <p class="mt-1 text-lg font-bold text-gray-900">
+                    {{ number_format($totalDue, 2, ',', ' ') }} DH
+                </p>
+            </div>
+
+            <div class="rounded-xl bg-green-50 p-4">
+                <p class="text-xs font-semibold uppercase text-green-600">Total payé</p>
+                <p class="mt-1 text-lg font-bold text-green-700">
+                    {{ number_format($totalPaid, 2, ',', ' ') }} DH
+                </p>
+            </div>
+
+            <div class="rounded-xl bg-yellow-50 p-4">
+                <p class="text-xs font-semibold uppercase text-yellow-600">Reste à payer</p>
+                <p class="mt-1 text-lg font-bold text-yellow-700">
+                    {{ number_format($remaining, 2, ',', ' ') }} DH
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-6 overflow-hidden rounded-xl border border-gray-200">
+            @if($payments->count())
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Échéance</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Montant dû</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Montant payé</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Statut</th>
+                            <th class="px-4 py-3 text-right font-semibold text-gray-600">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-gray-100 bg-white">
+                        @foreach($payments as $payment)
+                            <tr>
+                                <td class="px-4 py-3 text-gray-700">
+                                    {{ $payment->due_date?->format('d/m/Y') }}
+                                </td>
+
+                                <td class="px-4 py-3 text-gray-700">
+                                    {{ number_format($payment->amount_due, 2, ',', ' ') }} DH
+                                </td>
+
+                                <td class="px-4 py-3 text-gray-700">
+                                    {{ number_format($payment->amount_paid, 2, ',', ' ') }} DH
+                                </td>
+
+                                <td class="px-4 py-3">
+                                    <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                                        {{ $payment->real_status }}
+                                    </span>
+                                </td>
+
+                                <td class="px-4 py-3">
+                                    <div class="flex justify-end gap-2">
+                                        <a href="{{ route('admin.payments.show', $payment) }}"
+                                           class="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                                            Voir
+                                        </a>
+
+                                        @if($payment->status !== 'paid')
+                                            <form method="POST" action="{{ route('admin.payments.markAsPaid', $payment) }}">
+                                                @csrf
+                                                @method('PATCH')
+
+                                                <button type="submit"
+                                                        class="rounded-lg bg-[#284625] px-3 py-2 text-xs font-semibold text-white hover:opacity-90">
+                                                    Marquer payé
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700">
+                                                Payé
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @else
+                <div class="p-6 text-center text-sm text-gray-500">
+                    Aucune échéance n’a encore été ajoutée pour ce contrat.
+                </div>
+            @endif
+        </div>
+    </section>
 </div>
 @endsection

@@ -182,6 +182,9 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
 
         Route::resource('contracts', ContractController::class)
             ->only(['index', 'show', 'edit', 'update']);
+
+        Route::patch('/payments/{payment}/mark-as-paid', [PaymentController::class, 'markAsPaid'])
+            ->name('payments.markAsPaid');
 });
 /*
 |--------------------------------------------------------------------------
@@ -277,11 +280,13 @@ Route::middleware(['auth', 'role:client', 'client.active', 'password.changed'])
     ->name('client.')
     ->group(function () {
 
-        // This allows: http://127.0.0.1:8000/client/
         Route::get('/', function () {
             return redirect()->route('client.dashboard');
         })->name('home');
 
         Route::get('/dashboard', [ClientDashboardController::class, 'index'])
             ->name('dashboard');
+
+        Route::patch('/notifications/read-all', [\App\Http\Controllers\Client\DashboardController::class, 'markNotificationsAsRead'])
+            ->name('notifications.readAll');
     });

@@ -47,4 +47,26 @@ class Payment extends Model
     {
         return $this->belongsTo(User::class, 'recorded_by');
     }
+
+    public function getRealStatusAttribute(): string
+    {
+        if ($this->status === 'paid') {
+            return 'Payé';
+        }
+
+        if ($this->status === 'cancelled') {
+            return 'Annulé';
+        }
+
+        if ($this->due_date && $this->due_date->lt(today())) {
+            return 'En retard';
+        }
+
+        return 'À payer';
+    }
+
+    public function getRemainingAmountAttribute(): float
+    {
+        return max(0, (float) $this->amount_due - (float) $this->amount_paid);
+    }
 }

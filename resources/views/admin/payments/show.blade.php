@@ -21,10 +21,24 @@
                 </p>
             </div>
 
-            <a href="{{ route('admin.payments.edit', $payment) }}"
-               class="rounded-xl bg-[#284625] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90">
-                Modifier le paiement
-            </a>
+            <div class="flex flex-col gap-3 sm:flex-row">
+                @if($payment->status !== 'paid')
+                    <form method="POST" action="{{ route('admin.payments.markAsPaid', $payment) }}">
+                        @csrf
+                        @method('PATCH')
+
+                        <button type="submit"
+                                class="rounded-xl bg-[#284625] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90">
+                            Marquer comme payé
+                        </button>
+                    </form>
+                @endif
+
+                <a href="{{ route('admin.payments.edit', $payment) }}"
+                class="rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+                    Modifier le paiement
+                </a>
+            </div>
         </div>
     </div>
 
@@ -71,7 +85,7 @@
                     <dt class="text-xs font-semibold uppercase text-gray-400">Statut</dt>
                     <dd class="mt-1">
                         <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-                            {{ $payment->status }}
+                            {{ $payment->real_status }}
                         </span>
                     </dd>
                 </div>

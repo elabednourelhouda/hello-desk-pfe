@@ -36,7 +36,15 @@ class ContractController extends Controller
 
     public function show(Contract $contract)
     {
-        $contract->load(['client', 'reservation.space', 'reservation.campus', 'reservation.floor', 'uploader']);
+        $contract->load([
+            'client',
+            'reservation.space',
+            'reservation.campus',
+            'reservation.floor',
+            'payments' => function ($query) {
+                $query->orderBy('due_date');
+            },
+        ]);
 
         return view('admin.contracts.show', compact('contract'));
     }
