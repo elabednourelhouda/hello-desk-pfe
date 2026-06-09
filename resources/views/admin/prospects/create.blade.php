@@ -7,19 +7,35 @@
     <div class="mx-auto max-w-5xl px-6 py-8">
 
         {{-- Header --}}
-        <div class="mb-6">
-            <a href="{{ route('admin.prospects.index') }}"
-               class="text-sm font-semibold text-[#284625] hover:underline">
-                ← Retour aux prospects
-            </a>
+        <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <a href="{{ route('admin.prospects.index') }}"
+                   class="text-sm font-semibold text-[#284625] hover:underline">
+                    ← Retour aux prospects
+                </a>
 
-            <h1 class="mt-4 text-3xl font-bold text-gray-900">
-                Ajouter un prospect
-            </h1>
+                <h1 class="mt-4 text-3xl font-bold text-gray-900">
+                    Ajouter un prospect
+                </h1>
 
-            <p class="mt-2 text-sm text-gray-500">
-                Enregistrez une personne intéressée par les espaces Hello Desk.
-            </p>
+                <p class="mt-2 text-sm text-gray-500">
+                    Enregistrez une personne intéressée par les espaces Hello Desk.
+                </p>
+            </div>
+
+            {{-- Top action buttons --}}
+            <div class="flex gap-3">
+                <a href="{{ route('admin.prospects.index') }}"
+                   class="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100">
+                    Annuler
+                </a>
+
+                <button type="submit"
+                        form="admin-prospect-create-form"
+                        class="inline-flex h-11 items-center justify-center rounded-xl bg-[#284625] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1f351d]">
+                    Enregistrer le prospect
+                </button>
+            </div>
         </div>
 
         {{-- Errors --}}
@@ -30,7 +46,8 @@
         @endif
 
         {{-- Form card --}}
-        <form method="POST"
+        <form id="admin-prospect-create-form"
+              method="POST"
               action="{{ route('admin.prospects.store') }}"
               class="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
             @csrf
@@ -47,11 +64,11 @@
                             Nom complet <span class="text-red-500">*</span>
                         </label>
                         <input type="text"
-                            name="full_name"
-                            value="{{ old('full_name') }}"
-                            required
-                            placeholder="Ex: Sara Benali"
-                            class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                               name="full_name"
+                               value="{{ old('full_name') }}"
+                               required
+                               placeholder="Ex: Sara Benali"
+                               class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
 
                         @error('full_name')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -63,9 +80,9 @@
                             Date d’entrée CRM
                         </label>
                         <input type="date"
-                            name="registered_at"
-                            value="{{ old('registered_at', now()->toDateString()) }}"
-                            class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                               name="registered_at"
+                               value="{{ old('registered_at', now()->toDateString()) }}"
+                               class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
 
                         @error('registered_at')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -74,39 +91,43 @@
 
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-gray-700">
-                            Entreprise
+                            Téléphone <span class="text-red-500">*</span>
                         </label>
                         <input type="text"
-                            name="company_name"
-                            value="{{ old('company_name') }}"
-                            placeholder="Ex: Atlas Consulting"
-                            class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                               name="phone"
+                               value="{{ old('phone') }}"
+                               placeholder="Ex: 06 00 00 00 00"
+                               class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+
+                        @error('phone')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-gray-700">
-                            Téléphone
-                        </label>
-                        <input type="text"
-                            name="phone"
-                            value="{{ old('phone') }}"
-                            placeholder="Ex: 06 00 00 00 00"
-                            class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-gray-700">
-                            Email
+                            Email <span class="text-red-500">*</span>
                         </label>
                         <input type="email"
-                            name="email"
-                            value="{{ old('email') }}"
-                            placeholder="Ex: client@email.com"
-                            class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                               name="email"
+                               value="{{ old('email') }}"
+                               placeholder="Ex: client@email.com"
+                               class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
 
                         @error('email')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-semibold text-gray-700">
+                            Entreprise
+                        </label>
+                        <input type="text"
+                               name="company_name"
+                               value="{{ old('company_name') }}"
+                               placeholder="Ex: Atlas Consulting"
+                               class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                     </div>
                 </div>
             </div>
@@ -167,7 +188,7 @@
                 </div>
             </div>
 
-            {{-- Buttons --}}
+            {{-- Bottom buttons --}}
             <div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end">
                 <a href="{{ route('admin.prospects.index') }}"
                    class="inline-flex h-12 items-center justify-center rounded-xl border border-gray-300 px-6 text-sm font-semibold text-gray-700 transition hover:bg-gray-100">

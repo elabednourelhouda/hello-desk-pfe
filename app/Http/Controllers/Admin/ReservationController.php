@@ -14,11 +14,58 @@ use Illuminate\Support\Facades\DB;
 
 class ReservationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $reservations = Reservation::with(['client', 'space', 'contract'])
-            ->latest()
-            ->paginate(10);
+        $query = Reservation::query()
+            ->with(['client', 'space', 'contract'])
+            ->latest('starts_at');
+
+        // Search by client, email, phone, space name/code, or contract title
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('client', function ($clientQuery) use ($search) {
+                    $clientQuery->where('full_name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                })
+                ->orWhereHas('space', function ($spaceQuery) use ($search) {
+                    $spaceQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                })
+                ->orWhereHas('contract', function ($contractQuery) use ($search) {
+                    $contractQuery->where('title', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        // Filter by reservation status
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by contract existence
+        if ($request->filled('contract') && $request->contract !== 'all') {
+            if ($request->contract === 'created') {
+                $query->whereHas('contract');
+            }
+
+            if ($request->contract === 'missing') {
+                $query->whereDoesntHave('contract');
+            }
+        }
+
+        // Filter by start date
+        if ($request->filled('from')) {
+            $query->whereDate('starts_at', '>=', $request->from);
+        }
+
+        if ($request->filled('to')) {
+            $query->whereDate('starts_at', '<=', $request->to);
+        }
+
+        $reservations = $query->paginate(10)->withQueryString();
 
         return view('admin.reservations.index', compact('reservations'));
     }

@@ -27,7 +27,7 @@ class CommercialController extends Controller
 
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -36,7 +36,9 @@ class CommercialController extends Controller
         return view('admin.commercials.index', [
             'commercials' => $commercials,
             'totalCount' => User::where('role', 'commercial')->count(),
-            'assignedCount' => StaffAssignment::distinct('commercial_id')->count('commercial_id'),
+            'assignedCount' => StaffAssignment::whereNotNull('commercial_id')
+                ->distinct()
+                ->count('commercial_id'),
         ]);
     }
 

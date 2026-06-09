@@ -92,25 +92,39 @@ class ProspectController extends Controller
     {
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'email' => ['nullable', 'email', 'max:255'],
+
+            // Contact rule: at least one of them is required
+            'phone' => ['nullable', 'required_without:email', 'string', 'max:50'],
+            'email' => ['nullable', 'required_without:phone', 'email', 'max:255'],
+
             'company_name' => ['nullable', 'string', 'max:255'],
             'registered_at' => ['nullable', 'date'],
+
             'need' => ['nullable', 'string'],
             'preferred_campus_id' => ['nullable', 'exists:campuses,id'],
             'preferred_space_type_id' => ['nullable', 'exists:space_types,id'],
+
             'people_count' => ['nullable', 'integer', 'min:1', 'max:100'],
             'desired_start_date' => ['nullable', 'date'],
             'desired_rental_period' => ['nullable', 'in:hourly,daily,monthly,custom'],
+
             'source' => ['nullable', 'string', 'max:100'],
             'budget' => ['nullable', 'numeric', 'min:0'],
+
             'crm_status' => ['required', 'string'],
             'notes' => ['nullable', 'string'],
             'assigned_to' => ['nullable', 'exists:users,id'],
         ], [
             'full_name.required' => 'Le nom complet est obligatoire.',
+
+            'phone.required_without' => 'Veuillez saisir un téléphone ou un email.',
+            'email.required_without' => 'Veuillez saisir un email ou un téléphone.',
             'email.email' => 'Veuillez saisir une adresse email valide.',
+
             'budget.numeric' => 'Le budget doit être un nombre.',
+            'people_count.integer' => 'Le nombre de personnes doit être un nombre entier.',
+            'people_count.min' => 'Le nombre de personnes doit être au minimum 1.',
+            'people_count.max' => 'Le nombre de personnes ne peut pas dépasser 100.',
         ]);
 
         $validated['registered_at'] = $validated['registered_at'] ?? now()->toDateString();
@@ -318,6 +332,37 @@ class ProspectController extends Controller
         return redirect()
             ->route('admin.prospects.show', $prospect)
             ->with('success', 'Prospect réactivé avec succès.');
+    }
+
+    public function crm(Prospect $prospect)
+    {
+        $prospect->load([
+            'visits.campus',
+            'visits.spaceType',
+            'requests',
+            'assignedCommercial',
+        ]);
+
+        $statuses = [
+            'new' => 'Nouveau',
+            'contacted' => 'Contacté',
+            'visit_planned' => 'Visite planifiée',
+            'visit_done' => 'Visite effectuée',
+            'proposal_sent' => 'Proposition envoyée',
+            'negotiation' => 'En négociation',
+            'converted' => 'Converti en client',
+            'lost' => 'Perdu',
+        ];
+
+        $campuses = \App\Models\Campus::orderBy('name')->get();
+        $spaceTypes = \App\Models\SpaceType::orderBy('name')->get();
+
+        return view('admin.prospects.crm', compact(
+            'prospect',
+            'statuses',
+            'campuses',
+            'spaceTypes'
+        ));
     }
 
     private function crmStatuses(): array

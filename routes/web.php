@@ -9,8 +9,7 @@ use App\Http\Controllers\Admin\SpaceController as AdminSpaceController;
 use App\Http\Controllers\Admin\CommercialController as AdminCommercialController;
 use App\Http\Controllers\Admin\ProspectController as AdminProspectController;
 use App\Http\Controllers\Admin\ClientController as AdminClientController;
-use App\Http\Controllers\Admin\ProspectVisitController;
-use App\Http\Controllers\Admin\ProspectRequestController;
+use App\Http\Controllers\Admin\ProspectVisitController as AdminProspectVisitController;
 use App\Http\Controllers\Admin\ProspectRequestController as AdminProspectRequestController;
 use App\Http\Controllers\Admin\ReservationController;
 use App\Http\Controllers\Admin\InteractiveMapController;
@@ -84,6 +83,15 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
         Route::resource('payments', PaymentController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
+        Route::get('/commerciaux', [AdminCommercialController::class, 'index'])
+            ->name('commercials.index');
+
+        Route::get('/commerciaux/create', [AdminCommercialController::class, 'create'])
+            ->name('commercials.create');
+
+        Route::get('/commerciaux/{commercial}', [AdminCommercialController::class, 'show'])
+            ->name('commercials.show');
+
         /*
         |--------------------------------------------------------------------------
         | Spaces / Map
@@ -115,6 +123,9 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
 
         Route::patch('/prospects/{prospect}/reactivate', [AdminProspectController::class, 'reactivate'])
             ->name('prospects.reactivate');
+
+        Route::get('/prospects/{prospect}/crm', [AdminProspectController::class, 'crm'])
+            ->name('prospects.crm');
 
 
         /*
@@ -153,23 +164,17 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
         Route::patch('/clients/{client}/reset-password', [AdminClientController::class, 'resetPassword'])
             ->name('clients.resetPassword');
 
-        Route::post('/prospects/{prospect}/visits', [ProspectVisitController::class, 'store'])
+        Route::post('/prospects/{prospect}/visits', [AdminProspectVisitController::class, 'store'])
             ->name('prospects.visits.store');
 
-        Route::patch('/prospect-visits/{visit}/done', [ProspectVisitController::class, 'markDone'])
+        Route::patch('/prospect-visits/{visit}/done', [AdminProspectVisitController::class, 'markDone'])
             ->name('prospects.visits.done');
 
-        Route::patch('/prospect-visits/{visit}/cancel', [ProspectVisitController::class, 'cancel'])
+        Route::patch('/prospect-visits/{visit}/cancel', [AdminProspectVisitController::class, 'cancel'])
             ->name('prospects.visits.cancel');
 
-        Route::delete('/prospect-visits/{visit}', [ProspectVisitController::class, 'destroy'])
+        Route::delete('/prospect-visits/{visit}', [AdminProspectVisitController::class, 'destroy'])
             ->name('prospects.visits.destroy');
-
-        Route::post('/prospects/{prospect}/requests', [ProspectRequestController::class, 'store'])
-            ->name('prospects.requests.store');
-
-        Route::delete('/prospect-requests/{prospectRequest}', [ProspectRequestController::class, 'destroy'])
-            ->name('prospects.requests.destroy');
 
         Route::post('/prospects/{prospect}/requests', [AdminProspectRequestController::class, 'store'])
             ->name('prospects.requests.store');

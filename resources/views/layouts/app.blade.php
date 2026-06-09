@@ -87,8 +87,8 @@
                     @endphp
 
                     <div class="flex items-center gap-3">
-                        <div class="hidden items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-2 shadow-sm lg:flex">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#284625] text-sm font-bold text-white">
+                        <div class="hidden items-center gap-3 rounded-2xl border border-sky-100 bg-white px-4 py-2 shadow-sm lg:flex">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 text-sm font-bold text-white shadow-sm">
                                 {{ $initial }}
                             </div>
 
@@ -98,7 +98,7 @@
                                         {{ $user->name }}
                                     </p>
 
-                                    <span class="rounded-full bg-[#284625]/10 px-2 py-0.5 text-[11px] font-bold text-[#284625]">
+                                    <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">
                                         {{ $roleLabels[$user->role] ?? $user->role }}
                                     </span>
                                 </div>
@@ -140,6 +140,11 @@
                 ['label' => 'Tableau de bord', 'route' => 'admin.dashboard'],
                 ['label' => 'Prospects', 'route' => 'admin.prospects.index'],
                 ['label' => 'Clients', 'route' => 'admin.clients.index'],
+
+                // Admin only
+                ['label' => 'Commerciaux', 'route' => 'admin.commercials.index'],
+                ['label' => 'Commerciaux', 'route' => 'admin.users.index', 'params' => ['role' => 'commercial']],
+
                 ['label' => 'Carte interactive', 'route' => 'admin.interactive-map.index'],
                 ['label' => 'Réservations', 'route' => 'admin.reservations.index'],
                 ['label' => 'Contrats', 'route' => 'admin.contracts.index'],
@@ -170,14 +175,24 @@
         @if(count($links))
             <div class="border-b border-gray-200 bg-white">
                 <div class="hd-container">
-                    <nav class="flex gap-2 overflow-x-auto py-3">
+                    <nav class="flex justify-start gap-2 overflow-x-auto py-3 md:justify-center">
                         @foreach($links as $link)
                             @if(Route::has($link['route']))
-                                <a href="{{ route($link['route']) }}"
+                                @php
+                                    $params = $link['params'] ?? [];
+                                    $isActive = request()->routeIs($link['route'])
+                                        || request()->routeIs(str_replace('.index', '.*', $link['route']));
+
+                                    if (($link['params']['role'] ?? null) && request('role') === $link['params']['role']) {
+                                        $isActive = true;
+                                    }
+                                @endphp
+
+                                <a href="{{ route($link['route'], $params) }}"
                                 class="whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold transition
-                                {{ request()->routeIs($link['route']) || request()->routeIs(str_replace('.index', '.*', $link['route']))
-                                        ? 'bg-[#284625] text-white'
-                                        : 'text-gray-600 hover:bg-gray-100 hover:text-[#284625]' }}">
+                                {{ $isActive
+                                    ? 'bg-sky-100 text-sky-800 ring-1 ring-sky-200'
+                                    : 'text-gray-600 hover:bg-sky-50 hover:text-sky-700' }}">
                                     {{ $link['label'] }}
                                 </a>
                             @endif

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\ProspectRequest;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Prospect extends Model
 {
@@ -58,6 +60,11 @@ class Prospect extends Model
     }
 
     public function prospectRequests()
+    {
+        return $this->hasMany(ProspectRequest::class);
+    }
+
+    public function requests(): HasMany
     {
         return $this->hasMany(ProspectRequest::class);
     }
