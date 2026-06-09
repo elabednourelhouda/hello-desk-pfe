@@ -27,6 +27,7 @@ use App\Http\Controllers\Client\ReservationController as ClientReservationContro
 use App\Http\Controllers\Client\ContractController as ClientContractController;
 use App\Http\Controllers\Client\PaymentController as ClientPaymentController;
 use App\Http\Controllers\Client\NotificationController as ClientNotificationController;
+use App\Http\Controllers\Client\ComplaintController as ClientComplaintController;
 
 /*
 |--------------------------------------------------------------------------
@@ -337,4 +338,22 @@ Route::middleware(['auth', 'role:client', 'client.active', 'password.changed'])
 
         Route::patch('/notifications/read-all', [ClientNotificationController::class, 'markAllAsRead'])
             ->name('notifications.readAll');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Client complaints
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/complaints', [ClientComplaintController::class, 'index'])
+            ->name('complaints.index');
+
+        Route::get('/complaints/create', [ClientComplaintController::class, 'create'])
+            ->name('complaints.create');
+
+        Route::post('/complaints', [ClientComplaintController::class, 'store'])
+            ->name('complaints.store');
+
+        Route::get('/complaints/{complaint}', [ClientComplaintController::class, 'show'])
+            ->name('complaints.show');
     });

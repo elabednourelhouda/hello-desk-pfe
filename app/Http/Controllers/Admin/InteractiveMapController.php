@@ -47,6 +47,9 @@ class InteractiveMapController extends Controller
                     ->orderBy('name')
                     ->get()
                     ->map(function ($space) {
+                        $space->code = $space->internal_code;
+                        $space->surface = $space->area_m2;
+
                         $savedStatus = mb_strtolower($space->status ?? 'disponible');
 
                         if (in_array($savedStatus, ['occupé', 'occupe', 'occupied'])) {

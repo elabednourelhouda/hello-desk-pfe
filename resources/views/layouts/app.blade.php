@@ -165,6 +165,7 @@
                 ['label' => 'Réservations', 'route' => 'client.reservations.index'],
                 ['label' => 'Contrats', 'route' => 'client.contracts.index'],
                 ['label' => 'Paiements', 'route' => 'client.payments.index'],
+                ['label' => 'Réclamations', 'route' => 'client.complaints.index'],
                 ['label' => 'Notifications', 'route' => 'client.notifications.index'],
             ];
 

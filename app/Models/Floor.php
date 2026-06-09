@@ -10,8 +10,10 @@ class Floor extends Model
         'campus_id',
         'name',
         'code',
+        'level',
         'map_key',
         'description',
+        'is_active',
     ];
 
     public function campus()
