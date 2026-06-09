@@ -20,7 +20,14 @@
 
     $dueVisible = $pagePayments->where('status', 'due')->count();
     $paidVisible = $pagePayments->where('status', 'paid')->count();
-    $lateVisible = $pagePayments->where('status', 'late')->count();
+    $lateVisible = $pagePayments->filter(function ($payment) {
+        return $payment->status === 'late'
+            || (
+                $payment->status === 'due'
+                && $payment->due_date
+                && $payment->due_date->lt(today())
+            );
+    })->count();
     $cancelledVisible = $pagePayments->where('status', 'cancelled')->count();
 
     $paidAmountRate = $totalDueVisible > 0
@@ -314,6 +321,15 @@
                         @forelse($payments as $payment)
                             @php
                                 $status = $payment->status;
+
+                                if (
+                                    $status === 'due'
+                                    && $payment->due_date
+                                    && $payment->due_date->lt(today())
+                                ) {
+                                    $status = 'late';
+                                }
+
                                 $statusClass = $statusClasses[$status] ?? 'bg-slate-100 text-slate-700 ring-slate-500/20';
                                 $statusDot = $statusDots[$status] ?? 'bg-slate-500';
                                 $statusLabel = $statusLabels[$status] ?? ucfirst($status);

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Auth\PasswordController;
 
@@ -14,14 +15,24 @@ use App\Http\Controllers\Admin\ProspectRequestController as AdminProspectRequest
 use App\Http\Controllers\Admin\ReservationController;
 use App\Http\Controllers\Admin\InteractiveMapController;
 use App\Http\Controllers\Admin\ContractController;
+use App\Http\Controllers\Admin\PaymentController;
 
-use App\Http\Controllers\Commercial\ProspectRequestController as CommercialProspectRequestController;
 use App\Http\Controllers\Commercial\DashboardController as CommercialDashboardController;
 use App\Http\Controllers\Commercial\ProspectController as CommercialProspectController;
 use App\Http\Controllers\Commercial\ProspectVisitController as CommercialProspectVisitController;
-use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Commercial\ProspectRequestController as CommercialProspectRequestController;
 
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
+use App\Http\Controllers\Client\ReservationController as ClientReservationController;
+use App\Http\Controllers\Client\ContractController as ClientContractController;
+use App\Http\Controllers\Client\PaymentController as ClientPaymentController;
+use App\Http\Controllers\Client\NotificationController as ClientNotificationController;
+
+/*
+|--------------------------------------------------------------------------
+| Public routes
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', function () {
     return view('welcome');
@@ -29,12 +40,15 @@ Route::get('/', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Auth routes
+| Authentication routes
 |--------------------------------------------------------------------------
 */
 
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::get('/login', [AuthController::class, 'showLogin'])
+    ->name('login');
+
+Route::post('/login', [AuthController::class, 'login'])
+    ->name('login.post');
 
 Route::get('/signin', function () {
     return redirect()->route('login');
@@ -69,7 +83,6 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
     ->name('admin.')
     ->group(function () {
 
-        // This allows you to open: http://127.0.0.1:8000/admin/
         Route::get('/', function () {
             return redirect()->route('admin.dashboard');
         })->name('home');
@@ -77,56 +90,20 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
-        Route::resource('reservations', ReservationController::class)
-            ->only(['index', 'create', 'store', 'show']);
-
-        Route::resource('payments', PaymentController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
-
-        Route::get('/commerciaux', [AdminCommercialController::class, 'index'])
-            ->name('commercials.index');
-
-        Route::get('/commerciaux/create', [AdminCommercialController::class, 'create'])
-            ->name('commercials.create');
-
-        Route::get('/commerciaux/{commercial}', [AdminCommercialController::class, 'show'])
-            ->name('commercials.show');
-
         /*
         |--------------------------------------------------------------------------
-        | Spaces / Map
+        | Spaces and interactive map
         |--------------------------------------------------------------------------
         */
-        Route::get('/carte-interactive', [InteractiveMapController::class, 'index'])
-            ->name('interactive-map.index');
 
-        Route::get('/spaces', [AdminSpaceController::class, 'index'])
-            ->name('spaces.index');
+        Route::get('/interactive-map', [InteractiveMapController::class, 'index'])
+            ->name('interactive-map.index');
 
         Route::get('/map', [InteractiveMapController::class, 'index'])
             ->name('map.index');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prospects
-        |--------------------------------------------------------------------------
-        */
-
-        Route::resource('prospects', AdminProspectController::class)
-            ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
-
-        Route::post('/prospects/{prospect}/convert', [AdminProspectController::class, 'convert'])
-            ->name('prospects.convert');
-
-        Route::patch('/prospects/{prospect}/mark-lost', [AdminProspectController::class, 'markLost'])
-            ->name('prospects.markLost');
-
-        Route::patch('/prospects/{prospect}/reactivate', [AdminProspectController::class, 'reactivate'])
-            ->name('prospects.reactivate');
-
-        Route::get('/prospects/{prospect}/crm', [AdminProspectController::class, 'crm'])
-            ->name('prospects.crm');
-
+        Route::get('/spaces', [AdminSpaceController::class, 'index'])
+            ->name('spaces.index');
 
         /*
         |--------------------------------------------------------------------------
@@ -145,24 +122,27 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
 
         Route::delete('/commercials/{commercial}/assignments/{assignment}', [AdminCommercialController::class, 'destroyAssignment'])
             ->name('commercials.assignments.destroy');
-            
+
         /*
         |--------------------------------------------------------------------------
-        | Clients
+        | Prospects and CRM
         |--------------------------------------------------------------------------
         */
 
-        Route::resource('clients', AdminClientController::class)
+        Route::resource('prospects', AdminProspectController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
-        Route::patch('/clients/{client}/deactivate', [AdminClientController::class, 'deactivate'])
-            ->name('clients.deactivate');
+        Route::get('/prospects/{prospect}/crm', [AdminProspectController::class, 'crm'])
+            ->name('prospects.crm');
 
-        Route::patch('/clients/{client}/reactivate', [AdminClientController::class, 'reactivate'])
-            ->name('clients.reactivate');
+        Route::post('/prospects/{prospect}/convert', [AdminProspectController::class, 'convert'])
+            ->name('prospects.convert');
 
-        Route::patch('/clients/{client}/reset-password', [AdminClientController::class, 'resetPassword'])
-            ->name('clients.resetPassword');
+        Route::patch('/prospects/{prospect}/mark-lost', [AdminProspectController::class, 'markLost'])
+            ->name('prospects.markLost');
+
+        Route::patch('/prospects/{prospect}/reactivate', [AdminProspectController::class, 'reactivate'])
+            ->name('prospects.reactivate');
 
         Route::post('/prospects/{prospect}/visits', [AdminProspectVisitController::class, 'store'])
             ->name('prospects.visits.store');
@@ -185,27 +165,57 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
         Route::delete('/prospect-requests/{prospectRequest}', [AdminProspectRequestController::class, 'destroy'])
             ->name('prospects.requests.destroy');
 
+        /*
+        |--------------------------------------------------------------------------
+        | Clients
+        |--------------------------------------------------------------------------
+        */
+
+        Route::resource('clients', AdminClientController::class)
+            ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+
+        Route::patch('/clients/{client}/deactivate', [AdminClientController::class, 'deactivate'])
+            ->name('clients.deactivate');
+
+        Route::patch('/clients/{client}/reactivate', [AdminClientController::class, 'reactivate'])
+            ->name('clients.reactivate');
+
+        Route::patch('/clients/{client}/reset-password', [AdminClientController::class, 'resetPassword'])
+            ->name('clients.resetPassword');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Reservations
+        |--------------------------------------------------------------------------
+        */
+
+        Route::resource('reservations', ReservationController::class)
+            ->only(['index', 'create', 'store', 'show']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Contracts
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/contracts/{contract}/document', [ContractController::class, 'document'])
+            ->name('contracts.document');
+
         Route::resource('contracts', ContractController::class)
             ->only(['index', 'show', 'edit', 'update']);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Payments
+        |--------------------------------------------------------------------------
+        */
+
         Route::patch('/payments/{payment}/mark-as-paid', [PaymentController::class, 'markAsPaid'])
             ->name('payments.markAsPaid');
-});
-/*
-|--------------------------------------------------------------------------
-| Future CRM improvement: prospect need evolution
-|--------------------------------------------------------------------------
-| Disabled for now because the interface only shows "Besoin initial".
-*/
 
-// Route::post('/prospects/{prospect}/requests', [AdminProspectRequestController::class, 'store'])
-//     ->name('prospects.requests.store');
-
-// Route::patch('/prospect-requests/{prospectRequest}', [AdminProspectRequestController::class, 'update'])
-//     ->name('prospects.requests.update');
-
-// Route::delete('/prospect-requests/{prospectRequest}', [AdminProspectRequestController::class, 'destroy'])
-//     ->name('prospects.requests.destroy');
+        Route::resource('payments', PaymentController::class)
+            ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+    });
 
 /*
 |--------------------------------------------------------------------------
@@ -258,21 +268,6 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
         Route::delete('/prospect-requests/{prospectRequest}', [CommercialProspectRequestController::class, 'destroy'])
             ->name('prospects.requests.destroy');
     });
-    /*
-|--------------------------------------------------------------------------
-| Future CRM improvement: prospect need evolution
-|--------------------------------------------------------------------------
-| Disabled for now because the interface only shows "Besoin initial".
-*/
-
-// Route::post('/prospects/{prospect}/requests', [CommercialProspectRequestController::class, 'store'])
-//     ->name('prospects.requests.store');
-
-// Route::patch('/prospect-requests/{prospectRequest}', [CommercialProspectRequestController::class, 'update'])
-//     ->name('prospects.requests.update');
-
-// Route::delete('/prospect-requests/{prospectRequest}', [CommercialProspectRequestController::class, 'destroy'])
-//     ->name('prospects.requests.destroy');
 
 /*
 |--------------------------------------------------------------------------
@@ -292,6 +287,54 @@ Route::middleware(['auth', 'role:client', 'client.active', 'password.changed'])
         Route::get('/dashboard', [ClientDashboardController::class, 'index'])
             ->name('dashboard');
 
-        Route::patch('/notifications/read-all', [\App\Http\Controllers\Client\DashboardController::class, 'markNotificationsAsRead'])
+        /*
+        |--------------------------------------------------------------------------
+        | Client reservations
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/reservations', [ClientReservationController::class, 'index'])
+            ->name('reservations.index');
+
+        Route::get('/reservations/{reservation}', [ClientReservationController::class, 'show'])
+            ->name('reservations.show');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Client contracts
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/contracts', [ClientContractController::class, 'index'])
+            ->name('contracts.index');
+
+        Route::get('/contracts/{contract}', [ClientContractController::class, 'show'])
+            ->name('contracts.show');
+
+        Route::get('/contracts/{contract}/document', [ClientContractController::class, 'document'])
+            ->name('contracts.document');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Client payments
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/payments', [ClientPaymentController::class, 'index'])
+            ->name('payments.index');
+
+        Route::get('/payments/{payment}', [ClientPaymentController::class, 'show'])
+            ->name('payments.show');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Client notifications
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/notifications', [ClientNotificationController::class, 'index'])
+            ->name('notifications.index');
+
+        Route::patch('/notifications/read-all', [ClientNotificationController::class, 'markAllAsRead'])
             ->name('notifications.readAll');
     });

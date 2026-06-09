@@ -49,6 +49,22 @@ class ContractController extends Controller
         return view('admin.contracts.show', compact('contract'));
     }
 
+    public function document(Contract $contract)
+    {
+        $contract->load([
+            'client',
+            'reservation.space.spaceType',
+            'reservation.campus',
+            'reservation.floor',
+            'reservation.creator',
+            'payments' => function ($query) {
+                $query->orderBy('due_date');
+            },
+        ]);
+
+        return view('admin.contracts.document', compact('contract'));
+    }
+
     public function edit(Contract $contract)
     {
         $contract->load(['client', 'reservation.space']);
@@ -88,7 +104,7 @@ class ContractController extends Controller
 
             if ($contract->reservation->space) {
                 $contract->reservation->space->update([
-                    'status' => 'Réservé',
+                    'status' => 'reserved',
                 ]);
             }
         }
@@ -96,6 +112,7 @@ class ContractController extends Controller
         if ($contract->status === 'cancelled' && $contract->reservation) {
             $contract->reservation->update([
                 'status' => 'cancelled',
+                'cancelled_by' => Auth::id(),
             ]);
         }
 

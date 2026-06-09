@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Créer une réservation - Hello Desk')
+@section('title', 'Create Reservation - Hello Desk')
 
 @section('content')
 <div class="mx-auto max-w-5xl px-6 py-8">
     <div class="mb-6">
         <a href="{{ route('admin.interactive-map.index') }}"
            class="text-sm font-semibold text-[#284625] hover:underline">
-            ← Retour à la carte interactive
+            ← Back to interactive map
         </a>
 
         <h1 class="mt-4 text-2xl font-bold text-gray-900">
-            Créer une réservation
+            Create Reservation
         </h1>
 
         <p class="mt-1 text-sm text-gray-500">
-            Complétez les informations de réservation pour le client sélectionné.
+            Create a reservation for a client and prepare its draft contract automatically.
         </p>
     </div>
 
@@ -27,7 +27,7 @@
 
     @if($errors->any())
         <div class="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            <p class="font-semibold">Veuillez corriger les erreurs suivantes :</p>
+            <p class="font-semibold">Please correct the following errors:</p>
 
             <ul class="mt-2 list-inside list-disc">
                 @foreach($errors->all() as $error)
@@ -42,7 +42,7 @@
             <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                 <div>
                     <p class="text-xs font-bold uppercase tracking-wide text-[#284625]">
-                        Espace sélectionné depuis la carte
+                        Selected space from map
                     </p>
 
                     <h2 class="mt-2 text-xl font-bold text-gray-900">
@@ -51,24 +51,47 @@
 
                     <div class="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
                         <span class="rounded-full bg-white px-3 py-1 text-gray-700">
-                            Code : {{ $selectedSpace->code }}
+                            Code: {{ $selectedSpace->code }}
                         </span>
 
                         <span class="rounded-full bg-white px-3 py-1 text-gray-700">
-                            Type : {{ $selectedSpace->spaceType?->name ?? 'Non précisé' }}
+                            Type: {{ $selectedSpace->spaceType?->name ?? 'Not specified' }}
                         </span>
 
                         <span class="rounded-full bg-white px-3 py-1 text-gray-700">
-                            Campus : {{ $selectedSpace->campus?->name ?? 'Non précisé' }}
+                            Campus: {{ $selectedSpace->campus?->name ?? 'Not specified' }}
                         </span>
 
                         <span class="rounded-full bg-white px-3 py-1 text-gray-700">
-                            Étage : {{ $selectedSpace->floor?->name ?? 'Non précisé' }}
+                            Floor: {{ $selectedSpace->floor?->name ?? 'Not specified' }}
                         </span>
 
                         <span class="rounded-full bg-green-50 px-3 py-1 text-green-700">
-                            Statut : {{ $selectedSpace->status }}
+                            Status: {{ ucfirst($selectedSpace->status) }}
                         </span>
+                    </div>
+
+                    <div class="mt-4 grid gap-3 text-sm text-gray-700 sm:grid-cols-3">
+                        <div class="rounded-xl bg-white px-4 py-3">
+                            <p class="text-xs font-semibold uppercase text-gray-400">Hourly price</p>
+                            <p class="mt-1 font-bold">
+                                {{ $selectedSpace->price_hourly ?? 0 }} MAD
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl bg-white px-4 py-3">
+                            <p class="text-xs font-semibold uppercase text-gray-400">Daily price</p>
+                            <p class="mt-1 font-bold">
+                                {{ $selectedSpace->price_daily ?? 0 }} MAD
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl bg-white px-4 py-3">
+                            <p class="text-xs font-semibold uppercase text-gray-400">Monthly price</p>
+                            <p class="mt-1 font-bold">
+                                {{ $selectedSpace->price_monthly ?? 0 }} MAD
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -77,7 +100,7 @@
                     'floor_id' => $selectedSpace->floor_id,
                 ]) }}"
                    class="rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
-                    Changer d’espace
+                    Change space
                 </a>
             </div>
         </section>
@@ -97,7 +120,7 @@
                 <select name="client_id"
                         required
                         class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    <option value="">Choisir un client</option>
+                    <option value="">Select a client</option>
 
                     @foreach($clients as $client)
                         <option value="{{ $client->id }}" @selected(old('client_id') == $client->id)>
@@ -109,7 +132,7 @@
 
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
-                    Espace
+                    Space
                 </label>
 
                 @if($selectedSpace)
@@ -124,11 +147,35 @@
                     <select name="space_id"
                             required
                             class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                        <option value="">Choisir un espace</option>
+                        <option value="">Select a space</option>
 
                         @foreach($spaces as $space)
-                            <option value="{{ $space->id }}" @selected(old('space_id') == $space->id)>
-                                {{ $space->name }} — {{ $space->status }}
+                            @php
+                                $spaceStatus = mb_strtolower($space->status ?? 'available');
+
+                                $isNotReservable = in_array($spaceStatus, [
+                                    'occupied',
+                                    'unavailable',
+                                    'maintenance',
+                                    'in maintenance',
+                                    'occupé',
+                                    'occupe',
+                                    'indisponible',
+                                    'en maintenance',
+                                ]);
+                            @endphp
+
+                            <option value="{{ $space->id }}"
+                                    @selected(old('space_id') == $space->id)
+                                    @disabled($isNotReservable)>
+                                {{ $space->name }}
+                                —
+                                {{ $space->code }}
+                                —
+                                {{ ucfirst($space->status) }}
+                                @if($isNotReservable)
+                                    (not reservable)
+                                @endif
                             </option>
                         @endforeach
                     </select>
@@ -137,7 +184,7 @@
 
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
-                    Date et heure de début
+                    Start date and time
                 </label>
 
                 <input type="datetime-local"
@@ -149,7 +196,7 @@
 
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
-                    Date et heure de fin
+                    End date and time
                 </label>
 
                 <input type="datetime-local"
@@ -161,33 +208,28 @@
 
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
-                    Type de durée
+                    Duration type
                 </label>
 
                 <select name="duration_type"
                         required
                         class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    <option value="hourly" @selected(old('duration_type') === 'hourly')>
-                        À l’heure
-                    </option>
-
-                    <option value="daily" @selected(old('duration_type') === 'daily')>
-                        À la journée
-                    </option>
-
-                    <option value="monthly" @selected(old('duration_type') === 'monthly')>
-                        Au mois
-                    </option>
-
-                    <option value="custom" @selected(old('duration_type', 'custom') === 'custom')>
-                        Personnalisée
-                    </option>
+                    @foreach($durationTypes ?? [
+                        'hourly' => 'Hourly',
+                        'daily' => 'Daily',
+                        'monthly' => 'Monthly',
+                        'custom' => 'Custom',
+                    ] as $value => $label)
+                        <option value="{{ $value }}" @selected(old('duration_type', 'custom') === $value)>
+                            {{ $label }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
 
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
-                    Prix négocié
+                    Negotiated price
                 </label>
 
                 <input type="number"
@@ -196,34 +238,46 @@
                        name="negotiated_price"
                        value="{{ old('negotiated_price', 0) }}"
                        class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+
+                <p class="mt-2 text-xs text-gray-500">
+                    This price can be different from the official space price.
+                </p>
             </div>
         </div>
 
         <div class="mt-5">
             <label class="mb-2 block text-sm font-semibold text-gray-700">
-                Titre du contrat
+                Contract title
             </label>
 
             <input type="text"
                    name="contract_title"
                    value="{{ old('contract_title') }}"
-                   placeholder="Exemple : Contrat bureau privé - Juin 2026"
+                   placeholder="Example: Private office contract - June 2026"
                    class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
 
             <p class="mt-2 text-xs text-gray-500">
-                Un contrat brouillon sera créé automatiquement avec cette réservation.
+                A draft contract will be created automatically with this reservation.
+                The signed PDF can be uploaded later from the contract page.
             </p>
         </div>
 
         <div class="mt-5">
             <label class="mb-2 block text-sm font-semibold text-gray-700">
-                Notes internes
+                Internal notes
             </label>
 
             <textarea name="notes"
                       rows="4"
                       class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]"
-                      placeholder="Notes commerciales, conditions particulières...">{{ old('notes') }}</textarea>
+                      placeholder="Commercial notes, special conditions, internal details...">{{ old('notes') }}</textarea>
+        </div>
+
+        <div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p class="font-semibold">Important business rule</p>
+            <p class="mt-1">
+                Every reservation must be linked to a contract. For this reason, the system will automatically create a draft contract after saving the reservation.
+            </p>
         </div>
 
         <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -231,12 +285,12 @@
                     ? route('admin.interactive-map.index', ['campus_id' => $selectedSpace->campus_id, 'floor_id' => $selectedSpace->floor_id])
                     : route('admin.reservations.index') }}"
                class="inline-flex h-12 items-center justify-center rounded-xl border border-gray-300 px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50">
-                Annuler
+                Cancel
             </a>
 
             <button type="submit"
                     class="inline-flex h-12 items-center justify-center rounded-xl bg-[#284625] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90">
-                Créer la réservation
+                Create reservation
             </button>
         </div>
     </form>

@@ -5,9 +5,9 @@
 @section('content')
 <div class="mx-auto max-w-4xl px-6 py-8">
     <div class="mb-6">
-        <a href="{{ route('admin.payments.index') }}"
-           class="text-sm font-semibold text-[#284625] hover:underline">
-            ← Retour aux paiements
+        <a href="{{ $selectedContract ? route('admin.contracts.show', $selectedContract) : route('admin.payments.index') }}"
+        class="text-sm font-semibold text-[#284625] hover:underline">
+            ← {{ $selectedContract ? 'Retour au contrat' : 'Retour aux paiements' }}
         </a>
 
         <h1 class="mt-4 text-2xl font-bold text-gray-900">
@@ -61,6 +61,10 @@
           action="{{ route('admin.payments.store') }}"
           class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         @csrf
+
+        @if($selectedContract)
+            <input type="hidden" name="redirect_to_contract" value="1">
+        @endif
 
         <div class="grid gap-5 md:grid-cols-2">
             <div class="md:col-span-2">
@@ -180,8 +184,8 @@
         </div>
 
         <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <a href="{{ route('admin.payments.index') }}"
-               class="inline-flex h-12 items-center justify-center rounded-xl border border-gray-300 px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+            <a href="{{ $selectedContract ? route('admin.contracts.show', $selectedContract) : route('admin.payments.index') }}"
+            class="inline-flex h-12 items-center justify-center rounded-xl border border-gray-300 px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50">
                 Annuler
             </a>
 

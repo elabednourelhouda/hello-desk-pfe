@@ -16,11 +16,18 @@ class ReservationController extends Controller
 {
     public function index(Request $request)
     {
+        $reservationStatuses = $this->reservationStatuses();
+
+        $contractFilters = [
+            'all' => 'All contracts',
+            'created' => 'With contract',
+            'missing' => 'Without contract',
+        ];
+
         $query = Reservation::query()
             ->with(['client', 'space', 'contract'])
             ->latest('starts_at');
 
-        // Search by client, email, phone, space name/code, or contract title
         if ($request->filled('search')) {
             $search = $request->search;
 
@@ -40,12 +47,10 @@ class ReservationController extends Controller
             });
         }
 
-        // Filter by reservation status
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
 
-        // Filter by contract existence
         if ($request->filled('contract') && $request->contract !== 'all') {
             if ($request->contract === 'created') {
                 $query->whereHas('contract');
@@ -56,7 +61,6 @@ class ReservationController extends Controller
             }
         }
 
-        // Filter by start date
         if ($request->filled('from')) {
             $query->whereDate('starts_at', '>=', $request->from);
         }
@@ -67,11 +71,17 @@ class ReservationController extends Controller
 
         $reservations = $query->paginate(10)->withQueryString();
 
-        return view('admin.reservations.index', compact('reservations'));
+        return view('admin.reservations.index', compact(
+            'reservations',
+            'reservationStatuses',
+            'contractFilters'
+        ));
     }
 
     public function create(Request $request)
     {
+        $durationTypes = $this->durationTypes();
+
         $clients = Client::orderBy('full_name')->get();
 
         $spaces = Space::with(['campus', 'floor', 'spaceType'])
@@ -83,13 +93,15 @@ class ReservationController extends Controller
 
         if ($request->filled('space_id')) {
             $selectedSpace = Space::with(['campus', 'floor', 'spaceType'])
+                ->where('is_active', true)
                 ->findOrFail($request->space_id);
         }
 
         return view('admin.reservations.create', compact(
             'clients',
             'spaces',
-            'selectedSpace'
+            'selectedSpace',
+            'durationTypes'
         ));
     }
 
@@ -108,12 +120,23 @@ class ReservationController extends Controller
 
         $space = Space::findOrFail($data['space_id']);
 
-        $normalizedStatus = mb_strtolower($space->status ?? 'disponible');
+        $normalizedStatus = mb_strtolower($space->status ?? 'available');
 
-        if (in_array($normalizedStatus, ['occupé', 'occupe', 'occupied', 'indisponible', 'unavailable', 'maintenance', 'en maintenance'])) {
+        $notReservableStatuses = [
+            'occupied',
+            'unavailable',
+            'maintenance',
+            'in maintenance',
+            'occupé',
+            'occupe',
+            'indisponible',
+            'en maintenance',
+        ];
+
+        if (in_array($normalizedStatus, $notReservableStatuses)) {
             return back()
                 ->withInput()
-                ->with('error', 'Cet espace ne peut pas être réservé actuellement.');
+                ->with('error', 'This space cannot be reserved at the moment.');
         }
 
         $startsAt = Carbon::parse($data['starts_at']);
@@ -130,7 +153,7 @@ class ReservationController extends Controller
         if ($hasOverlap) {
             return back()
                 ->withInput()
-                ->with('error', 'Cet espace est déjà réservé sur cette période.');
+                ->with('error', 'This space is already reserved during this period.');
         }
 
         $reservation = DB::transaction(function () use ($data, $space, $startsAt, $endsAt) {
@@ -153,7 +176,7 @@ class ReservationController extends Controller
             Contract::create([
                 'client_id' => $client->id,
                 'reservation_id' => $reservation->id,
-                'title' => $data['contract_title'] ?: 'Contrat - ' . $client->full_name,
+                'title' => $data['contract_title'] ?: 'Contract - ' . $client->full_name,
                 'start_date' => $startsAt->toDateString(),
                 'end_date' => $endsAt->toDateString(),
                 'status' => 'draft',
@@ -165,13 +188,47 @@ class ReservationController extends Controller
 
         return redirect()
             ->route('admin.reservations.show', $reservation)
-            ->with('success', 'Réservation créée avec succès. Un contrat brouillon a été créé automatiquement.');
+            ->with('success', 'Reservation created successfully. A draft contract was created automatically.');
     }
 
     public function show(Reservation $reservation)
     {
-        $reservation->load(['client', 'space', 'campus', 'floor', 'contract', 'creator']);
+        $reservation->load([
+            'client',
+            'space',
+            'campus',
+            'floor',
+            'contract',
+            'creator',
+        ]);
 
-        return view('admin.reservations.show', compact('reservation'));
+        $reservationStatuses = $this->reservationStatuses();
+
+        return view('admin.reservations.show', compact(
+            'reservation',
+            'reservationStatuses'
+        ));
+    }
+
+    private function reservationStatuses(): array
+    {
+        return [
+            'pending' => 'Pending',
+            'confirmed' => 'Confirmed',
+            'in_progress' => 'In progress',
+            'completed' => 'Completed',
+            'cancelled' => 'Cancelled',
+            'expired' => 'Expired',
+        ];
+    }
+
+    private function durationTypes(): array
+    {
+        return [
+            'hourly' => 'Hourly',
+            'daily' => 'Daily',
+            'monthly' => 'Monthly',
+            'custom' => 'Custom',
+        ];
     }
 }

@@ -15,7 +15,17 @@ class PaymentController extends Controller
     {
         $payments = Payment::with(['client', 'contract.reservation.space'])
             ->when($request->filled('status') && $request->status !== 'all', function ($query) use ($request) {
-                $query->where('status', $request->status);
+                if ($request->status === 'late') {
+                    $query->where(function ($lateQuery) {
+                        $lateQuery->where('status', 'late')
+                            ->orWhere(function ($subQuery) {
+                                $subQuery->where('status', 'due')
+                                    ->whereDate('due_date', '<', today());
+                            });
+                    });
+                } else {
+                    $query->where('status', $request->status);
+                }
             })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->search;
@@ -64,11 +74,16 @@ class PaymentController extends Controller
             'payment_method' => ['nullable', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'redirect_to_contract' => ['nullable', 'boolean'],
         ]);
 
         $contract = Contract::with(['client', 'reservation'])->findOrFail($data['contract_id']);
 
         $amountPaid = $data['amount_paid'] ?? 0;
+
+        if ($data['status'] === 'paid') {
+            $amountPaid = $data['amount_due'];
+        }
 
         $payment = Payment::create([
             'client_id' => $contract->client_id,
@@ -89,6 +104,12 @@ class PaymentController extends Controller
 
         if ($payment->client && $payment->client->user) {
             $payment->client->user->notify(new PaymentDueCreatedNotification($payment));
+        }
+
+        if ($request->boolean('redirect_to_contract')) {
+            return redirect()
+                ->route('admin.contracts.show', $contract)
+                ->with('success', 'Échéance de paiement créée avec succès.');
         }
 
         return redirect()
@@ -123,6 +144,10 @@ class PaymentController extends Controller
         ]);
 
         $data['amount_paid'] = $data['amount_paid'] ?? 0;
+
+        if ($data['status'] === 'paid') {
+            $data['amount_paid'] = $data['amount_due'];
+        }
 
         if ($data['status'] === 'paid' && !$payment->paid_at) {
             $data['paid_at'] = now();

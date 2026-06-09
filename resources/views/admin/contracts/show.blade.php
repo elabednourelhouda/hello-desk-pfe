@@ -27,6 +27,11 @@
                     Ajouter une échéance
                 </a>
 
+                <a href="{{ route('admin.contracts.document', $contract) }}"
+                class="inline-flex justify-center rounded-xl bg-[#284625] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90">
+                    Générer le contrat
+                </a>
+
                 <a href="{{ route('admin.contracts.edit', $contract) }}"
                    class="inline-flex justify-center rounded-xl bg-[#284625] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90">
                     Modifier / Importer PDF

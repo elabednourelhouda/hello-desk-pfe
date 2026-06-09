@@ -162,6 +162,10 @@
 
             $clientLinks = [
                 ['label' => 'Tableau de bord', 'route' => 'client.dashboard'],
+                ['label' => 'Réservations', 'route' => 'client.reservations.index'],
+                ['label' => 'Contrats', 'route' => 'client.contracts.index'],
+                ['label' => 'Paiements', 'route' => 'client.payments.index'],
+                ['label' => 'Notifications', 'route' => 'client.notifications.index'],
             ];
 
             $links = match ($user->role) {
@@ -180,19 +184,28 @@
                             @if(Route::has($link['route']))
                                 @php
                                     $params = $link['params'] ?? [];
-                                    $isActive = request()->routeIs($link['route'])
-                                        || request()->routeIs(str_replace('.index', '.*', $link['route']));
+                                    $fragment = $link['fragment'] ?? null;
+
+                                    $href = route($link['route'], $params) . ($fragment ? '#' . $fragment : '');
+
+                                    if ($fragment) {
+                                        $isActive = request()->routeIs($link['route'])
+                                            && $fragment === 'overview';
+                                    } else {
+                                        $isActive = request()->routeIs($link['route'])
+                                            || request()->routeIs(str_replace('.index', '.*', $link['route']));
+                                    }
 
                                     if (($link['params']['role'] ?? null) && request('role') === $link['params']['role']) {
                                         $isActive = true;
                                     }
                                 @endphp
 
-                                <a href="{{ route($link['route'], $params) }}"
+                                <a href="{{ $href }}"
                                 class="whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold transition
                                 {{ $isActive
-                                    ? 'bg-sky-100 text-sky-800 ring-1 ring-sky-200'
-                                    : 'text-gray-600 hover:bg-sky-50 hover:text-sky-700' }}">
+                                    ? 'bg-[#284625] text-white ring-1 ring-[#284625]/20'
+                                    : 'text-gray-600 hover:bg-[#284625]/5 hover:text-[#284625]' }}">
                                     {{ $link['label'] }}
                                 </a>
                             @endif
