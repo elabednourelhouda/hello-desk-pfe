@@ -24,6 +24,58 @@ class ClientController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('client_type')) {
+            $query->where('client_type', $request->client_type);
+        }
+
+        if ($request->filled('legal_status')) {
+            if ($request->legal_status === 'complete') {
+                $query->where(function ($q) {
+                    $q->where(function ($sub) {
+                        $sub->where('client_type', 'physique')
+                            ->whereNotNull('first_name')
+                            ->whereNotNull('last_name')
+                            ->whereNotNull('identity_document_type')
+                            ->whereNotNull('identity_document_number');
+                    })->orWhere(function ($sub) {
+                        $sub->where('client_type', 'morale')
+                            ->whereNotNull('company_name')
+                            ->whereNotNull('legal_form')
+                            ->whereNotNull('ice_number')
+                            ->whereNotNull('legal_representative_full_name')
+                            ->whereNotNull('legal_representative_identity_document_type')
+                            ->whereNotNull('legal_representative_identity_document_number');
+                    });
+                });
+            }
+
+            if ($request->legal_status === 'incomplete') {
+                $query->where(function ($q) {
+                    $q->whereNull('client_type')
+                        ->orWhere(function ($sub) {
+                            $sub->where('client_type', 'physique')
+                                ->where(function ($missing) {
+                                    $missing->whereNull('first_name')
+                                        ->orWhereNull('last_name')
+                                        ->orWhereNull('identity_document_type')
+                                        ->orWhereNull('identity_document_number');
+                                });
+                        })
+                        ->orWhere(function ($sub) {
+                            $sub->where('client_type', 'morale')
+                                ->where(function ($missing) {
+                                    $missing->whereNull('company_name')
+                                        ->orWhereNull('legal_form')
+                                        ->orWhereNull('ice_number')
+                                        ->orWhereNull('legal_representative_full_name')
+                                        ->orWhereNull('legal_representative_identity_document_type')
+                                        ->orWhereNull('legal_representative_identity_document_number');
+                                });
+                        });
+                });
+            }
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
 
@@ -54,15 +106,27 @@ class ClientController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email', 'unique:clients,email'],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'company_name' => ['nullable', 'string', 'max:255'],
-            'main_campus_id' => ['nullable', 'exists:campuses,id'],
-            'registered_at' => ['nullable', 'date'],
-            'notes' => ['nullable', 'string'],
-        ]);
+        $validated = $this->normalizeClientData(
+            $request->validate($this->clientRules(), [
+                'full_name.required' => 'Le nom complet est obligatoire.',
+                'email.required' => 'L’email est obligatoire.',
+                'email.email' => 'Veuillez saisir une adresse email valide.',
+                'email.unique' => 'Cet email est déjà utilisé.',
+                'client_type.required' => 'Veuillez choisir le type de client.',
+
+                'first_name.required_if' => 'Le prénom est obligatoire pour une personne physique.',
+                'last_name.required_if' => 'Le nom est obligatoire pour une personne physique.',
+                'identity_document_type.required_if' => 'Le type de pièce est obligatoire pour une personne physique.',
+                'identity_document_number.required_if' => 'Le numéro de pièce est obligatoire pour une personne physique.',
+
+                'company_name.required_if' => 'La raison sociale est obligatoire pour une personne morale.',
+                'legal_form.required_if' => 'La forme juridique est obligatoire pour une personne morale.',
+                'ice_number.required_if' => 'L’ICE est obligatoire pour une personne morale.',
+                'legal_representative_full_name.required_if' => 'Le représentant légal est obligatoire pour une personne morale.',
+                'legal_representative_identity_document_type.required_if' => 'Le type de pièce du représentant légal est obligatoire.',
+                'legal_representative_identity_document_number.required_if' => 'Le numéro de pièce du représentant légal est obligatoire.',
+            ])
+        );
 
         $temporaryPassword = Str::random(10);
 
@@ -86,6 +150,33 @@ class ClientController extends Controller
                 'registered_at' => $validated['registered_at'] ?? now()->toDateString(),
                 'status' => 'active',
                 'notes' => $validated['notes'] ?? null,
+
+                'client_type' => $validated['client_type'],
+
+                'first_name' => $validated['first_name'] ?? null,
+                'last_name' => $validated['last_name'] ?? null,
+                'identity_document_type' => $validated['identity_document_type'] ?? null,
+                'identity_document_number' => $validated['identity_document_number'] ?? null,
+                'nationality' => $validated['nationality'] ?? null,
+
+                'billing_email' => $validated['billing_email'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'city' => $validated['city'] ?? null,
+                'country' => $validated['country'] ?? 'Maroc',
+
+                'legal_form' => $validated['legal_form'] ?? null,
+                'ice_number' => $validated['ice_number'] ?? null,
+                'if_number' => $validated['if_number'] ?? null,
+                'rc_number' => $validated['rc_number'] ?? null,
+                'patente_number' => $validated['patente_number'] ?? null,
+                'cnss_number' => $validated['cnss_number'] ?? null,
+                'headquarters_address' => $validated['headquarters_address'] ?? null,
+
+                'legal_representative_full_name' => $validated['legal_representative_full_name'] ?? null,
+                'legal_representative_identity_document_type' => $validated['legal_representative_identity_document_type'] ?? null,
+                'legal_representative_identity_document_number' => $validated['legal_representative_identity_document_number'] ?? null,
+                'legal_representative_phone' => $validated['legal_representative_phone'] ?? null,
+                'legal_representative_email' => $validated['legal_representative_email'] ?? null,
             ]);
         });
 
@@ -93,6 +184,91 @@ class ClientController extends Controller
             ->route('admin.clients.show', $client)
             ->with('success', 'Client créé avec succès.')
             ->with('temporary_password', $temporaryPassword);
+    }
+
+    private function clientRules(?Client $client = null): array
+    {
+        $emailRules = ['required', 'email', 'max:255'];
+
+        if ($client) {
+            $emailRules[] = Rule::unique('users', 'email')->ignore($client->user_id);
+            $emailRules[] = Rule::unique('clients', 'email')->ignore($client->id);
+        } else {
+            $emailRules[] = 'unique:users,email';
+            $emailRules[] = 'unique:clients,email';
+        }
+
+        return [
+            'full_name' => ['required', 'string', 'max:255'],
+            'email' => $emailRules,
+            'phone' => ['nullable', 'string', 'max:50'],
+            'company_name' => ['nullable', 'required_if:client_type,morale', 'string', 'max:255'],
+            'main_campus_id' => ['nullable', 'exists:campuses,id'],
+            'registered_at' => ['nullable', 'date'],
+            'joined_at' => ['nullable', 'date'],
+            'billing_info' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
+
+            'client_type' => ['required', 'in:physique,morale'],
+
+            // Personne physique
+            'first_name' => ['nullable', 'required_if:client_type,physique', 'string', 'max:255'],
+            'last_name' => ['nullable', 'required_if:client_type,physique', 'string', 'max:255'],
+            'identity_document_type' => ['nullable', 'required_if:client_type,physique', 'in:cin,passport,carte_sejour'],
+            'identity_document_number' => ['nullable', 'required_if:client_type,physique', 'string', 'max:100'],
+            'nationality' => ['nullable', 'string', 'max:100'],
+
+            // Coordonnées / facturation
+            'billing_email' => ['nullable', 'email', 'max:255'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'country' => ['nullable', 'string', 'max:100'],
+
+            // Personne morale
+            'legal_form' => ['nullable', 'required_if:client_type,morale', 'in:sarl,sa,snc,auto_entrepreneur,association,other'],
+            'ice_number' => ['nullable', 'required_if:client_type,morale', 'string', 'max:50'],
+            'if_number' => ['nullable', 'string', 'max:50'],
+            'rc_number' => ['nullable', 'string', 'max:50'],
+            'patente_number' => ['nullable', 'string', 'max:50'],
+            'cnss_number' => ['nullable', 'string', 'max:50'],
+            'headquarters_address' => ['nullable', 'string', 'max:255'],
+
+            // Représentant légal
+            'legal_representative_full_name' => ['nullable', 'required_if:client_type,morale', 'string', 'max:255'],
+            'legal_representative_identity_document_type' => ['nullable', 'required_if:client_type,morale', 'in:cin,passport,carte_sejour'],
+            'legal_representative_identity_document_number' => ['nullable', 'required_if:client_type,morale', 'string', 'max:100'],
+            'legal_representative_phone' => ['nullable', 'string', 'max:50'],
+            'legal_representative_email' => ['nullable', 'email', 'max:255'],
+        ];
+    }
+
+    private function normalizeClientData(array $validated): array
+    {
+        if (($validated['client_type'] ?? null) === 'physique') {
+            $validated['company_name'] = null;
+            $validated['legal_form'] = null;
+            $validated['ice_number'] = null;
+            $validated['if_number'] = null;
+            $validated['rc_number'] = null;
+            $validated['patente_number'] = null;
+            $validated['cnss_number'] = null;
+            $validated['headquarters_address'] = null;
+            $validated['legal_representative_full_name'] = null;
+            $validated['legal_representative_identity_document_type'] = null;
+            $validated['legal_representative_identity_document_number'] = null;
+            $validated['legal_representative_phone'] = null;
+            $validated['legal_representative_email'] = null;
+        }
+
+        if (($validated['client_type'] ?? null) === 'morale') {
+            $validated['first_name'] = null;
+            $validated['last_name'] = null;
+            $validated['identity_document_type'] = null;
+            $validated['identity_document_number'] = null;
+            $validated['nationality'] = null;
+        }
+
+        return $validated;
     }
 
     public function show(Client $client)
@@ -116,28 +292,27 @@ class ClientController extends Controller
 
     public function update(Request $request, Client $client)
     {
-        $validated = $request->validate([
-            'full_name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email')->ignore($client->user_id),
-            ],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'company_name' => ['nullable', 'string', 'max:255'],
-            'main_campus_id' => ['nullable', 'exists:campuses,id'],
-            'joined_at' => ['nullable', 'date'],
-            'registered_at' => ['nullable', 'date'],
-            'status' => ['required', 'in:active,inactive'],
-            'billing_info' => ['nullable', 'string'],
-            'notes' => ['nullable', 'string'],
-        ], [
-            'full_name.required' => 'Le nom complet est obligatoire.',
-            'email.required' => 'L’email est obligatoire.',
-            'email.email' => 'Veuillez saisir une adresse email valide.',
-            'email.unique' => 'Cet email est déjà utilisé.',
-        ]);
+        $validated = $this->normalizeClientData(
+            $request->validate(array_merge($this->clientRules($client), [
+                'status' => ['required', 'in:active,inactive'],
+            ]), [
+                'full_name.required' => 'Le nom complet est obligatoire.',
+                'email.required' => 'L’email est obligatoire.',
+                'email.email' => 'Veuillez saisir une adresse email valide.',
+                'email.unique' => 'Cet email est déjà utilisé.',
+                'client_type.required' => 'Veuillez choisir le type de client.',
+                'first_name.required_if' => 'Le prénom est obligatoire pour une personne physique.',
+                'last_name.required_if' => 'Le nom est obligatoire pour une personne physique.',
+                'identity_document_type.required_if' => 'Le type de pièce est obligatoire pour une personne physique.',
+                'identity_document_number.required_if' => 'Le numéro de pièce est obligatoire pour une personne physique.',
+                'company_name.required_if' => 'La raison sociale est obligatoire pour une personne morale.',
+                'legal_form.required_if' => 'La forme juridique est obligatoire pour une personne morale.',
+                'ice_number.required_if' => 'L’ICE est obligatoire pour une personne morale.',
+                'legal_representative_full_name.required_if' => 'Le représentant légal est obligatoire pour une personne morale.',
+                'legal_representative_identity_document_type.required_if' => 'Le type de pièce du représentant légal est obligatoire.',
+                'legal_representative_identity_document_number.required_if' => 'Le numéro de pièce du représentant légal est obligatoire.',
+            ])
+        );
 
         $validated['joined_at'] = $validated['joined_at'] ?? now()->toDateString();
         $validated['registered_at'] = $validated['registered_at'] ?? now()->toDateString();
@@ -146,6 +321,7 @@ class ClientController extends Controller
             $client->user->update([
                 'name' => $validated['full_name'],
                 'email' => $validated['email'],
+                'phone' => $validated['phone'] ?? null,
             ]);
 
             $client->update([
@@ -159,6 +335,33 @@ class ClientController extends Controller
                 'status' => $validated['status'],
                 'billing_info' => $validated['billing_info'] ?? null,
                 'notes' => $validated['notes'] ?? null,
+
+                'client_type' => $validated['client_type'],
+
+                'first_name' => $validated['first_name'] ?? null,
+                'last_name' => $validated['last_name'] ?? null,
+                'identity_document_type' => $validated['identity_document_type'] ?? null,
+                'identity_document_number' => $validated['identity_document_number'] ?? null,
+                'nationality' => $validated['nationality'] ?? null,
+
+                'billing_email' => $validated['billing_email'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'city' => $validated['city'] ?? null,
+                'country' => $validated['country'] ?? 'Maroc',
+
+                'legal_form' => $validated['legal_form'] ?? null,
+                'ice_number' => $validated['ice_number'] ?? null,
+                'if_number' => $validated['if_number'] ?? null,
+                'rc_number' => $validated['rc_number'] ?? null,
+                'patente_number' => $validated['patente_number'] ?? null,
+                'cnss_number' => $validated['cnss_number'] ?? null,
+                'headquarters_address' => $validated['headquarters_address'] ?? null,
+
+                'legal_representative_full_name' => $validated['legal_representative_full_name'] ?? null,
+                'legal_representative_identity_document_type' => $validated['legal_representative_identity_document_type'] ?? null,
+                'legal_representative_identity_document_number' => $validated['legal_representative_identity_document_number'] ?? null,
+                'legal_representative_phone' => $validated['legal_representative_phone'] ?? null,
+                'legal_representative_email' => $validated['legal_representative_email'] ?? null,
             ]);
         });
 
@@ -206,5 +409,23 @@ class ClientController extends Controller
             ->route('admin.clients.show', $client)
             ->with('success', 'Mot de passe réinitialisé avec succès.')
             ->with('temporary_password', $temporaryPassword);
+    }
+
+    public function updateLegalFile(Request $request, Client $client)
+    {
+        $validated = $request->validate([
+            'legal_file_status' => ['required', 'in:complete,incomplete'],
+            'legal_file_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $client->update([
+            'legal_file_status' => $validated['legal_file_status'],
+            'legal_file_completed_at' => $validated['legal_file_status'] === 'complete'
+                ? now()
+                : null,
+            'legal_file_notes' => $validated['legal_file_notes'] ?? $client->legal_file_notes,
+        ]);
+
+        return back()->with('success', 'Legal file status updated successfully.');
     }
 }

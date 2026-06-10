@@ -3,6 +3,34 @@
 @section('title', 'Détail contrat - Hello Desk')
 
 @section('content')
+
+@php
+    $contractStatusLabels = [
+        'draft' => 'Brouillon',
+        'active' => 'Actif',
+        'expired' => 'Expiré',
+        'cancelled' => 'Annulé',
+    ];
+
+    $contractStatusClasses = [
+        'draft' => 'bg-amber-100 text-amber-800 ring-amber-300',
+        'active' => 'bg-emerald-100 text-emerald-800 ring-emerald-300',
+        'expired' => 'bg-orange-100 text-orange-800 ring-orange-300',
+        'cancelled' => 'bg-red-100 text-red-800 ring-red-300',
+    ];
+
+    $reservationStatusLabels = [
+        'pending' => 'En attente',
+        'confirmed' => 'Confirmée',
+        'in_progress' => 'En cours',
+        'completed' => 'Terminée',
+        'cancelled' => 'Annulée',
+        'expired' => 'Expirée',
+    ];
+
+    $contractStatusClass = $contractStatusClasses[$contract->status] ?? 'bg-gray-100 text-gray-700 ring-gray-300';
+@endphp
+
 <div class="mx-auto max-w-6xl px-6 py-8">
     <div class="mb-6">
         <a href="{{ route('admin.contracts.index') }}"
@@ -21,21 +49,34 @@
                 </p>
             </div>
 
-            <div class="flex flex-col gap-3 sm:flex-row">
-                <a href="{{ route('admin.payments.create', ['contract_id' => $contract->id]) }}"
-                   class="inline-flex justify-center rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
-                    Ajouter une échéance
-                </a>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                @if($contract->pdf_path)
+                    <a href="{{ asset('storage/' . $contract->pdf_path) }}"
+                    target="_blank"
+                    class="inline-flex items-center justify-center rounded-xl bg-[#284625] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                        Ouvrir le PDF signé
+                    </a>
 
-                <a href="{{ route('admin.contracts.document', $contract) }}"
-                class="inline-flex justify-center rounded-xl bg-[#284625] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90">
-                    Générer le contrat
-                </a>
+                    <a href="{{ route('admin.contracts.document', $contract) }}"
+                    class="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 hover:shadow-md">
+                        Voir le modèle généré
+                    </a>
 
-                <a href="{{ route('admin.contracts.edit', $contract) }}"
-                   class="inline-flex justify-center rounded-xl bg-[#284625] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90">
-                    Modifier / Importer PDF
-                </a>
+                    <a href="{{ route('admin.contracts.edit', $contract) }}"
+                    class="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 hover:shadow-md">
+                        Modifier
+                    </a>
+                @else
+                    <a href="{{ route('admin.contracts.document', $contract) }}"
+                    class="inline-flex items-center justify-center rounded-xl bg-[#284625] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                        Voir / imprimer le modèle généré
+                    </a>
+
+                    <a href="{{ route('admin.contracts.edit', $contract) }}"
+                    class="inline-flex items-center justify-center rounded-xl border border-[#284625]/30 bg-[#284625]/5 px-5 py-3 text-sm font-semibold text-[#284625] shadow-sm transition hover:bg-[#284625]/10 hover:shadow-md">
+                        Importer le PDF signé
+                    </a>
+                @endif
             </div>
         </div>
     </div>
@@ -47,8 +88,14 @@
     @endif
 
     <div class="grid gap-6 lg:grid-cols-3">
-        <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:col-span-2">
-            <h2 class="text-lg font-bold text-gray-900">Informations du contrat</h2>
+        <section class="rounded-3xl border border-blue-100 bg-gradient-to-br from-white via-blue-50/40 to-purple-50/40 p-6 shadow-sm lg:col-span-2">
+            <div class="flex items-center gap-3">
+
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900">Informations du contrat</h2>
+                    <p class="text-sm text-gray-500">Données principales du contrat et de sa version signée.</p>
+                </div>
+            </div>
 
             <dl class="mt-5 grid gap-4 md:grid-cols-2">
                 <div>
@@ -82,16 +129,24 @@
                 <div>
                     <dt class="text-xs font-semibold uppercase text-gray-400">Statut</dt>
                     <dd class="mt-1">
-                        <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-                            {{ $contract->status }}
+                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold ring-1 {{ $contractStatusClass }}">
+                            {{ $contractStatusLabels[$contract->status] ?? ucfirst($contract->status) }}
                         </span>
                     </dd>
                 </div>
 
                 <div>
-                    <dt class="text-xs font-semibold uppercase text-gray-400">PDF</dt>
-                    <dd class="mt-1 text-sm text-gray-700">
-                        {{ $contract->pdf_path ? 'Importé' : 'Non importé' }}
+                    <dt class="text-xs font-semibold uppercase text-gray-400">Version signée</dt>
+                    <dd class="mt-1">
+                        @if($contract->pdf_path)
+                            <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 ring-1 ring-emerald-300">
+                                PDF signé importé
+                            </span>
+                        @else
+                            <span class="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-800 ring-1 ring-rose-300">
+                                En attente du PDF signé
+                            </span>
+                        @endif
                     </dd>
                 </div>
             </dl>
@@ -106,8 +161,14 @@
             @endif
         </section>
 
-        <aside class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-bold text-gray-900">Réservation liée</h2>
+        <aside class="rounded-3xl border border-purple-100 bg-gradient-to-br from-white via-purple-50/40 to-blue-50/40 p-6 shadow-sm">
+            <div class="flex items-center gap-3">
+
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900">Réservation liée</h2>
+                    <p class="text-sm text-gray-500">Espace, campus et statut de réservation.</p>
+                </div>
+            </div>
 
             <div class="mt-5 space-y-4 text-sm">
                 <div>
@@ -146,18 +207,18 @@
                 @endif
             </div>
 
-            <div class="mt-6 border-t border-gray-100 pt-6">
-                <h3 class="text-sm font-bold text-gray-900">Fichier PDF</h3>
+            <div class="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+                <h3 class="text-sm font-bold text-gray-900">Version officielle signée</h3>
 
                 @if($contract->pdf_path)
                     <a href="{{ asset('storage/' . $contract->pdf_path) }}"
                        target="_blank"
                        class="mt-3 inline-flex w-full justify-center rounded-xl bg-[#284625] px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
-                        Ouvrir le PDF
+                        Ouvrir le PDF signé
                     </a>
                 @else
-                    <div class="mt-3 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-700">
-                        Le PDF du contrat n’est pas encore importé.
+                    <div class="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700">
+                        Le PDF signé n’est pas encore importé. Le modèle généré peut être imprimé puis signé.
                     </div>
                 @endif
             </div>
@@ -171,7 +232,7 @@
         $remaining = max(0, $totalDue - $totalPaid);
     @endphp
 
-    <section class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <section class="mt-6 rounded-3xl border border-amber-100 bg-gradient-to-br from-white via-amber-50/40 to-rose-50/30 p-6 shadow-sm">
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
                 <h2 class="text-lg font-bold text-gray-900">Échéances de paiement</h2>
@@ -187,23 +248,23 @@
         </div>
 
         <div class="mt-5 grid gap-4 md:grid-cols-3">
-            <div class="rounded-xl bg-gray-50 p-4">
-                <p class="text-xs font-semibold uppercase text-gray-400">Total à payer</p>
-                <p class="mt-1 text-lg font-bold text-gray-900">
+            <div class="rounded-2xl border border-blue-200 bg-blue-50 p-5 shadow-sm">
+                <p class="text-xs font-bold uppercase tracking-wide text-blue-700">Total à payer</p>
+                <p class="mt-2 text-xl font-bold text-blue-900">
                     {{ number_format($totalDue, 2, ',', ' ') }} DH
                 </p>
             </div>
 
-            <div class="rounded-xl bg-green-50 p-4">
-                <p class="text-xs font-semibold uppercase text-green-600">Total payé</p>
-                <p class="mt-1 text-lg font-bold text-green-700">
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+                <p class="text-xs font-bold uppercase tracking-wide text-emerald-700">Total payé</p>
+                <p class="mt-2 text-xl font-bold text-emerald-900">
                     {{ number_format($totalPaid, 2, ',', ' ') }} DH
                 </p>
             </div>
 
-            <div class="rounded-xl bg-yellow-50 p-4">
-                <p class="text-xs font-semibold uppercase text-yellow-600">Reste à payer</p>
-                <p class="mt-1 text-lg font-bold text-yellow-700">
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
+                <p class="text-xs font-bold uppercase tracking-wide text-rose-700">Reste à payer</p>
+                <p class="mt-2 text-xl font-bold text-rose-900">
                     {{ number_format($remaining, 2, ',', ' ') }} DH
                 </p>
             </div>

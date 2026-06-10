@@ -82,7 +82,10 @@ class ReservationController extends Controller
     {
         $durationTypes = $this->durationTypes();
 
-        $clients = Client::orderBy('full_name')->get();
+        $clients = Client::orderBy('full_name')
+            ->get()
+            ->sortByDesc(fn ($client) => $client->hasCompleteLegalFile())
+            ->values();
 
         $spaces = Space::with(['campus', 'floor', 'spaceType'])
             ->where('is_active', true)
@@ -95,6 +98,10 @@ class ReservationController extends Controller
             $selectedSpace = Space::with(['campus', 'floor', 'spaceType'])
                 ->where('is_active', true)
                 ->findOrFail($request->space_id);
+
+            $selectedSpace->display_price_per_hour = $selectedSpace->price_per_hour ?? 0;
+            $selectedSpace->display_price_per_day = $selectedSpace->price_per_day ?? 0;
+            $selectedSpace->display_price_per_month = $selectedSpace->price_per_month ?? 0;
         }
 
         return view('admin.reservations.create', compact(
@@ -113,10 +120,18 @@ class ReservationController extends Controller
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
             'duration_type' => ['required', 'in:hourly,daily,monthly,custom'],
-            'negotiated_price' => ['nullable', 'numeric', 'min:0'],
+            'negotiated_price' => ['required', 'numeric', 'min:0'],
             'contract_title' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        $client = Client::findOrFail($data['client_id']);
+
+        if (! $client->hasCompleteLegalFile()) {
+            return back()
+                ->withInput()
+                ->with('error', 'Impossible de créer la réservation : le dossier juridique du client est incomplet.');
+        }
 
         $space = Space::findOrFail($data['space_id']);
 
@@ -124,19 +139,24 @@ class ReservationController extends Controller
 
         $notReservableStatuses = [
             'occupied',
+            'reserved',
             'unavailable',
             'maintenance',
             'in maintenance',
+
             'occupé',
             'occupe',
+            'réservé',
+            'reserve',
+            'réservée',
             'indisponible',
             'en maintenance',
         ];
 
-        if (in_array($normalizedStatus, $notReservableStatuses)) {
+        if (in_array($normalizedStatus, $notReservableStatuses, true)) {
             return back()
                 ->withInput()
-                ->with('error', 'This space cannot be reserved at the moment.');
+                ->with('error', 'Cet espace ne peut pas être réservé pour le moment.');
         }
 
         $startsAt = Carbon::parse($data['starts_at']);
@@ -153,12 +173,12 @@ class ReservationController extends Controller
         if ($hasOverlap) {
             return back()
                 ->withInput()
-                ->with('error', 'This space is already reserved during this period.');
+                ->with('error', 'Cet espace est déjà réservé pendant cette période.');
         }
 
-        $reservation = DB::transaction(function () use ($data, $space, $startsAt, $endsAt) {
+        $reservation = DB::transaction(function () use ($data, $client, $space, $startsAt, $endsAt) {
             $reservation = Reservation::create([
-                'client_id' => $data['client_id'],
+                'client_id' => $client->id,
                 'space_id' => $space->id,
                 'campus_id' => $space->campus_id,
                 'floor_id' => $space->floor_id,
@@ -170,8 +190,6 @@ class ReservationController extends Controller
                 'created_by' => Auth::id(),
                 'notes' => $data['notes'] ?? null,
             ]);
-
-            $client = Client::findOrFail($data['client_id']);
 
             Contract::create([
                 'client_id' => $client->id,
@@ -188,7 +206,7 @@ class ReservationController extends Controller
 
         return redirect()
             ->route('admin.reservations.show', $reservation)
-            ->with('success', 'Reservation created successfully. A draft contract was created automatically.');
+            ->with('success', 'Réservation créée avec succès. Un contrat brouillon a été créé automatiquement.');
     }
 
     public function show(Reservation $reservation)
@@ -213,22 +231,22 @@ class ReservationController extends Controller
     private function reservationStatuses(): array
     {
         return [
-            'pending' => 'Pending',
-            'confirmed' => 'Confirmed',
-            'in_progress' => 'In progress',
-            'completed' => 'Completed',
-            'cancelled' => 'Cancelled',
-            'expired' => 'Expired',
+            'pending' => 'En attente',
+            'confirmed' => 'Confirmée',
+            'in_progress' => 'En cours',
+            'completed' => 'Terminée',
+            'cancelled' => 'Annulée',
+            'expired' => 'Expirée',
         ];
     }
 
     private function durationTypes(): array
     {
         return [
-            'hourly' => 'Hourly',
-            'daily' => 'Daily',
-            'monthly' => 'Monthly',
-            'custom' => 'Custom',
+            'hourly' => 'À l’heure',
+            'daily' => 'À la journée',
+            'monthly' => 'Au mois',
+            'custom' => 'Personnalisée',
         ];
     }
 }

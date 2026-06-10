@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Contract;
+use App\Models\Payment;
+use App\Notifications\PaymentDueCreatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -83,6 +85,22 @@ class ContractController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        if ($data['status'] === 'active') {
+            if (! $contract->client?->hasCompleteLegalFile()) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Impossible d’activer le contrat : le dossier juridique du client est incomplet.');
+            }
+
+            $hasSignedPdf = $request->hasFile('pdf_file') || filled($contract->pdf_path);
+
+            if (! $hasSignedPdf) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Impossible d’activer le contrat : veuillez importer le PDF signé.');
+            }
+        }
+
         if ($request->hasFile('pdf_file')) {
             if ($contract->pdf_path && Storage::disk('public')->exists($contract->pdf_path)) {
                 Storage::disk('public')->delete($contract->pdf_path);
@@ -107,12 +125,33 @@ class ContractController extends Controller
                     'status' => 'reserved',
                 ]);
             }
+
+            $alreadyHasPayments = Payment::where('contract_id', $contract->id)->exists();
+
+            if (! $alreadyHasPayments) {
+                $payment = Payment::create([
+                    'client_id' => $contract->client_id,
+                    'contract_id' => $contract->id,
+                    'reservation_id' => $contract->reservation_id,
+                    'due_date' => $contract->start_date,
+                    'amount_due' => $contract->reservation->negotiated_price ?? 0,
+                    'amount_paid' => 0,
+                    'status' => 'due',
+                    'recorded_by' => Auth::id(),
+                    'notes' => 'Échéance créée automatiquement lors de l’activation du contrat.',
+                ]);
+
+                $payment->load('client.user');
+
+                if ($payment->client && $payment->client->user) {
+                    $payment->client->user->notify(new PaymentDueCreatedNotification($payment));
+                }
+            }
         }
 
         if ($contract->status === 'cancelled' && $contract->reservation) {
             $contract->reservation->update([
                 'status' => 'cancelled',
-                'cancelled_by' => Auth::id(),
             ]);
         }
 

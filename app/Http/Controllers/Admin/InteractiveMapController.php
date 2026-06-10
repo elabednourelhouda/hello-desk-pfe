@@ -26,7 +26,11 @@ class InteractiveMapController extends Controller
                 ->orderBy('name')
                 ->get();
 
-            $selectedFloorId = $request->integer('floor_id') ?: $floors->first()?->id;
+            $defaultFloor = $floors->firstWhere('map_key', 'centre_ville_2') ?? $floors->first();
+
+            $defaultFloor = $floors->firstWhere('map_key', 'centre_ville_2') ?? $floors->first();
+
+            $selectedFloorId = $request->integer('floor_id') ?: $defaultFloor?->id;
 
             if ($selectedFloorId) {
                 $selectedFloor = Floor::find($selectedFloorId);
@@ -49,6 +53,10 @@ class InteractiveMapController extends Controller
                     ->map(function ($space) {
                         $space->code = $space->internal_code;
                         $space->surface = $space->area_m2;
+
+                        $space->display_price_per_hour = $space->price_per_hour ?? 0;
+                        $space->display_price_per_day = $space->price_per_day ?? 0;
+                        $space->display_price_per_month = $space->price_per_month ?? 0;
 
                         $savedStatus = mb_strtolower($space->status ?? 'disponible');
 

@@ -95,7 +95,7 @@
 
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
-                    Date d’échéance
+                    Date d’échéance <span class="text-red-500">*</span>
                 </label>
 
                 <input type="date"
@@ -107,7 +107,7 @@
 
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
-                    Montant à payer
+                    Montant à payer <span class="text-red-500">*</span>
                 </label>
 
                 <input type="number"
@@ -121,7 +121,7 @@
 
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
-                    Montant payé
+                    Montant payé <span class="text-gray-400">(optionnel)</span>
                 </label>
 
                 <input type="number"
@@ -134,7 +134,7 @@
 
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
-                    Statut
+                    Statut <span class="text-red-500">*</span>
                 </label>
 
                 <select name="status"
@@ -149,7 +149,7 @@
 
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
-                    Méthode de paiement
+                    Méthode de paiement <span class="text-gray-400">(optionnel)</span>
                 </label>
 
                 <input type="text"
@@ -161,7 +161,7 @@
 
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
-                    Référence
+                    Référence <span class="text-gray-400">(optionnel)</span>
                 </label>
 
                 <input type="text"

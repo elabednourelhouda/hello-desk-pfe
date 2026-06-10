@@ -11,11 +11,11 @@
         </a>
 
         <h1 class="mt-4 text-2xl font-bold text-gray-900">
-            Modifier le contrat
+            Modifier le contrat / importer le PDF signé
         </h1>
 
         <p class="mt-1 text-sm text-gray-500">
-            Importez le PDF du contrat et mettez à jour son statut.
+            Importez la version signée du contrat et mettez à jour son statut.
         </p>
     </div>
 
@@ -28,6 +28,12 @@
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {{ session('error') }}
         </div>
     @endif
 
@@ -121,7 +127,7 @@
 
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
-                    PDF du contrat
+                    PDF signé du contrat
                 </label>
 
                 <input type="file"
@@ -131,11 +137,11 @@
 
                 @if($contract->pdf_path)
                     <p class="mt-2 text-xs text-green-700">
-                        Un PDF est déjà importé. Importer un nouveau fichier remplacera l’ancien.
+                        Un PDF signé est déjà importé. Importer un nouveau fichier remplacera l’ancien.
                     </p>
                 @else
                     <p class="mt-2 text-xs text-gray-500">
-                        Aucun PDF importé pour le moment.
+                        Aucun PDF signé importé pour le moment.
                     </p>
                 @endif
             </div>

@@ -143,7 +143,7 @@
                     </h2>
 
                     <p class="mt-1 text-sm text-gray-500">
-                        Filtrez les clients par nom, email, téléphone ou statut.
+                        Filtrez les clients par nom, email, téléphone, type ou état du dossier juridique.
                     </p>
                 </div>
 
@@ -156,7 +156,7 @@
             <form id="clientFilters"
                   method="GET"
                   action="{{ route('admin.clients.index') }}#clients-list"
-                  class="grid gap-4 lg:grid-cols-[1.5fr_1fr_auto]">
+                  class="grid gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr_auto]">
 
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">
@@ -178,6 +178,38 @@
                         <option value="">Tous les statuts</option>
                         <option value="active" @selected(request('status') === 'active')>Actif</option>
                         <option value="inactive" @selected(request('status') === 'inactive')>Inactif</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700">
+                        Type de client
+                    </label>
+                    <select name="client_type"
+                            class="filter-auto h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                        <option value="">Tous les types</option>
+                        <option value="physique" @selected(request('client_type') === 'physique')>
+                            Personne physique
+                        </option>
+                        <option value="morale" @selected(request('client_type') === 'morale')>
+                            Personne morale
+                        </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700">
+                        Dossier juridique
+                    </label>
+                    <select name="legal_status"
+                            class="filter-auto h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                        <option value="">Tous les dossiers</option>
+                        <option value="complete" @selected(request('legal_status') === 'complete')>
+                            Complet
+                        </option>
+                        <option value="incomplete" @selected(request('legal_status') === 'incomplete')>
+                            À compléter
+                        </option>
                     </select>
                 </div>
 
@@ -246,9 +278,41 @@
                                                 {{ $client->full_name }}
                                             </p>
 
-                                            <p class="mt-0.5 text-xs text-gray-500">
-                                                {{ $client->company_name ?? 'Sans entreprise' }}
-                                            </p>
+                                            <div class="mt-1 flex flex-wrap gap-1.5">
+                                                @if($client->client_type === 'physique')
+                                                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
+                                                        Personne physique
+                                                    </span>
+                                                @elseif($client->client_type === 'morale')
+                                                    <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-bold text-indigo-700">
+                                                        Personne morale
+                                                    </span>
+                                                @else
+                                                    <span class="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">
+                                                        Type non renseigné
+                                                    </span>
+                                                @endif
+
+                                                @php
+                                                    $indexLegalComplete = $client->hasCompleteLegalFile();
+                                                @endphp
+
+                                                @if($indexLegalComplete)
+                                                    <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                                                        Dossier complet
+                                                    </span>
+                                                @else
+                                                    <span class="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">
+                                                        À compléter
+                                                    </span>
+                                                @endif
+                                            </div>
+
+                                            @if($client->company_name)
+                                                <p class="mt-1 text-xs text-gray-500">
+                                                    {{ $client->company_name }}
+                                                </p>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>

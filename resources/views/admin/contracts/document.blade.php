@@ -269,10 +269,30 @@
             <div class="card">
                 <h3 class="section-title">Informations du client</h3>
 
-                <p class="row"><span class="label">Nom complet :</span> {{ $client?->full_name ?? 'Non précisé' }}</p>
+                <p class="row">
+                    <span class="label">Type de client :</span>
+                    {{ $client?->client_type === 'morale' ? 'Personne morale' : 'Personne physique' }}
+                </p>
+
+                @if($client?->client_type === 'physique')
+                    <p class="row"><span class="label">Nom :</span> {{ $client->last_name ?? 'Non précisé' }}</p>
+                    <p class="row"><span class="label">Prénom :</span> {{ $client->first_name ?? 'Non précisé' }}</p>
+                    <p class="row"><span class="label">Pièce d’identité :</span> {{ $client->identity_document_type ?? 'Non précisé' }}</p>
+                    <p class="row"><span class="label">N° pièce :</span> {{ $client->identity_document_number ?? 'Non précisé' }}</p>
+                    <p class="row"><span class="label">Nationalité :</span> {{ $client->nationality ?? 'Non précisée' }}</p>
+                @else
+                    <p class="row"><span class="label">Raison sociale :</span> {{ $client?->company_name ?? 'Non précisée' }}</p>
+                    <p class="row"><span class="label">Forme juridique :</span> {{ $client?->legal_form ?? 'Non précisée' }}</p>
+                    <p class="row"><span class="label">ICE :</span> {{ $client?->ice_number ?? 'Non précisé' }}</p>
+                    <p class="row"><span class="label">RC :</span> {{ $client?->rc_number ?? 'Non précisé' }}</p>
+                    <p class="row"><span class="label">Siège social :</span> {{ $client?->headquarters_address ?? 'Non précisé' }}</p>
+                    <p class="row"><span class="label">Représentant légal :</span> {{ $client?->legal_representative_full_name ?? 'Non précisé' }}</p>
+                @endif
+
                 <p class="row"><span class="label">Email :</span> {{ $client?->email ?? 'Non précisé' }}</p>
                 <p class="row"><span class="label">Téléphone :</span> {{ $client?->phone ?? 'Non précisé' }}</p>
-                <p class="row"><span class="label">Entreprise :</span> {{ $client?->company_name ?? 'Non précisée' }}</p>
+                <p class="row"><span class="label">Adresse :</span> {{ $client?->address ?? 'Non précisée' }}</p>
+                <p class="row"><span class="label">Ville :</span> {{ $client?->city ?? 'Non précisée' }}</p>
             </div>
 
             <div class="card">

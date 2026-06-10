@@ -93,17 +93,6 @@
 
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-slate-700">
-                        Entreprise
-                    </label>
-                    <input type="text"
-                           name="company_name"
-                           value="{{ old('company_name') }}"
-                           placeholder="Ex: Atlas Consulting"
-                           class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                </div>
-
-                <div>
-                    <label class="mb-2 block text-sm font-semibold text-slate-700">
                         Campus principal
                     </label>
                     <select name="main_campus_id"
@@ -117,6 +106,8 @@
                         @endforeach
                     </select>
                 </div>
+
+                @include('admin.clients._legal-fields', ['client' => null])
 
                 <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-semibold text-slate-700">
