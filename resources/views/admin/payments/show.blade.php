@@ -7,16 +7,23 @@
     $realStatus = $payment->real_status;
 
     $statusClasses = [
-        'À payer' => 'bg-yellow-50 text-yellow-700 border-yellow-200',
-        'Payé' => 'bg-green-50 text-green-700 border-green-200',
-        'En retard' => 'bg-red-50 text-red-700 border-red-200',
-        'Annulé' => 'bg-gray-100 text-gray-700 border-gray-200',
+        'À payer' => 'bg-amber-50 text-amber-700 border-amber-200',
+        'Payé' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        'En retard' => 'bg-rose-50 text-rose-700 border-rose-200',
+        'Annulé' => 'bg-slate-100 text-slate-700 border-slate-200',
     ];
 
-    $statusClass = $statusClasses[$realStatus] ?? 'bg-gray-100 text-gray-700 border-gray-200';
+    $statusClass = $statusClasses[$realStatus] ?? 'bg-slate-100 text-slate-700 border-slate-200';
+
+    $amountHt = (float) ($payment->amount_ht ?? 0);
+    $taxRate = (float) ($payment->tax_rate ?? 20);
+    $taxAmount = (float) ($payment->tax_amount ?? 0);
+    $amountTtc = (float) ($payment->amount_ttc ?? $payment->amount_due ?? 0);
+    $amountPaid = (float) ($payment->amount_paid ?? 0);
+    $remaining = max($amountTtc - $amountPaid, 0);
 @endphp
 
-<div class="mx-auto max-w-5xl px-6 py-8">
+<div class="mx-auto max-w-6xl px-6 py-8">
     <div class="mb-6">
         <a href="{{ route('admin.payments.index') }}"
            class="text-sm font-semibold text-[#284625] hover:underline">
@@ -30,7 +37,7 @@
                 </h1>
 
                 <p class="mt-1 text-sm text-gray-500">
-                    Suivi d’une échéance liée à un contrat Hello Desk.
+                    Dossier complet du paiement : échéance, montants, mode de paiement, reçu et facture.
                 </p>
             </div>
 
@@ -68,110 +75,329 @@
         </div>
     @endif
 
+    <section class="mb-6 grid gap-4 md:grid-cols-4">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <p class="text-xs font-semibold uppercase text-gray-400">Statut</p>
+
+            <span class="mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-bold {{ $statusClass }}">
+                {{ $realStatus }}
+            </span>
+        </div>
+
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <p class="text-xs font-semibold uppercase text-gray-400">Montant TTC</p>
+
+            <p class="mt-3 text-xl font-bold text-[#284625]">
+                {{ number_format($amountTtc, 2, ',', ' ') }} DH
+            </p>
+        </div>
+
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <p class="text-xs font-semibold uppercase text-gray-400">Montant payé</p>
+
+            <p class="mt-3 text-xl font-bold text-emerald-700">
+                {{ number_format($amountPaid, 2, ',', ' ') }} DH
+            </p>
+        </div>
+
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <p class="text-xs font-semibold uppercase text-gray-400">Reste à payer</p>
+
+            <p class="mt-3 text-xl font-bold {{ $remaining > 0 ? 'text-amber-700' : 'text-emerald-700' }}">
+                {{ number_format($remaining, 2, ',', ' ') }} DH
+            </p>
+        </div>
+    </section>
+
     <div class="grid gap-6 lg:grid-cols-3">
-        <section class="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h2 class="text-lg font-bold text-gray-900">
-                        Informations paiement
-                    </h2>
+        <section class="space-y-4 lg:col-span-2">
 
-                    <p class="mt-1 text-sm text-gray-500">
-                        Montants, statut, échéance et informations de règlement.
-                    </p>
-                </div>
+            <details open class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <summary class="flex cursor-pointer items-center justify-between gap-4 px-6 py-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">
+                            Informations générales
+                        </h2>
 
-                <span class="inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold {{ $statusClass }}">
-                    {{ $realStatus }}
-                </span>
-            </div>
-
-            <dl class="mt-6 grid gap-4 md:grid-cols-2">
-                <div class="rounded-xl bg-gray-50 p-4">
-                    <dt class="text-xs font-semibold uppercase text-gray-400">Client</dt>
-                    <dd class="mt-1 text-sm font-semibold text-gray-900">
-                        {{ $payment->client?->full_name ?? 'Client supprimé' }}
-                    </dd>
-
-                    @if($payment->client?->email)
-                        <p class="mt-1 text-xs text-gray-500">
-                            {{ $payment->client->email }}
+                        <p class="mt-1 text-sm text-gray-500">
+                            Client, échéance, durée et enregistrement.
                         </p>
-                    @endif
-                </div>
+                    </div>
 
-                <div class="rounded-xl bg-gray-50 p-4">
-                    <dt class="text-xs font-semibold uppercase text-gray-400">Date d’échéance</dt>
-                    <dd class="mt-1 text-sm text-gray-700">
-                        {{ $payment->due_date?->format('d/m/Y') ?? 'Non précisée' }}
-                    </dd>
-                </div>
+                    <span class="toggle-label text-xs font-semibold text-[#284625]"></span>
+                </summary>
 
-                <div class="rounded-xl bg-gray-50 p-4">
-                    <dt class="text-xs font-semibold uppercase text-gray-400">Montant à payer</dt>
-                    <dd class="mt-1 text-sm font-semibold text-gray-900">
-                        {{ number_format($payment->amount_due, 2, ',', ' ') }} DH
-                    </dd>
-                </div>
+                <div class="border-t border-gray-100 p-6">
+                    <dl class="grid gap-4 md:grid-cols-2">
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">Client</dt>
+                            <dd class="mt-1 text-sm font-semibold text-gray-900">
+                                {{ $payment->client?->full_name ?? 'Client supprimé' }}
+                            </dd>
 
-                <div class="rounded-xl bg-gray-50 p-4">
-                    <dt class="text-xs font-semibold uppercase text-gray-400">Montant payé</dt>
-                    <dd class="mt-1 text-sm font-semibold text-gray-900">
-                        {{ number_format($payment->amount_paid, 2, ',', ' ') }} DH
-                    </dd>
-                </div>
+                            @if($payment->client?->email)
+                                <p class="mt-1 text-xs text-gray-500">
+                                    {{ $payment->client->email }}
+                                </p>
+                            @endif
+                        </div>
 
-                <div class="rounded-xl bg-gray-50 p-4">
-                    <dt class="text-xs font-semibold uppercase text-gray-400">Montant restant</dt>
-                    <dd class="mt-1 text-sm font-semibold {{ $payment->remaining_amount > 0 ? 'text-red-700' : 'text-green-700' }}">
-                        {{ number_format($payment->remaining_amount, 2, ',', ' ') }} DH
-                    </dd>
-                </div>
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">Date d’échéance</dt>
+                            <dd class="mt-1 text-sm text-gray-700">
+                                {{ $payment->due_date?->format('d/m/Y') ?? 'Non précisée' }}
+                            </dd>
+                        </div>
 
-                <div class="rounded-xl bg-gray-50 p-4">
-                    <dt class="text-xs font-semibold uppercase text-gray-400">Payé le</dt>
-                    <dd class="mt-1 text-sm text-gray-700">
-                        {{ $payment->paid_at?->format('d/m/Y H:i') ?? 'Non payé' }}
-                    </dd>
-                </div>
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">Durée</dt>
+                            <dd class="mt-1 text-sm text-gray-700">
+                                {{ $payment->duration_label ?? 'Non précisée' }}
+                            </dd>
+                        </div>
 
-                <div class="rounded-xl bg-gray-50 p-4">
-                    <dt class="text-xs font-semibold uppercase text-gray-400">Méthode</dt>
-                    <dd class="mt-1 text-sm text-gray-700">
-                        {{ $payment->payment_method ?? 'Non précisée' }}
-                    </dd>
-                </div>
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">Payé le</dt>
+                            <dd class="mt-1 text-sm text-gray-700">
+                                {{ $payment->paid_at?->format('d/m/Y H:i') ?? 'Non payé' }}
+                            </dd>
+                        </div>
 
-                <div class="rounded-xl bg-gray-50 p-4">
-                    <dt class="text-xs font-semibold uppercase text-gray-400">Référence</dt>
-                    <dd class="mt-1 text-sm text-gray-700">
-                        {{ $payment->reference ?? 'Non précisée' }}
-                    </dd>
-                </div>
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">Enregistré par</dt>
+                            <dd class="mt-1 text-sm text-gray-700">
+                                {{ $payment->recorder?->name ?? 'Non précisé' }}
+                            </dd>
+                        </div>
 
-                <div class="rounded-xl bg-gray-50 p-4">
-                    <dt class="text-xs font-semibold uppercase text-gray-400">Enregistré par</dt>
-                    <dd class="mt-1 text-sm text-gray-700">
-                        {{ $payment->recorder?->name ?? 'Non précisé' }}
-                    </dd>
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">Créé le</dt>
+                            <dd class="mt-1 text-sm text-gray-700">
+                                {{ $payment->created_at?->format('d/m/Y H:i') }}
+                            </dd>
+                        </div>
+                    </dl>
                 </div>
+            </details>
 
-                <div class="rounded-xl bg-gray-50 p-4">
-                    <dt class="text-xs font-semibold uppercase text-gray-400">Créé le</dt>
-                    <dd class="mt-1 text-sm text-gray-700">
-                        {{ $payment->created_at?->format('d/m/Y H:i') }}
-                    </dd>
+            <details open class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <summary class="flex cursor-pointer items-center justify-between gap-4 px-6 py-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">
+                            Montants HT, TVA et TTC
+                        </h2>
+
+                        <p class="mt-1 text-sm text-gray-500">
+                            Détail comptable de l’échéance.
+                        </p>
+                    </div>
+
+                    <span class="toggle-label text-xs font-semibold text-[#284625]"></span>
+                </summary>
+
+                <div class="border-t border-gray-100 p-6">
+                    <dl class="grid gap-4 md:grid-cols-2">
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">Montant HT</dt>
+                            <dd class="mt-1 text-sm font-semibold text-gray-900">
+                                {{ number_format($amountHt, 2, ',', ' ') }} DH
+                            </dd>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">TVA</dt>
+                            <dd class="mt-1 text-sm text-gray-700">
+                                {{ number_format($taxRate, 2, ',', ' ') }} %
+                                —
+                                {{ number_format($taxAmount, 2, ',', ' ') }} DH
+                            </dd>
+                        </div>
+
+                        <div class="rounded-xl bg-[#284625]/5 p-4">
+                            <dt class="text-xs font-semibold uppercase text-[#284625]">Montant TTC</dt>
+                            <dd class="mt-1 text-lg font-bold text-[#284625]">
+                                {{ number_format($amountTtc, 2, ',', ' ') }} DH
+                            </dd>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">Montant payé</dt>
+                            <dd class="mt-1 text-sm font-semibold text-gray-900">
+                                {{ number_format($amountPaid, 2, ',', ' ') }} DH
+                            </dd>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">Reste à payer</dt>
+                            <dd class="mt-1 text-sm font-semibold {{ $remaining > 0 ? 'text-amber-700' : 'text-emerald-700' }}">
+                                {{ number_format($remaining, 2, ',', ' ') }} DH
+                            </dd>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">Ancien champ montant dû</dt>
+                            <dd class="mt-1 text-sm text-gray-700">
+                                {{ number_format($payment->amount_due, 2, ',', ' ') }} DH
+                            </dd>
+                        </div>
+                    </dl>
                 </div>
-            </dl>
+            </details>
+
+            <details open class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <summary class="flex cursor-pointer items-center justify-between gap-4 px-6 py-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">
+                            Mode de paiement
+                        </h2>
+
+                        <p class="mt-1 text-sm text-gray-500">
+                            Espèces, chèque, virement bancaire, TPE ou autre.
+                        </p>
+                    </div>
+
+                    <span class="toggle-label text-xs font-semibold text-[#284625]"></span>
+                </summary>
+
+                <div class="border-t border-gray-100 p-6">
+                    <dl class="grid gap-4 md:grid-cols-2">
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">Mode</dt>
+                            <dd class="mt-1 text-sm font-semibold text-gray-900">
+                                {{ $payment->payment_method_label }}
+                            </dd>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">Référence générale</dt>
+                            <dd class="mt-1 text-sm text-gray-700">
+                                {{ $payment->reference ?? 'Non précisée' }}
+                            </dd>
+                        </div>
+
+                        @if($payment->payment_method === 'cheque')
+                            <div class="rounded-xl bg-gray-50 p-4">
+                                <dt class="text-xs font-semibold uppercase text-gray-400">N° chèque</dt>
+                                <dd class="mt-1 text-sm text-gray-700">
+                                    {{ $payment->cheque_number ?? 'Non précisé' }}
+                                </dd>
+                            </div>
+
+                            <div class="rounded-xl bg-gray-50 p-4">
+                                <dt class="text-xs font-semibold uppercase text-gray-400">Banque du chèque</dt>
+                                <dd class="mt-1 text-sm text-gray-700">
+                                    {{ $payment->cheque_bank ?? 'Non précisée' }}
+                                </dd>
+                            </div>
+
+                            <div class="rounded-xl bg-gray-50 p-4">
+                                <dt class="text-xs font-semibold uppercase text-gray-400">Date du chèque</dt>
+                                <dd class="mt-1 text-sm text-gray-700">
+                                    {{ $payment->cheque_date?->format('d/m/Y') ?? 'Non précisée' }}
+                                </dd>
+                            </div>
+                        @endif
+
+                        @if($payment->payment_method === 'bank_transfer')
+                            <div class="rounded-xl bg-gray-50 p-4">
+                                <dt class="text-xs font-semibold uppercase text-gray-400">Référence virement</dt>
+                                <dd class="mt-1 text-sm text-gray-700">
+                                    {{ $payment->bank_transfer_reference ?? 'Non précisée' }}
+                                </dd>
+                            </div>
+
+                            <div class="rounded-xl bg-gray-50 p-4">
+                                <dt class="text-xs font-semibold uppercase text-gray-400">Banque</dt>
+                                <dd class="mt-1 text-sm text-gray-700">
+                                    {{ $payment->bank_name ?? 'Non précisée' }}
+                                </dd>
+                            </div>
+                        @endif
+
+                        @if($payment->payment_method === 'tpe')
+                            <div class="rounded-xl bg-gray-50 p-4">
+                                <dt class="text-xs font-semibold uppercase text-gray-400">Référence transaction TPE</dt>
+                                <dd class="mt-1 text-sm text-gray-700">
+                                    {{ $payment->tpe_transaction_reference ?? 'Non précisée' }}
+                                </dd>
+                            </div>
+                        @endif
+                    </dl>
+                </div>
+            </details>
+
+            <details open class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <summary class="flex cursor-pointer items-center justify-between gap-4 px-6 py-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">
+                            Reçu et facture
+                        </h2>
+
+                        <p class="mt-1 text-sm text-gray-500">
+                            Documents justificatifs liés au paiement.
+                        </p>
+                    </div>
+
+                    <span class="toggle-label text-xs font-semibold text-[#284625]"></span>
+                </summary>
+
+                <div class="border-t border-gray-100 p-6">
+                    <dl class="grid gap-4 md:grid-cols-2">
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">N° reçu</dt>
+                            <dd class="mt-1 text-sm text-gray-700">
+                                {{ $payment->receipt_number ?? 'Non précisé' }}
+                            </dd>
+
+                            @if($payment->receipt_file)
+                                <a href="{{ asset('storage/' . $payment->receipt_file) }}"
+                                   target="_blank"
+                                   class="mt-3 inline-flex rounded-xl border border-[#284625] px-4 py-2 text-xs font-semibold text-[#284625] hover:bg-[#284625]/5">
+                                    Voir le reçu
+                                </a>
+                            @endif
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <dt class="text-xs font-semibold uppercase text-gray-400">N° facture</dt>
+                            <dd class="mt-1 text-sm text-gray-700">
+                                {{ $payment->invoice_number ?? 'Non précisé' }}
+                            </dd>
+
+                            @if($payment->invoice_file)
+                                <a href="{{ asset('storage/' . $payment->invoice_file) }}"
+                                   target="_blank"
+                                   class="mt-3 inline-flex rounded-xl border border-[#284625] px-4 py-2 text-xs font-semibold text-[#284625] hover:bg-[#284625]/5">
+                                    Voir la facture
+                                </a>
+                            @endif
+                        </div>
+                    </dl>
+                </div>
+            </details>
 
             @if($payment->notes)
-                <div class="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <h3 class="text-sm font-semibold text-gray-900">Notes internes</h3>
+                <details class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                    <summary class="flex cursor-pointer items-center justify-between gap-4 px-6 py-5">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">
+                                Notes internes
+                            </h2>
 
-                    <p class="mt-2 text-sm leading-6 text-gray-600">
-                        {{ $payment->notes }}
-                    </p>
-                </div>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Notes visibles uniquement côté administration.
+                            </p>
+                        </div>
+
+                        <span class="toggle-label text-xs font-semibold text-[#284625]"></span>
+                    </summary>
+
+                    <div class="border-t border-gray-100 p-6">
+                        <p class="text-sm leading-6 text-gray-600">
+                            {{ $payment->notes }}
+                        </p>
+                    </div>
+                </details>
             @endif
         </section>
 
@@ -240,4 +466,21 @@
         </aside>
     </div>
 </div>
+<script>
+    document.querySelectorAll('details').forEach((detail) => {
+        const label = detail.querySelector('.toggle-label');
+
+        if (!label) {
+            return;
+        }
+
+        function updateLabel() {
+            label.textContent = detail.open ? 'Masquer' : 'Afficher';
+        }
+
+        updateLabel();
+
+        detail.addEventListener('toggle', updateLabel);
+    });
+</script>
 @endsection

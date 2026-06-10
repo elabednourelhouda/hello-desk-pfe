@@ -334,10 +334,13 @@
                                 $statusDot = $statusDots[$status] ?? 'bg-slate-500';
                                 $statusLabel = $statusLabels[$status] ?? ucfirst($status);
 
-                                $amountDue = (float) ($payment->amount_due ?? 0);
+                                $amountHt = (float) ($payment->amount_ht ?? 0);
+                                $taxAmount = (float) ($payment->tax_amount ?? 0);
+                                $amountTtc = (float) ($payment->amount_ttc ?? $payment->amount_due ?? 0);
+
                                 $amountPaid = (float) ($payment->amount_paid ?? 0);
-                                $remaining = max($amountDue - $amountPaid, 0);
-                                $rowPaidRate = $amountDue > 0 ? min(100, round(($amountPaid / $amountDue) * 100)) : 0;
+                                $remaining = max($amountTtc - $amountPaid, 0);
+                                $rowPaidRate = $amountTtc > 0 ? min(100, round(($amountPaid / $amountTtc) * 100)) : 0;
                             @endphp
 
                             <tr class="transition hover:bg-gray-50">
@@ -394,7 +397,17 @@
 
                                         <div class="mt-2 flex justify-between text-xs">
                                             <span class="text-gray-500">
-                                                Dû : {{ number_format($amountDue, 2, ',', ' ') }} DH
+                                                HT : {{ number_format($amountHt, 2, ',', ' ') }} DH
+                                            </span>
+
+                                            <span class="font-semibold text-[#284625]">
+                                                TTC : {{ number_format($amountTtc, 2, ',', ' ') }} DH
+                                            </span>
+                                        </div>
+
+                                        <div class="mt-1 flex justify-between text-xs">
+                                            <span class="text-gray-500">
+                                                TVA : {{ number_format($taxAmount, 2, ',', ' ') }} DH
                                             </span>
 
                                             <span class="font-semibold text-amber-700">
