@@ -87,6 +87,13 @@
 
                     $isUnread = is_null($notification->read_at);
 
+                    $typeLabels = [
+                        'success' => 'Succès',
+                        'warning' => 'Alerte',
+                        'danger' => 'Urgent',
+                        'info' => 'Info',
+                    ];
+
                     $typeClasses = [
                         'success' => 'bg-green-50 text-green-700 border-green-200',
                         'warning' => 'bg-yellow-50 text-yellow-700 border-yellow-200',
@@ -94,6 +101,7 @@
                         'info' => 'bg-blue-50 text-blue-700 border-blue-200',
                     ];
 
+                    $typeLabel = $typeLabels[$type] ?? 'Info';
                     $typeClass = $typeClasses[$type] ?? $typeClasses['info'];
                 @endphp
 
@@ -109,7 +117,7 @@
                                     </h2>
 
                                     <span class="rounded-full border px-2.5 py-1 text-xs font-bold {{ $typeClass }}">
-                                        {{ ucfirst($type) }}
+                                        {{ $typeLabel }}
                                     </span>
 
                                     @if($isUnread)

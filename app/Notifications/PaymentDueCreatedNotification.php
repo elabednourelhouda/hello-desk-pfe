@@ -22,15 +22,30 @@ class PaymentDueCreatedNotification extends Notification
 
     public function toArray(object $notifiable): array
     {
+        $role = $notifiable->role ?? 'client';
+
+        $routeName = match ($role) {
+            'admin' => 'admin.payments.show',
+            'commercial' => 'commercial.payments.show',
+            'client' => 'client.payments.show',
+            default => null,
+        };
+
         return [
-            'type' => 'payment_due_created',
             'title' => 'Nouvelle échéance de paiement',
-            'message' => 'Une nouvelle échéance de paiement a été ajoutée à votre contrat.',
+            'message' => 'Une nouvelle échéance de paiement a été ajoutée. Montant : '
+                . number_format((float) $this->payment->amount_due, 2, ',', ' ')
+                . ' DH. Date limite : '
+                . optional($this->payment->due_date)->format('d/m/Y')
+                . '.',
+            'type' => 'warning',
+            'url' => $routeName ? route($routeName, $this->payment) : null,
+
             'payment_id' => $this->payment->id,
             'contract_id' => $this->payment->contract_id,
             'reservation_id' => $this->payment->reservation_id,
             'amount_due' => $this->payment->amount_due,
-            'due_date' => $this->payment->due_date?->format('d/m/Y'),
+            'due_date' => optional($this->payment->due_date)->format('d/m/Y'),
         ];
     }
 }
