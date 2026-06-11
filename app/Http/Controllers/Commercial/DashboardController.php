@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Commercial;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Collection;
 use App\Models\ProspectVisit;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -17,9 +17,14 @@ class DashboardController extends Controller
     {
         $userId = (int) Auth::id();
 
+        $prospectsCount = $this->countOwnedRecords('prospects', $userId);
+        $convertedProspectsCount = $this->countProspectsByStatus($userId, 'converted');
+        $lostProspectsCount = $this->countProspectsByStatus($userId, 'lost');
+        $activeProspectsCount = max($prospectsCount - $convertedProspectsCount - $lostProspectsCount, 0);
+
         $stats = [
-            'prospects' => $this->countOwnedRecords('prospects', $userId),
-            'clients' => $this->countOwnedRecords('clients', $userId),
+            'prospects' => $prospectsCount,
+            'clients' => $this->countCommercialClients($userId),
             'reservations' => $this->countOwnedRecords('reservations', $userId),
             'available_spaces' => $this->countAvailableSpaces(),
         ];
@@ -45,7 +50,11 @@ class DashboardController extends Controller
             'assignments',
             'recentProspects',
             'upcomingReservations',
-            'todayVisits'
+            'todayVisits',
+            'prospectsCount',
+            'convertedProspectsCount',
+            'lostProspectsCount',
+            'activeProspectsCount'
         ));
     }
 
@@ -58,6 +67,54 @@ class DashboardController extends Controller
         $query = DB::table($table);
 
         $this->applyUserScope($query, $table, $userId);
+
+        return (int) $query->count();
+    }
+
+    private function countProspectsByStatus(int $userId, string $status): int
+    {
+        if (! Schema::hasTable('prospects')) {
+            return 0;
+        }
+
+        if (! Schema::hasColumn('prospects', 'assigned_to') || ! Schema::hasColumn('prospects', 'crm_status')) {
+            return 0;
+        }
+
+        return (int) DB::table('prospects')
+            ->where('assigned_to', $userId)
+            ->where('crm_status', $status)
+            ->count();
+    }
+
+    private function countCommercialClients(int $userId): int
+    {
+        if (! Schema::hasTable('clients')) {
+            return 0;
+        }
+
+        $query = DB::table('clients');
+
+        $query->where(function ($clientQuery) use ($userId) {
+            if (
+                Schema::hasTable('prospects')
+                && Schema::hasColumn('clients', 'prospect_id')
+                && Schema::hasColumn('prospects', 'assigned_to')
+            ) {
+                $clientQuery->whereIn('prospect_id', function ($subQuery) use ($userId) {
+                    $subQuery->select('id')
+                        ->from('prospects')
+                        ->where('assigned_to', $userId);
+                });
+            }
+
+            foreach (['assigned_to', 'commercial_id', 'responsible_commercial_id', 'created_by'] as $column) {
+                if (Schema::hasColumn('clients', $column)) {
+                    $clientQuery->orWhere($column, $userId);
+                    break;
+                }
+            }
+        });
 
         return (int) $query->count();
     }
@@ -137,7 +194,8 @@ class DashboardController extends Controller
                     ?? $prospect->nom_complet
                     ?? 'Prospect sans nom',
 
-                'company' => $prospect->company
+                'company' => $prospect->company_name
+                    ?? $prospect->company
                     ?? $prospect->entreprise
                     ?? null,
 

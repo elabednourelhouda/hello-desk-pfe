@@ -231,7 +231,7 @@ class ProspectController extends Controller
             $prospect->update([
                 'email' => $validated['client_email'],
                 'crm_status' => 'converted',
-                'converted_client_id' => $clientUser->id,
+                'converted_client_id' => $client->id,
                 'converted_at' => now(),
             ]);
         });

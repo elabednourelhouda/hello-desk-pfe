@@ -52,7 +52,7 @@ class Prospect extends Model
 
     public function convertedClient()
     {
-        return $this->belongsTo(User::class, 'converted_client_id');
+        return $this->belongsTo(Client::class, 'converted_client_id');
     }
     public function visits()
     {

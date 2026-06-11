@@ -21,6 +21,7 @@ use App\Http\Controllers\Commercial\DashboardController as CommercialDashboardCo
 use App\Http\Controllers\Commercial\ProspectController as CommercialProspectController;
 use App\Http\Controllers\Commercial\ProspectVisitController as CommercialProspectVisitController;
 use App\Http\Controllers\Commercial\ProspectRequestController as CommercialProspectRequestController;
+use App\Http\Controllers\Commercial\ClientController as CommercialClientController;
 
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
 use App\Http\Controllers\Client\ReservationController as ClientReservationController;
@@ -239,6 +240,9 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
         Route::resource('prospects', CommercialProspectController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
+        Route::resource('clients', CommercialClientController::class)
+            ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+
         Route::post('/prospects/{prospect}/convert', [CommercialProspectController::class, 'convert'])
             ->name('prospects.convert');
 
@@ -285,8 +289,14 @@ Route::middleware(['auth', 'role:client', 'client.active', 'password.changed'])
             return redirect()->route('client.dashboard');
         })->name('home');
 
-        Route::get('/dashboard', [ClientDashboardController::class, 'index'])
+        Route::get('/dashboard', [CommercialDashboardController::class, 'index'])
             ->name('dashboard');
+
+        Route::resource('prospects', CommercialProspectController::class)
+            ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+
+        Route::resource('clients', CommercialClientController::class)
+            ->only(['index', 'show', 'edit', 'update']);
 
         /*
         |--------------------------------------------------------------------------
