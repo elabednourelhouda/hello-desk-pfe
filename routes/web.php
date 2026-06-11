@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\ReservationController;
 use App\Http\Controllers\Admin\InteractiveMapController;
 use App\Http\Controllers\Admin\ContractController;
 use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\ComplaintController as AdminComplaintController;
 
 use App\Http\Controllers\Commercial\DashboardController as CommercialDashboardController;
 use App\Http\Controllers\Commercial\ProspectController as CommercialProspectController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\Commercial\ReservationController as CommercialReservati
 use App\Http\Controllers\Commercial\ContractController as CommercialContractController;
 use App\Http\Controllers\Commercial\PaymentController as CommercialPaymentController;
 use App\Http\Controllers\Commercial\InteractiveMapController as CommercialInteractiveMapController;
+use App\Http\Controllers\Commercial\ComplaintController as CommercialComplaintController;
 
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
 use App\Http\Controllers\Client\ReservationController as ClientReservationController;
@@ -221,6 +223,15 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
 
         Route::resource('payments', PaymentController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Admin complaints
+        |--------------------------------------------------------------------------
+        */
+
+        Route::resource('complaints', AdminComplaintController::class)
+            ->only(['index', 'show', 'update']);
     });
 
 /*
@@ -312,6 +323,15 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
 
         Route::resource('payments', CommercialPaymentController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Commercial complaints
+        |--------------------------------------------------------------------------
+        */
+
+        Route::resource('complaints', CommercialComplaintController::class)
+            ->only(['index', 'show', 'update']);
     });
 
 /*

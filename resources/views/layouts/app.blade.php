@@ -149,6 +149,8 @@
                 ['label' => 'Réservations', 'route' => 'admin.reservations.index'],
                 ['label' => 'Contrats', 'route' => 'admin.contracts.index'],
                 ['label' => 'Paiements', 'route' => 'admin.payments.index'],
+
+                ['label' => 'Réclamations', 'route' => 'admin.complaints.index'],
             ];
 
             $commercialLinks = [
@@ -159,6 +161,7 @@
                 ['label' => 'Réservations', 'route' => 'commercial.reservations.index'],
                 ['label' => 'Contrats', 'route' => 'commercial.contracts.index'],
                 ['label' => 'Paiements', 'route' => 'commercial.payments.index'],
+                ['label' => 'Réclamations', 'route' => 'commercial.complaints.index'],
             ];
 
             $clientLinks = [
