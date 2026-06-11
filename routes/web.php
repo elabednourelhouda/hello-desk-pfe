@@ -23,6 +23,7 @@ use App\Http\Controllers\Commercial\ProspectVisitController as CommercialProspec
 use App\Http\Controllers\Commercial\ProspectRequestController as CommercialProspectRequestController;
 use App\Http\Controllers\Commercial\ClientController as CommercialClientController;
 use App\Http\Controllers\Commercial\ReservationController as CommercialReservationController;
+use App\Http\Controllers\Commercial\ContractController as CommercialContractController;
 
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
 use App\Http\Controllers\Client\ReservationController as ClientReservationController;
@@ -282,6 +283,18 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
 
         Route::resource('reservations', CommercialReservationController::class)
             ->only(['index', 'create', 'store', 'show']);
+
+                /*
+        |--------------------------------------------------------------------------
+        | Commercial contracts
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/contracts/{contract}/document', [CommercialContractController::class, 'document'])
+            ->name('contracts.document');
+
+        Route::resource('contracts', CommercialContractController::class)
+            ->only(['index', 'show', 'edit', 'update']);
     });
 
 /*
