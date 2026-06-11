@@ -25,6 +25,7 @@ use App\Http\Controllers\Commercial\ClientController as CommercialClientControll
 use App\Http\Controllers\Commercial\ReservationController as CommercialReservationController;
 use App\Http\Controllers\Commercial\ContractController as CommercialContractController;
 use App\Http\Controllers\Commercial\PaymentController as CommercialPaymentController;
+use App\Http\Controllers\Commercial\InteractiveMapController as CommercialInteractiveMapController;
 
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
 use App\Http\Controllers\Client\ReservationController as ClientReservationController;
@@ -275,6 +276,9 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
 
         Route::delete('/prospect-requests/{prospectRequest}', [CommercialProspectRequestController::class, 'destroy'])
             ->name('prospects.requests.destroy');
+
+        Route::get('/carte-interactive', [CommercialInteractiveMapController::class, 'index'])
+            ->name('interactive-map.index');
 
                 /*
         |--------------------------------------------------------------------------
