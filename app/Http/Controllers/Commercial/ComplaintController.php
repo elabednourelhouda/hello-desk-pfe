@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Commercial;
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
 use App\Models\Reservation;
+use App\Notifications\HelloDeskNotification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -106,11 +107,15 @@ class ComplaintController extends Controller
             'reservation.space',
             'contract.reservation.space',
             'client',
+            'user',
         ]);
 
         if (! $this->canManageComplaint($complaint)) {
             abort(403, 'Cette réclamation ne fait pas partie de votre périmètre commercial.');
         }
+
+        $oldStatus = $complaint->status;
+        $oldPriority = $complaint->priority;
 
         $data = $request->validate([
             'status' => ['required', 'string', 'in:new,in_progress,waiting,resolved,closed,rejected'],
@@ -123,6 +128,26 @@ class ComplaintController extends Controller
             : null;
 
         $complaint->update($data);
+
+        if ($complaint->user && (
+            $oldStatus !== $complaint->status ||
+            $oldPriority !== $complaint->priority ||
+            filled($data['admin_response'] ?? null)
+        )) {
+            $notificationType = match ($complaint->status) {
+                'resolved', 'closed' => 'success',
+                'rejected' => 'danger',
+                'waiting' => 'warning',
+                default => 'info',
+            };
+
+            $complaint->user->notify(new HelloDeskNotification(
+                'Réclamation mise à jour',
+                "Votre réclamation « {$complaint->subject} » est maintenant : {$complaint->status_label}.",
+                $notificationType,
+                route('client.complaints.show', $complaint)
+            ));
+        }
 
         return redirect()
             ->route('commercial.complaints.show', $complaint)

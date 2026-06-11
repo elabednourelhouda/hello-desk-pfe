@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\NotificationController;
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\SpaceController as AdminSpaceController;
@@ -33,7 +34,6 @@ use App\Http\Controllers\Client\DashboardController as ClientDashboardController
 use App\Http\Controllers\Client\ReservationController as ClientReservationController;
 use App\Http\Controllers\Client\ContractController as ClientContractController;
 use App\Http\Controllers\Client\PaymentController as ClientPaymentController;
-use App\Http\Controllers\Client\NotificationController as ClientNotificationController;
 use App\Http\Controllers\Client\ComplaintController as ClientComplaintController;
 
 /*
@@ -232,6 +232,21 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
 
         Route::resource('complaints', AdminComplaintController::class)
             ->only(['index', 'show', 'update']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Admin notifications
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/notifications', [NotificationController::class, 'index'])
+            ->name('notifications.index');
+
+        Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])
+            ->name('notifications.readAll');
+
+        Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])
+            ->name('notifications.read');
     });
 
 /*
@@ -332,6 +347,21 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
 
         Route::resource('complaints', CommercialComplaintController::class)
             ->only(['index', 'show', 'update']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Commercial notifications
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/notifications', [NotificationController::class, 'index'])
+            ->name('notifications.index');
+
+        Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])
+            ->name('notifications.readAll');
+
+        Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])
+            ->name('notifications.read');
     });
 
 /*
@@ -397,11 +427,14 @@ Route::middleware(['auth', 'role:client', 'client.active', 'password.changed'])
         |--------------------------------------------------------------------------
         */
 
-        Route::get('/notifications', [ClientNotificationController::class, 'index'])
+        Route::get('/notifications', [NotificationController::class, 'index'])
             ->name('notifications.index');
 
-        Route::patch('/notifications/read-all', [ClientNotificationController::class, 'markAllAsRead'])
+        Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])
             ->name('notifications.readAll');
+
+        Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])
+            ->name('notifications.read');
 
         /*
         |--------------------------------------------------------------------------

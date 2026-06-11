@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
+use App\Notifications\HelloDeskNotification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -80,6 +81,9 @@ class ComplaintController extends Controller
 
     public function update(Request $request, Complaint $complaint): RedirectResponse
     {
+        $oldStatus = $complaint->status;
+        $oldPriority = $complaint->priority;
+
         $data = $request->validate([
             'status' => ['required', 'string', 'in:new,in_progress,waiting,resolved,closed,rejected'],
             'priority' => ['required', 'string', 'in:low,normal,high,urgent'],
@@ -91,6 +95,28 @@ class ComplaintController extends Controller
             : null;
 
         $complaint->update($data);
+
+        $complaint->load(['user']);
+
+        if ($complaint->user && (
+            $oldStatus !== $complaint->status ||
+            $oldPriority !== $complaint->priority ||
+            filled($data['admin_response'] ?? null)
+        )) {
+            $notificationType = match ($complaint->status) {
+                'resolved', 'closed' => 'success',
+                'rejected' => 'danger',
+                'waiting' => 'warning',
+                default => 'info',
+            };
+
+            $complaint->user->notify(new HelloDeskNotification(
+                'Réclamation mise à jour',
+                "Votre réclamation « {$complaint->subject} » est maintenant : {$complaint->status_label}.",
+                $notificationType,
+                route('client.complaints.show', $complaint)
+            ));
+        }
 
         return redirect()
             ->route('admin.complaints.show', $complaint)

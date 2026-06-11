@@ -7,6 +7,8 @@ use App\Models\Client;
 use App\Models\Complaint;
 use App\Models\Contract;
 use App\Models\Reservation;
+use App\Models\User;
+use App\Notifications\HelloDeskNotification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -100,6 +102,32 @@ class ComplaintController extends Controller
             'description' => $validated['description'] ?? null,
             'status' => 'new',
         ]);
+
+        $type = in_array($complaint->priority, ['high', 'urgent'], true)
+            ? 'warning'
+            : 'info';
+
+        $admins = User::where('role', 'admin')->get();
+
+        foreach ($admins as $admin) {
+            $admin->notify(new HelloDeskNotification(
+                'Nouvelle réclamation',
+                "{$client->full_name} a envoyé une réclamation : {$complaint->subject}",
+                $type,
+                route('admin.complaints.show', $complaint)
+            ));
+        }
+
+        $commercials = User::where('role', 'commercial')->get();
+
+        foreach ($commercials as $commercial) {
+            $commercial->notify(new HelloDeskNotification(
+                'Nouvelle réclamation client',
+                "{$client->full_name} a envoyé une réclamation : {$complaint->subject}",
+                $type,
+                route('commercial.complaints.show', $complaint)
+            ));
+        }
 
         return redirect()
             ->route('client.complaints.show', $complaint)

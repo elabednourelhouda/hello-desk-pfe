@@ -143,7 +143,6 @@
 
                 // Admin only
                 ['label' => 'Commerciaux', 'route' => 'admin.commercials.index'],
-                ['label' => 'Commerciaux', 'route' => 'admin.users.index', 'params' => ['role' => 'commercial']],
 
                 ['label' => 'Carte interactive', 'route' => 'admin.interactive-map.index'],
                 ['label' => 'Réservations', 'route' => 'admin.reservations.index'],
@@ -151,6 +150,7 @@
                 ['label' => 'Paiements', 'route' => 'admin.payments.index'],
 
                 ['label' => 'Réclamations', 'route' => 'admin.complaints.index'],
+                ['label' => 'Notifications', 'route' => 'admin.notifications.index'],
             ];
 
             $commercialLinks = [
@@ -162,6 +162,7 @@
                 ['label' => 'Contrats', 'route' => 'commercial.contracts.index'],
                 ['label' => 'Paiements', 'route' => 'commercial.payments.index'],
                 ['label' => 'Réclamations', 'route' => 'commercial.complaints.index'],
+                ['label' => 'Notifications', 'route' => 'commercial.notifications.index'],
             ];
 
             $clientLinks = [
