@@ -14,6 +14,7 @@
         'completed' => 'Terminée',
         'cancelled' => 'Annulée',
         'expired' => 'Expirée',
+        'in_progress' => 'En cours',
     ];
 
     $statusClasses = [
@@ -23,6 +24,7 @@
         'completed' => 'bg-slate-100 text-slate-700 ring-slate-200',
         'cancelled' => 'bg-red-50 text-red-700 ring-red-200',
         'expired' => 'bg-red-50 text-red-700 ring-red-200',
+        'in_progress' => 'bg-blue-50 text-blue-700 ring-blue-200',
     ];
 
     $status = $reservation->status ?? 'pending';

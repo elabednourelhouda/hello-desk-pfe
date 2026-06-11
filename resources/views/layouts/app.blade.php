@@ -10,7 +10,11 @@
 </head>
 
 <body class="min-h-screen bg-[#f6f8f6]">
+    @php
+    $isPublicPage = request()->routeIs('home') || request()->routeIs('login') || request()->routeIs('signin');
+    @endphp
     <header class="bg-white shadow-sm">
+        @if($isPublicPage)
         <div class="bg-hd-green text-white">
             <div class="hd-container">
                 <div class="flex flex-col justify-between gap-2 py-3 text-xs sm:flex-row sm:items-center">
@@ -36,14 +40,15 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <div class="hd-container">
-            <div class="flex min-h-24 items-center justify-between gap-8 py-4">
+            <div class="flex items-center justify-between gap-8 py-4 {{ $isPublicPage ? 'min-h-24' : 'min-h-16' }}">
                 <a href="{{ route('home') }}" class="flex items-center">
                     <img
                         src="{{ asset('images/hello-desk-logo.png') }}"
                         alt="Hello Desk"
-                        class="h-20 w-auto">
+                        class="{{ $isPublicPage ? 'h-20' : 'h-12' }} w-auto">
                 </a>
 
                 @if(request()->routeIs('home'))
@@ -313,12 +318,12 @@
                 @endphp
 
                 <a href="{{ $href }}"
-   class="whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold transition
+                    class="whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold transition
    {{ $isActive
        ? 'bg-[#FFE4E6] text-[#BE123C] shadow-sm'
        : 'text-gray-600 hover:bg-[#FFF1F2] hover:text-[#BE123C]' }}">
-    {{ $link['label'] }}
-</a>
+                    {{ $link['label'] }}
+                </a>
                 @endif
                 @endforeach
             </nav>
@@ -331,6 +336,7 @@
         @yield('content')
     </main>
 
+    @if($isPublicPage)
     <footer class="mt-16 bg-[#101310] text-white">
         <div class="hd-container py-12">
             <div class="grid gap-10 lg:grid-cols-4">
@@ -417,6 +423,7 @@
             </div>
         </div>
     </footer>
+    @endif
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
