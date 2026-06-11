@@ -158,6 +158,7 @@
                 ['label' => 'Carte interactive', 'route' => 'commercial.interactive-map.index'],
                 ['label' => 'Réservations', 'route' => 'commercial.reservations.index'],
                 ['label' => 'Contrats', 'route' => 'commercial.contracts.index'],
+                ['label' => 'Paiements', 'route' => 'commercial.payments.index'],
             ];
 
             $clientLinks = [
