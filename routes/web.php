@@ -24,6 +24,7 @@ use App\Http\Controllers\Commercial\ProspectRequestController as CommercialProsp
 use App\Http\Controllers\Commercial\ClientController as CommercialClientController;
 use App\Http\Controllers\Commercial\ReservationController as CommercialReservationController;
 use App\Http\Controllers\Commercial\ContractController as CommercialContractController;
+use App\Http\Controllers\Commercial\PaymentController as CommercialPaymentController;
 
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
 use App\Http\Controllers\Client\ReservationController as ClientReservationController;
@@ -295,6 +296,18 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
 
         Route::resource('contracts', CommercialContractController::class)
             ->only(['index', 'show', 'edit', 'update']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Commercial payments
+        |--------------------------------------------------------------------------
+        */
+
+        Route::patch('/payments/{payment}/mark-as-paid', [CommercialPaymentController::class, 'markAsPaid'])
+            ->name('payments.markAsPaid');
+
+        Route::resource('payments', CommercialPaymentController::class)
+            ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     });
 
 /*
