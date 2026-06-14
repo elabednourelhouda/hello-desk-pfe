@@ -134,6 +134,16 @@
                             </p>
                         </div>
 
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Source du prospect
+                            </p>
+
+                            <p class="mt-1 text-sm font-semibold text-gray-900">
+                                {{ $sources[$prospect->source] ?? ($prospect->source ?: 'Non renseignée') }}
+                            </p>
+                        </div>
+
                         <div class="rounded-xl bg-gray-50 p-4">
                             <p class="text-xs font-semibold uppercase text-gray-400">Nombre de personnes / postes</p>
                             <p class="mt-1 text-sm font-medium text-gray-800">
@@ -395,22 +405,47 @@
                         @csrf
                         @method('PATCH')
 
-                        <div>
-                            <label for="lost_reason" class="mb-2 block text-sm font-semibold text-gray-700">
-                                Raison de perte <span class="text-red-500">*</span>
-                            </label>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="lost_reason_key" class="mb-2 block text-sm font-semibold text-gray-700">
+                                    Raison de perte <span class="text-red-500">*</span>
+                                </label>
 
-                            <textarea
-                                id="lost_reason"
-                                name="lost_reason"
-                                rows="3"
-                                required
-                                class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]"
-                                placeholder="Exemple : budget insuffisant, espace non adapté, prospect non joignable...">{{ old('lost_reason') }}</textarea>
+                                <select
+                                    id="lost_reason_key"
+                                    name="lost_reason_key"
+                                    required
+                                    class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                                    <option value="">Sélectionner une raison</option>
 
-                            @error('lost_reason')
-                            <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
-                            @enderror
+                                    @foreach(($lostReasons ?? []) as $key => $label)
+                                    <option value="{{ $key }}" @selected(old('lost_reason_key')===$key)>
+                                        {{ $label }}
+                                    </option>
+                                    @endforeach
+                                </select>
+
+                                @error('lost_reason_key')
+                                <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="lost_reason_details" class="mb-2 block text-sm font-semibold text-gray-700">
+                                    Détails complémentaires
+                                </label>
+
+                                <textarea
+                                    id="lost_reason_details"
+                                    name="lost_reason_details"
+                                    rows="3"
+                                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]"
+                                    placeholder="Exemple : le prospect souhaite un budget inférieur ou a choisi une autre localisation...">{{ old('lost_reason_details') }}</textarea>
+
+                                @error('lost_reason_details')
+                                <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
 
                         <button type="submit"

@@ -97,6 +97,7 @@ class ProspectController extends Controller
             'assignedCampuses' => $this->assignedCampuses($assignedCampusIds),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->editableCrmStatuses(),
+            'sources' => $this->prospectSources(),
         ]);
     }
 
@@ -121,7 +122,7 @@ class ProspectController extends Controller
             'preferred_campus_id' => $campusRule,
             'preferred_space_type_id' => ['nullable', 'exists:space_types,id'],
             'budget' => ['nullable', 'numeric', 'min:0'],
-            'source' => ['nullable', 'string', 'max:255'],
+            'source' => ['nullable', Rule::in(array_keys($this->prospectSources()))],
             'notes' => ['nullable', 'string'],
         ], [
             'full_name.required' => 'Le nom complet est obligatoire.',
@@ -166,6 +167,8 @@ class ProspectController extends Controller
             'assignedCampuses' => $this->assignedCampuses($assignedCampusIds),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->crmStatuses(),
+            'sources' => $this->prospectSources(),
+            'lostReasons' => $this->lostReasons(),
         ]);
     }
 
@@ -262,15 +265,31 @@ class ProspectController extends Controller
         }
 
         $validated = $request->validate([
-            'lost_reason' => ['required', 'string', 'max:1000'],
+            'lost_reason_key' => ['required', Rule::in(array_keys($this->lostReasons()))],
+            'lost_reason_details' => ['nullable', 'string', 'max:1000'],
         ], [
-            'lost_reason.required' => 'La raison de perte est obligatoire.',
-            'lost_reason.max' => 'La raison de perte ne doit pas dépasser 1000 caractères.',
+            'lost_reason_key.required' => 'Veuillez choisir une raison de perte.',
+            'lost_reason_key.in' => 'La raison de perte sélectionnée est invalide.',
+            'lost_reason_details.max' => 'Le détail ne doit pas dépasser 1000 caractères.',
         ]);
+
+        if ($validated['lost_reason_key'] === 'autre' && blank($validated['lost_reason_details'] ?? null)) {
+            return back()
+                ->withErrors(['lost_reason_details' => 'Veuillez préciser la raison de perte.'])
+                ->withInput();
+        }
+
+        $reasonLabel = $this->lostReasons()[$validated['lost_reason_key']];
+
+        $lostReason = $reasonLabel;
+
+        if (filled($validated['lost_reason_details'] ?? null)) {
+            $lostReason .= ' — ' . $validated['lost_reason_details'];
+        }
 
         $prospect->update([
             'crm_status' => 'lost',
-            'lost_reason' => $validated['lost_reason'],
+            'lost_reason' => $lostReason,
         ]);
 
         return redirect()
@@ -351,7 +370,7 @@ class ProspectController extends Controller
             ->pluck('campus_id')
             ->unique()
             ->values()
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->toArray();
     }
 
@@ -455,6 +474,7 @@ class ProspectController extends Controller
             'assignedCampuses' => $this->assignedCampuses($assignedCampusIds),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->editableCrmStatuses(),
+            'sources' => $this->prospectSources(),
         ]);
     }
 
@@ -480,7 +500,7 @@ class ProspectController extends Controller
             'desired_start_date' => ['nullable', 'date'],
             'desired_rental_period' => ['nullable', 'in:hourly,daily,monthly,custom'],
 
-            'source' => ['nullable', 'string', 'max:255'],
+            'source' => ['nullable', Rule::in(array_keys($this->prospectSources()))],
             'need' => ['nullable', 'string'],
             'crm_status' => ['required', 'in:new,contacted,visit_scheduled,visited,proposal_sent,negotiation,converted,lost'],
             'notes' => ['nullable', 'string'],
@@ -506,5 +526,39 @@ class ProspectController extends Controller
         return redirect()
             ->route('commercial.prospects.show', $prospect)
             ->with('success', 'Le prospect a été modifié avec succès.');
+    }
+
+    private function prospectSources(): array
+    {
+        return [
+            'passage_direct' => 'Passage direct',
+            'appel_telephonique' => 'Appel téléphonique',
+            'whatsapp' => 'WhatsApp',
+            'email' => 'Email',
+            'site_web' => 'Site web',
+            'instagram' => 'Instagram',
+            'facebook' => 'Facebook',
+            'google_maps' => 'Google / Maps',
+            'recommandation' => 'Recommandation',
+            'ancien_client' => 'Ancien client',
+            'evenement' => 'Événement / networking',
+            'autre' => 'Autre',
+        ];
+    }
+
+    private function lostReasons(): array
+    {
+        return [
+            'budget_trop_eleve' => 'Budget insuffisant / prix trop élevé',
+            'besoin_non_adapte' => 'Besoin non adapté aux offres',
+            'espace_indisponible' => 'Espace souhaité indisponible',
+            'localisation_non_adaptee' => 'Localisation non adaptée',
+            'delai_non_adapte' => 'Délai non adapté',
+            'choix_concurrent' => 'A choisi un concurrent',
+            'pas_de_reponse' => 'Pas de réponse après relance',
+            'projet_reporte' => 'Projet reporté',
+            'besoin_annule' => 'Besoin annulé',
+            'autre' => 'Autre',
+        ];
     }
 }
