@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\ValidationException;
 
 class CommercialController extends Controller
 {
@@ -27,7 +28,7 @@ class CommercialController extends Controller
 
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -61,52 +62,30 @@ class CommercialController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validatedUser = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'campus_id' => ['required', 'exists:campuses,id'],
-            'floor_id' => ['nullable', 'exists:floors,id'],
-            'notes' => ['nullable', 'string', 'max:1000'],
         ], [
             'name.required' => 'Le nom complet est obligatoire.',
             'email.required' => 'L’email est obligatoire.',
             'email.email' => 'Veuillez saisir une adresse email valide.',
             'email.unique' => 'Cet email est déjà utilisé.',
-            'campus_id.required' => 'Veuillez choisir un campus.',
-            'campus_id.exists' => 'Le campus sélectionné est invalide.',
-            'floor_id.exists' => 'L’étage sélectionné est invalide.',
         ]);
 
-        if (!empty($validated['floor_id'])) {
-            $floorBelongsToCampus = Floor::where('id', $validated['floor_id'])
-                ->where('campus_id', $validated['campus_id'])
-                ->exists();
-
-            if (!$floorBelongsToCampus) {
-                return back()
-                    ->withInput()
-                    ->with('error', 'L’étage sélectionné ne correspond pas au campus choisi.');
-            }
-        }
+        $validatedAssignment = $this->validateAssignmentData($request);
 
         $temporaryPassword = 'HD-' . Str::upper(Str::random(8));
 
-        $commercial = DB::transaction(function () use ($validated, $temporaryPassword) {
+        $commercial = DB::transaction(function () use ($validatedUser, $validatedAssignment, $temporaryPassword) {
             $commercial = User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
+                'name' => $validatedUser['name'],
+                'email' => $validatedUser['email'],
                 'password' => Hash::make($temporaryPassword),
                 'role' => 'commercial',
                 'must_change_password' => true,
             ]);
 
-            StaffAssignment::create([
-                'commercial_id' => $commercial->id,
-                'campus_id' => $validated['campus_id'],
-                'floor_id' => $validated['floor_id'] ?? null,
-                'assigned_by' => Auth::id(),
-                'notes' => $validated['notes'] ?? null,
-            ]);
+            $this->createAssignmentsForCommercial($commercial, $validatedAssignment);
 
             return $commercial;
         });
@@ -164,67 +143,15 @@ class CommercialController extends Controller
     {
         $this->ensureCommercial($commercial);
 
-        $validated = $request->validate([
-            'campus_id' => ['required', 'exists:campuses,id'],
-            'floor_id' => ['nullable', 'exists:floors,id'],
-            'notes' => ['nullable', 'string', 'max:1000'],
-        ], [
-            'campus_id.required' => 'Veuillez choisir un campus.',
-            'campus_id.exists' => 'Le campus sélectionné est invalide.',
-            'floor_id.exists' => 'L’étage sélectionné est invalide.',
-        ]);
+        $validatedAssignment = $this->validateAssignmentData($request);
 
-        if (!empty($validated['floor_id'])) {
-            $floorBelongsToCampus = Floor::where('id', $validated['floor_id'])
-                ->where('campus_id', $validated['campus_id'])
-                ->exists();
-
-            if (!$floorBelongsToCampus) {
-                return redirect()
-                    ->route('admin.commercials.show', $commercial)
-                    ->with('error', 'L’étage sélectionné ne correspond pas au campus choisi.');
-            }
-        }
-
-        $alreadyAssignedToWholeCampus = StaffAssignment::where('commercial_id', $commercial->id)
-            ->where('campus_id', $validated['campus_id'])
-            ->whereNull('floor_id')
-            ->exists();
-
-        if ($alreadyAssignedToWholeCampus && !empty($validated['floor_id'])) {
-            return redirect()
-                ->route('admin.commercials.show', $commercial)
-                ->with('error', 'Ce commercial est déjà affecté à tout ce campus.');
-        }
-
-        if (empty($validated['floor_id'])) {
-            StaffAssignment::where('commercial_id', $commercial->id)
-                ->where('campus_id', $validated['campus_id'])
-                ->delete();
-        } else {
-            $duplicate = StaffAssignment::where('commercial_id', $commercial->id)
-                ->where('campus_id', $validated['campus_id'])
-                ->where('floor_id', $validated['floor_id'])
-                ->exists();
-
-            if ($duplicate) {
-                return redirect()
-                    ->route('admin.commercials.show', $commercial)
-                    ->with('error', 'Cette affectation existe déjà.');
-            }
-        }
-
-        StaffAssignment::create([
-            'commercial_id' => $commercial->id,
-            'campus_id' => $validated['campus_id'],
-            'floor_id' => $validated['floor_id'] ?? null,
-            'assigned_by' => Auth::id(),
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        DB::transaction(function () use ($commercial, $validatedAssignment) {
+            $this->createAssignmentsForCommercial($commercial, $validatedAssignment);
+        });
 
         return redirect()
             ->route('admin.commercials.show', $commercial)
-            ->with('success', 'Affectation ajoutée avec succès.');
+            ->with('success', 'Affectation enregistrée avec succès.');
     }
 
     public function destroyAssignment(User $commercial, StaffAssignment $assignment)
@@ -240,6 +167,126 @@ class CommercialController extends Controller
         return redirect()
             ->route('admin.commercials.show', $commercial)
             ->with('success', 'Affectation supprimée avec succès.');
+    }
+
+    private function validateAssignmentData(Request $request): array
+    {
+        $validated = $request->validate([
+            'assignment_type' => ['required', 'in:all_campuses,campus,floors'],
+            'campus_id' => ['nullable', 'exists:campuses,id'],
+            'floor_ids' => ['nullable', 'array'],
+            'floor_ids.*' => ['integer', 'exists:floors,id'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'assignment_type.required' => 'Veuillez choisir le type d’affectation.',
+            'assignment_type.in' => 'Le type d’affectation sélectionné est invalide.',
+            'campus_id.exists' => 'Le campus sélectionné est invalide.',
+            'floor_ids.array' => 'La liste des étages sélectionnés est invalide.',
+            'floor_ids.*.exists' => 'Un des étages sélectionnés est invalide.',
+        ]);
+
+        if ($validated['assignment_type'] !== 'all_campuses' && empty($validated['campus_id'])) {
+            throw ValidationException::withMessages([
+                'campus_id' => 'Veuillez choisir un campus.',
+            ]);
+        }
+
+        if ($validated['assignment_type'] === 'floors') {
+            $floorIds = collect($validated['floor_ids'] ?? [])
+                ->map(fn($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+
+            if (empty($floorIds)) {
+                throw ValidationException::withMessages([
+                    'floor_ids' => 'Veuillez choisir au moins un étage.',
+                ]);
+            }
+
+            $validFloorIds = Floor::whereIn('id', $floorIds)
+                ->where('campus_id', $validated['campus_id'])
+                ->pluck('id')
+                ->map(fn($id) => (int) $id)
+                ->values()
+                ->all();
+
+            if (count($validFloorIds) !== count($floorIds)) {
+                throw ValidationException::withMessages([
+                    'floor_ids' => 'Un des étages sélectionnés ne correspond pas au campus choisi.',
+                ]);
+            }
+
+            $validated['floor_ids'] = $floorIds;
+        }
+
+        return $validated;
+    }
+
+    private function createAssignmentsForCommercial(User $commercial, array $validated): void
+    {
+        $notes = $validated['notes'] ?? null;
+
+        if ($validated['assignment_type'] === 'all_campuses') {
+            StaffAssignment::where('commercial_id', $commercial->id)->delete();
+
+            $campuses = Campus::where('is_active', true)
+                ->orderBy('name')
+                ->get();
+
+            foreach ($campuses as $campus) {
+                StaffAssignment::create([
+                    'commercial_id' => $commercial->id,
+                    'campus_id' => $campus->id,
+                    'floor_id' => null,
+                    'assigned_by' => Auth::id(),
+                    'notes' => $notes,
+                ]);
+            }
+
+            return;
+        }
+
+        if ($validated['assignment_type'] === 'campus') {
+            StaffAssignment::where('commercial_id', $commercial->id)
+                ->where('campus_id', $validated['campus_id'])
+                ->delete();
+
+            StaffAssignment::create([
+                'commercial_id' => $commercial->id,
+                'campus_id' => $validated['campus_id'],
+                'floor_id' => null,
+                'assigned_by' => Auth::id(),
+                'notes' => $notes,
+            ]);
+
+            return;
+        }
+
+        $alreadyAssignedToWholeCampus = StaffAssignment::where('commercial_id', $commercial->id)
+            ->where('campus_id', $validated['campus_id'])
+            ->whereNull('floor_id')
+            ->exists();
+
+        if ($alreadyAssignedToWholeCampus) {
+            throw ValidationException::withMessages([
+                'floor_ids' => 'Ce commercial est déjà affecté à tout ce campus.',
+            ]);
+        }
+
+        foreach ($validated['floor_ids'] as $floorId) {
+            StaffAssignment::firstOrCreate(
+                [
+                    'commercial_id' => $commercial->id,
+                    'campus_id' => $validated['campus_id'],
+                    'floor_id' => $floorId,
+                ],
+                [
+                    'assigned_by' => Auth::id(),
+                    'notes' => $notes,
+                ]
+            );
+        }
     }
 
     private function ensureCommercial(User $commercial): void
