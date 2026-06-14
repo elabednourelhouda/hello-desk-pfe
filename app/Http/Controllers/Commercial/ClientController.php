@@ -57,21 +57,21 @@ class ClientController extends Controller
                             ->whereNotNull('identity_document_number')
                             ->where('identity_document_number', '!=', '');
                     })
-                    ->orWhere(function (Builder $company) {
-                        $company->where('client_type', 'morale')
-                            ->whereNotNull('company_name')
-                            ->where('company_name', '!=', '')
-                            ->whereNotNull('legal_form')
-                            ->where('legal_form', '!=', '')
-                            ->whereNotNull('ice_number')
-                            ->where('ice_number', '!=', '')
-                            ->whereNotNull('legal_representative_full_name')
-                            ->where('legal_representative_full_name', '!=', '')
-                            ->whereNotNull('legal_representative_identity_document_type')
-                            ->where('legal_representative_identity_document_type', '!=', '')
-                            ->whereNotNull('legal_representative_identity_document_number')
-                            ->where('legal_representative_identity_document_number', '!=', '');
-                    });
+                        ->orWhere(function (Builder $company) {
+                            $company->where('client_type', 'morale')
+                                ->whereNotNull('company_name')
+                                ->where('company_name', '!=', '')
+                                ->whereNotNull('legal_form')
+                                ->where('legal_form', '!=', '')
+                                ->whereNotNull('ice_number')
+                                ->where('ice_number', '!=', '')
+                                ->whereNotNull('legal_representative_full_name')
+                                ->where('legal_representative_full_name', '!=', '')
+                                ->whereNotNull('legal_representative_identity_document_type')
+                                ->where('legal_representative_identity_document_type', '!=', '')
+                                ->whereNotNull('legal_representative_identity_document_number')
+                                ->where('legal_representative_identity_document_number', '!=', '');
+                        });
                 });
             }
 
@@ -264,6 +264,8 @@ class ClientController extends Controller
         $client->load([
             'user',
             'prospect.assignedCommercial',
+            'prospect.preferredCampus',
+            'prospect.preferredSpaceType',
             'mainCampus',
             'reservations.space',
             'reservations.campus',
@@ -408,10 +410,12 @@ class ClientController extends Controller
                 }
 
                 // Demo fallback: show active clients if no assignment columns exist
-                if (! Schema::hasColumn('clients', 'assigned_to')
+                if (
+                    ! Schema::hasColumn('clients', 'assigned_to')
                     && ! Schema::hasColumn('clients', 'commercial_id')
                     && ! Schema::hasColumn('clients', 'responsible_commercial_id')
-                    && ! Schema::hasColumn('clients', 'created_by')) {
+                    && ! Schema::hasColumn('clients', 'created_by')
+                ) {
                     $q->orWhere('status', 'active');
                 }
             });
@@ -449,7 +453,7 @@ class ClientController extends Controller
             ->pluck('campus_id')
             ->unique()
             ->values()
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->toArray();
     }
 

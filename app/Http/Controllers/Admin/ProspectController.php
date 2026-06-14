@@ -183,8 +183,8 @@ class ProspectController extends Controller
     {
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'required_without:email', 'string', 'max:50'],
+            'email' => ['nullable', 'required_without:phone', 'email', 'max:255'],
             'company_name' => ['nullable', 'string', 'max:255'],
 
             'registered_at' => ['nullable', 'date'],
@@ -203,6 +203,8 @@ class ProspectController extends Controller
             'assigned_to' => ['nullable', 'exists:users,id'],
         ], [
             'full_name.required' => 'Le nom complet est obligatoire.',
+            'phone.required_without' => 'Veuillez saisir un téléphone ou un email.',
+            'email.required_without' => 'Veuillez saisir un email ou un téléphone.',
             'email.email' => 'Veuillez saisir une adresse email valide.',
             'people_count.integer' => 'Le nombre de personnes doit être un nombre entier.',
             'people_count.min' => 'Le nombre de personnes doit être au moins 1.',
@@ -267,7 +269,7 @@ class ProspectController extends Controller
                 ]);
             }
 
-            Client::updateOrCreate(
+            $client = Client::updateOrCreate(
                 ['user_id' => $clientUser->id],
                 [
                     'prospect_id' => $prospect->id,
@@ -285,7 +287,7 @@ class ProspectController extends Controller
             $prospect->update([
                 'email' => $validated['client_email'],
                 'crm_status' => 'converted',
-                'converted_client_id' => $clientUser->id,
+                'converted_client_id' => $client->id,
                 'converted_at' => now(),
             ]);
         });

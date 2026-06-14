@@ -273,7 +273,13 @@ class ClientController extends Controller
 
     public function show(Client $client)
     {
-        $client->load(['user', 'prospect', 'mainCampus']);
+        $client->load([
+            'user',
+            'prospect.assignedCommercial',
+            'prospect.preferredCampus',
+            'prospect.preferredSpaceType',
+            'mainCampus',
+        ]);
 
         return view('admin.clients.show', [
             'client' => $client,
@@ -282,7 +288,13 @@ class ClientController extends Controller
 
     public function edit(Client $client)
     {
-        $client->load(['user', 'prospect', 'mainCampus']);
+        $client->load([
+            'user',
+            'prospect.assignedCommercial',
+            'prospect.preferredCampus',
+            'prospect.preferredSpaceType',
+            'mainCampus',
+        ]);
 
         return view('admin.clients.edit', [
             'client' => $client,

@@ -108,10 +108,6 @@ class ProspectController extends Controller
 
         $campusRule = ['nullable', 'exists:campuses,id'];
 
-        if (! empty($assignedCampusIds)) {
-            $campusRule = ['nullable', Rule::in($assignedCampusIds)];
-        }
-
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
@@ -128,7 +124,6 @@ class ProspectController extends Controller
             'full_name.required' => 'Le nom complet est obligatoire.',
             'email.email' => 'Veuillez saisir une adresse email valide.',
             'budget.numeric' => 'Le budget doit être un nombre.',
-            'preferred_campus_id.in' => 'Ce campus ne fait pas partie de votre périmètre affecté.',
         ]);
 
         $validated['registered_at'] = $validated['registered_at'] ?? now()->toDateString();
@@ -328,17 +323,8 @@ class ProspectController extends Controller
 
     private function baseProspectQuery(int $userId, array $assignedCampusIds): EloquentBuilder
     {
-        $query = Prospect::query()
+        return Prospect::query()
             ->where('assigned_to', $userId);
-
-        if (! empty($assignedCampusIds)) {
-            $query->where(function (EloquentBuilder $q) use ($assignedCampusIds) {
-                $q->whereNull('preferred_campus_id')
-                    ->orWhereIn('preferred_campus_id', $assignedCampusIds);
-            });
-        }
-
-        return $query;
     }
 
     private function assignedCampusIds(int $userId): array
@@ -405,13 +391,9 @@ class ProspectController extends Controller
 
     private function availableCampuses(array $assignedCampusIds)
     {
-        $query = Campus::where('is_active', true)->orderBy('name');
-
-        if (! empty($assignedCampusIds)) {
-            $query->whereIn('id', $assignedCampusIds);
-        }
-
-        return $query->get();
+        return Campus::where('is_active', true)
+            ->orderBy('name')
+            ->get();
     }
 
     private function attachCommercialToClient(int $clientId, int $commercialId): void
@@ -505,18 +487,6 @@ class ProspectController extends Controller
             'crm_status' => ['required', 'in:new,contacted,visit_scheduled,visited,proposal_sent,negotiation,converted,lost'],
             'notes' => ['nullable', 'string'],
         ]);
-
-        if (
-            !empty($validated['preferred_campus_id']) &&
-            !empty($assignedCampusIds) &&
-            !in_array((int) $validated['preferred_campus_id'], $assignedCampusIds, true)
-        ) {
-            return back()
-                ->withErrors([
-                    'preferred_campus_id' => 'Vous ne pouvez pas affecter ce prospect à un campus hors de votre périmètre.',
-                ])
-                ->withInput();
-        }
 
         // Important: commercial must never update assigned_to.
         unset($validated['assigned_to']);
