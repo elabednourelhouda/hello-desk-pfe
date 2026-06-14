@@ -1,5 +1,5 @@
 @php
-    $prospectForNeed = $prospect ?? null;
+$prospectForNeed = $prospect ?? null;
 @endphp
 
 {{-- Section: Besoin initial --}}
@@ -19,18 +19,18 @@
                 Campus souhaité
             </label>
             <select name="preferred_campus_id"
-                    class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                 <option value="">Non précisé</option>
                 @foreach($campuses as $campus)
-                    <option value="{{ $campus->id }}"
-                        @selected(old('preferred_campus_id', optional($prospectForNeed)->preferred_campus_id) == $campus->id)>
-                        {{ $campus->name }}
-                    </option>
+                <option value="{{ $campus->id }}"
+                    @selected(old('preferred_campus_id', optional($prospectForNeed)->preferred_campus_id) == $campus->id)>
+                    {{ $campus->name }}
+                </option>
                 @endforeach
             </select>
 
             @error('preferred_campus_id')
-                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
         </div>
 
@@ -39,18 +39,18 @@
                 Type d’espace recherché
             </label>
             <select name="preferred_space_type_id"
-                    class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                 <option value="">Non précisé</option>
                 @foreach($spaceTypes as $type)
-                    <option value="{{ $type->id }}"
-                        @selected(old('preferred_space_type_id', optional($prospectForNeed)->preferred_space_type_id) == $type->id)>
-                        {{ $type->name }}
-                    </option>
+                <option value="{{ $type->id }}"
+                    @selected(old('preferred_space_type_id', optional($prospectForNeed)->preferred_space_type_id) == $type->id)>
+                    {{ $type->name }}
+                </option>
                 @endforeach
             </select>
 
             @error('preferred_space_type_id')
-                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
         </div>
 
@@ -59,14 +59,14 @@
                 Nombre de personnes / postes
             </label>
             <input type="number"
-                   min="1"
-                   name="people_count"
-                   value="{{ old('people_count', optional($prospectForNeed)->people_count) }}"
-                   placeholder="Ex: 2"
-                   class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                min="1"
+                name="people_count"
+                value="{{ old('people_count', optional($prospectForNeed)->people_count) }}"
+                placeholder="Ex: 2"
+                class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
 
             @error('people_count')
-                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
         </div>
 
@@ -75,15 +75,15 @@
                 Budget approximatif
             </label>
             <input type="number"
-                   step="0.01"
-                   min="0"
-                   name="budget"
-                   value="{{ old('budget', optional($prospectForNeed)->budget) }}"
-                   placeholder="Ex: 3000"
-                   class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                step="0.01"
+                min="0"
+                name="budget"
+                value="{{ old('budget', optional($prospectForNeed)->budget) }}"
+                placeholder="Ex: 3000"
+                class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
 
             @error('budget')
-                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
         </div>
 
@@ -92,12 +92,12 @@
                 Date de début souhaitée
             </label>
             <input type="date"
-                   name="desired_start_date"
-                   value="{{ old('desired_start_date', optional(optional($prospectForNeed)->desired_start_date)->format('Y-m-d')) }}"
-                   class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                name="desired_start_date"
+                value="{{ old('desired_start_date', optional(optional($prospectForNeed)->desired_start_date)->format('Y-m-d')) }}"
+                class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
 
             @error('desired_start_date')
-                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
         </div>
 
@@ -106,7 +106,7 @@
                 Durée souhaitée
             </label>
             <select name="desired_rental_period"
-                    class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                 <option value="">Non précisée</option>
                 <option value="hourly" @selected(old('desired_rental_period', optional($prospectForNeed)->desired_rental_period) === 'hourly')>
                     À l’heure
@@ -123,22 +123,29 @@
             </select>
 
             @error('desired_rental_period')
-                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
         </div>
 
-        <div class="md:col-span-2">
+        <div>
             <label class="mb-2 block text-sm font-semibold text-gray-700">
                 Source du prospect
             </label>
-            <input type="text"
-                   name="source"
-                   value="{{ old('source', optional($prospectForNeed)->source) }}"
-                   placeholder="Ex: Visite, appel, site web, recommandation..."
-                   class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+
+            <select name="source"
+                class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                <option value="">Sélectionner une source</option>
+
+                @foreach(($sources ?? []) as $key => $label)
+                <option value="{{ $key }}"
+                    @selected(old('source', $prospect->source ?? '') === $key)>
+                    {{ $label }}
+                </option>
+                @endforeach
+            </select>
 
             @error('source')
-                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
         </div>
     </div>
@@ -148,16 +155,16 @@
             Description du besoin
         </label>
         <textarea name="need"
-                  rows="4"
-                  placeholder="Ex: Cherche un bureau privé pour 2 personnes à partir du mois prochain..."
-                  class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">{{ old('need', optional($prospectForNeed)->need) }}</textarea>
+            rows="4"
+            placeholder="Ex: Cherche un bureau privé pour 2 personnes à partir du mois prochain..."
+            class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">{{ old('need', optional($prospectForNeed)->need) }}</textarea>
 
         @error('need')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
         @enderror
     </div>
 
-    {{-- 
+    {{--
         FUTURE CRM IMPROVEMENT - Évolution du besoin
 
         For now, the interface only shows one clear "Besoin initial" section
