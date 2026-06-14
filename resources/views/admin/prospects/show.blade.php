@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Détail prospect - Administration')
 
@@ -8,48 +8,48 @@
 
         <div class="mb-6">
             <a href="{{ request('return_url', route('admin.prospects.index', ['view' => 'active'])) }}"
-               class="text-sm font-semibold text-[#284625] hover:underline">
+                class="text-sm font-semibold text-[#284625] hover:underline">
                 ← Retour aux prospects
             </a>
         </div>
 
         @if(session('success'))
-            <div class="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
-                {{ session('success') }}
-            </div>
+        <div class="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+            {{ session('success') }}
+        </div>
         @endif
 
         @if(session('info'))
-            <div class="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
-                {{ session('info') }}
-            </div>
+        <div class="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+            {{ session('info') }}
+        </div>
         @endif
 
         @if(session('temporary_password'))
-            <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
-                <p class="font-semibold">Compte client créé.</p>
-                <p class="mt-1">
-                    Mot de passe temporaire :
-                    <span class="rounded bg-white px-2 py-1 font-mono font-bold">
-                        {{ session('temporary_password') }}
-                    </span>
-                </p>
-                <p class="mt-2 text-xs">
-                    Pour l’instant, copiez ces informations. Plus tard, on pourra les envoyer automatiquement par email.
-                </p>
-            </div>
+        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+            <p class="font-semibold">Compte client créé.</p>
+            <p class="mt-1">
+                Mot de passe temporaire :
+                <span class="rounded bg-white px-2 py-1 font-mono font-bold">
+                    {{ session('temporary_password') }}
+                </span>
+            </p>
+            <p class="mt-2 text-xs">
+                Pour l’instant, copiez ces informations. Plus tard, on pourra les envoyer automatiquement par email.
+            </p>
+        </div>
         @endif
 
         @if ($errors->any())
-            <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <p class="font-semibold">Veuillez corriger les erreurs suivantes :</p>
+        <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p class="font-semibold">Veuillez corriger les erreurs suivantes :</p>
 
-                <ul class="mt-2 list-inside list-disc">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
+            <ul class="mt-2 list-inside list-disc">
+                @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
         @endif
 
         {{-- TOP PART: prospect details + sidebar --}}
@@ -79,12 +79,12 @@
                             </span>
 
                             <a href="{{ route('admin.prospects.edit', $prospect) }}"
-                               class="inline-flex h-10 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-blue-700 transition hover:bg-blue-100">
+                                class="inline-flex h-10 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-blue-700 transition hover:bg-blue-100">
                                 Modifier
                             </a>
 
                             <a href="{{ route('admin.prospects.crm', ['prospect' => $prospect, 'return_url' => request()->fullUrl()]) }}"
-                            class="inline-flex h-10 items-center justify-center rounded-xl bg-[#284625] px-4 text-sm font-bold text-white transition hover:bg-[#1f351d]">
+                                class="inline-flex h-10 items-center justify-center rounded-xl bg-[#284625] px-4 text-sm font-bold text-white transition hover:bg-[#1f351d]">
                                 Suivi CRM
                             </a>
                         </div>
@@ -159,24 +159,24 @@
                             <p class="text-xs font-semibold uppercase text-gray-400">Durée souhaitée</p>
                             <p class="mt-1 text-sm font-medium text-gray-800">
                                 @switch($prospect->desired_rental_period)
-                                    @case('hourly')
-                                        À l’heure
-                                        @break
+                                @case('hourly')
+                                À l’heure
+                                @break
 
-                                    @case('daily')
-                                        À la journée
-                                        @break
+                                @case('daily')
+                                À la journée
+                                @break
 
-                                    @case('monthly')
-                                        Au mois
-                                        @break
+                                @case('monthly')
+                                Au mois
+                                @break
 
-                                    @case('custom')
-                                        Personnalisée
-                                        @break
+                                @case('custom')
+                                Personnalisée
+                                @break
 
-                                    @default
-                                        -
+                                @default
+                                -
                                 @endswitch
                             </p>
                         </div>
@@ -248,11 +248,11 @@
                                 <p class="text-xs font-semibold uppercase text-gray-400">Durée souhaitée</p>
                                 <p class="mt-1 text-sm font-semibold text-gray-800">
                                     @switch($prospect->desired_rental_period)
-                                        @case('hourly') À l’heure @break
-                                        @case('daily') À la journée @break
-                                        @case('monthly') Au mois @break
-                                        @case('custom') Personnalisée @break
-                                        @default Non précisée
+                                    @case('hourly') À l’heure @break
+                                    @case('daily') À la journée @break
+                                    @case('monthly') Au mois @break
+                                    @case('custom') Personnalisée @break
+                                    @default Non précisée
                                     @endswitch
                                 </p>
                             </div>
@@ -294,49 +294,49 @@
                     <h2 class="text-lg font-bold text-gray-900">Conversion client</h2>
 
                     @if($prospect->crm_status === 'converted' && $prospect->convertedClient)
-                        <div class="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-                            <p class="font-semibold">Déjà converti en client</p>
-                            <p class="mt-1">{{ $prospect->convertedClient->name }}</p>
-                            <p>{{ $prospect->convertedClient->email }}</p>
-                        </div>
+                    <div class="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+                        <p class="font-semibold">Déjà converti en client</p>
+                        <p class="mt-1">{{ $prospect->convertedClient->name }}</p>
+                        <p>{{ $prospect->convertedClient->email }}</p>
+                    </div>
 
-                        <a href="{{ request('return_url', route('admin.prospects.index', ['view' => 'active'])) }}"
-                           class="mt-5 inline-flex h-11 w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-100">
-                            Retour à la liste
-                        </a>
+                    <a href="{{ request('return_url', route('admin.prospects.index', ['view' => 'active'])) }}"
+                        class="mt-5 inline-flex h-11 w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-100">
+                        Retour à la liste
+                    </a>
 
                     @elseif($prospect->crm_status === 'lost')
-                        <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                            <p class="font-semibold">Prospect perdu</p>
-                            <p class="mt-1 text-xs">
-                                Réactivez ce prospect avant de le convertir en client.
-                            </p>
-                        </div>
+                    <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                        <p class="font-semibold">Prospect perdu</p>
+                        <p class="mt-1 text-xs">
+                            Réactivez ce prospect avant de le convertir en client.
+                        </p>
+                    </div>
 
                     @else
-                        <p class="mt-2 text-sm leading-6 text-gray-500">
-                            Convertir ce prospect va créer un dossier client et un compte de connexion avec un mot de passe temporaire.
-                        </p>
+                    <p class="mt-2 text-sm leading-6 text-gray-500">
+                        Convertir ce prospect va créer un dossier client et un compte de connexion avec un mot de passe temporaire.
+                    </p>
 
-                        <form method="POST" action="{{ route('admin.prospects.convert', $prospect) }}" class="mt-5">
-                            @csrf
+                    <form method="POST" action="{{ route('admin.prospects.convert', $prospect) }}" class="mt-5">
+                        @csrf
 
-                            <label class="mb-2 block text-sm font-semibold text-gray-700">
-                                Email officiel du client
-                            </label>
+                        <label class="mb-2 block text-sm font-semibold text-gray-700">
+                            Email officiel du client
+                        </label>
 
-                            <input type="email"
-                                   name="client_email"
-                                   value="{{ old('client_email', $prospect->email) }}"
-                                   required
-                                   class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]"
-                                   placeholder="client@email.com">
+                        <input type="email"
+                            name="client_email"
+                            value="{{ old('client_email', $prospect->email) }}"
+                            required
+                            class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]"
+                            placeholder="client@email.com">
 
-                            <button type="submit"
-                                    class="mt-4 inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#284625] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1f351d]">
-                                Convertir en client
-                            </button>
-                        </form>
+                        <button type="submit"
+                            class="mt-4 inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#284625] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1f351d]">
+                            Convertir en client
+                        </button>
+                    </form>
                     @endif
                 </section>
 
@@ -349,46 +349,75 @@
                     </p>
 
                     @if($prospect->crm_status === 'lost')
-                        <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                            <p class="font-semibold">Ce prospect est marqué comme perdu.</p>
-                            <p class="mt-1 text-xs">
-                                Vous pouvez le réactiver si la discussion reprend.
+                    <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                        <p class="font-semibold">Ce prospect est marqué comme perdu.</p>
+                        <p class="mt-1 text-xs">
+                            Vous pouvez le réactiver si la discussion reprend.
+                        </p>
+
+                        @if($prospect->lost_reason)
+                        <div class="mt-4 rounded-xl border border-red-100 bg-white/70 p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-red-700">
+                                Raison de perte
+                            </p>
+                            <p class="mt-2 text-sm leading-6 text-red-900">
+                                {{ $prospect->lost_reason }}
                             </p>
                         </div>
+                        @endif
+                    </div>
 
-                        <form method="POST"
-                              action="{{ route('admin.prospects.reactivate', $prospect) }}"
-                              class="mt-4">
-                            @csrf
-                            @method('PATCH')
+                    <form method="POST"
+                        action="{{ route('admin.prospects.reactivate', $prospect) }}"
+                        class="mt-4">
+                        @csrf
+                        @method('PATCH')
 
-                            <button type="submit"
-                                    class="inline-flex h-11 w-full items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-blue-700 transition hover:bg-blue-100">
-                                Réactiver le prospect
-                            </button>
-                        </form>
+                        <button type="submit"
+                            class="inline-flex h-11 w-full items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-blue-700 transition hover:bg-blue-100">
+                            Réactiver le prospect
+                        </button>
+                    </form>
 
                     @elseif($prospect->crm_status === 'converted')
-                        <div class="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-                            <p class="font-semibold">Ce prospect est déjà converti en client.</p>
-                            <p class="mt-1 text-xs">
-                                Aucune action “Perdu” n’est disponible après conversion.
-                            </p>
-                        </div>
+                    <div class="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+                        <p class="font-semibold">Ce prospect est déjà converti en client.</p>
+                        <p class="mt-1 text-xs">
+                            Aucune action “Perdu” n’est disponible après conversion.
+                        </p>
+                    </div>
 
                     @else
-                        <form method="POST"
-                              action="{{ route('admin.prospects.markLost', $prospect) }}"
-                              onsubmit="return confirm('Marquer ce prospect comme perdu ?');"
-                              class="mt-4">
-                            @csrf
-                            @method('PATCH')
+                    <form method="POST"
+                        action="{{ route('admin.prospects.markLost', $prospect) }}"
+                        onsubmit="return confirm('Marquer ce prospect comme perdu ?');"
+                        class="mt-4">
+                        @csrf
+                        @method('PATCH')
 
-                            <button type="submit"
-                                    class="inline-flex h-11 w-full items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-700 transition hover:bg-red-100">
-                                Marquer comme perdu
-                            </button>
-                        </form>
+                        <div>
+                            <label for="lost_reason" class="mb-2 block text-sm font-semibold text-gray-700">
+                                Raison de perte <span class="text-red-500">*</span>
+                            </label>
+
+                            <textarea
+                                id="lost_reason"
+                                name="lost_reason"
+                                rows="3"
+                                required
+                                class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]"
+                                placeholder="Exemple : budget insuffisant, espace non adapté, prospect non joignable...">{{ old('lost_reason') }}</textarea>
+
+                            @error('lost_reason')
+                            <p class="mt-2 text-sm font-semibold text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <button type="submit"
+                            class="mt-4 inline-flex h-11 w-full items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-700 transition hover:bg-red-100">
+                            Marquer comme perdu
+                        </button>
+                    </form>
                     @endif
                 </section>
 
@@ -412,31 +441,31 @@
 
                     <div class="border-t border-gray-100 px-6 pb-6 pt-5">
                         @php
-                            $mapUrl = \Illuminate\Support\Facades\Route::has('admin.carte-interactive.index')
-                                ? route('admin.carte-interactive.index')
-                                : url('/admin/carte-interactive');
+                        $mapUrl = \Illuminate\Support\Facades\Route::has('admin.carte-interactive.index')
+                        ? route('admin.carte-interactive.index')
+                        : url('/admin/carte-interactive');
 
-                            $crmUrl = route('admin.prospects.crm', [
-                                'prospect' => $prospect,
-                                'return_url' => request()->fullUrl()
-                            ]);
+                        $crmUrl = route('admin.prospects.crm', [
+                        'prospect' => $prospect,
+                        'return_url' => request()->fullUrl()
+                        ]);
 
-                            $reservationsUrl = \Illuminate\Support\Facades\Route::has('admin.reservations.index')
-                                ? route('admin.reservations.index')
-                                : url('/admin/reservations');
+                        $reservationsUrl = \Illuminate\Support\Facades\Route::has('admin.reservations.index')
+                        ? route('admin.reservations.index')
+                        : url('/admin/reservations');
 
-                            $contractsUrl = \Illuminate\Support\Facades\Route::has('admin.contracts.index')
-                                ? route('admin.contracts.index')
-                                : url('/admin/contracts');
+                        $contractsUrl = \Illuminate\Support\Facades\Route::has('admin.contracts.index')
+                        ? route('admin.contracts.index')
+                        : url('/admin/contracts');
 
-                            $paymentsUrl = \Illuminate\Support\Facades\Route::has('admin.payments.index')
-                                ? route('admin.payments.index')
-                                : url('/admin/payments');
+                        $paymentsUrl = \Illuminate\Support\Facades\Route::has('admin.payments.index')
+                        ? route('admin.payments.index')
+                        : url('/admin/payments');
                         @endphp
 
                         <div class="space-y-3">
                             <a href="{{ $mapUrl }}"
-                            class="block rounded-xl border border-gray-200 bg-gray-50 p-4 transition hover:border-[#284625]/40 hover:bg-[#284625]/5">
+                                class="block rounded-xl border border-gray-200 bg-gray-50 p-4 transition hover:border-[#284625]/40 hover:bg-[#284625]/5">
                                 <p class="font-bold text-gray-900">Carte interactive</p>
                                 <p class="mt-1 text-sm text-gray-500">
                                     Consulter les espaces disponibles.
@@ -444,7 +473,7 @@
                             </a>
 
                             <a href="{{ $crmUrl }}"
-                            class="block rounded-xl border border-gray-200 bg-gray-50 p-4 transition hover:border-[#284625]/40 hover:bg-[#284625]/5">
+                                class="block rounded-xl border border-gray-200 bg-gray-50 p-4 transition hover:border-[#284625]/40 hover:bg-[#284625]/5">
                                 <p class="font-bold text-gray-900">Suivi CRM</p>
                                 <p class="mt-1 text-sm text-gray-500">
                                     Gérer les visites, demandes et relances.
@@ -452,38 +481,38 @@
                             </a>
 
                             @if($prospect->converted_client_id)
-                                <a href="{{ $reservationsUrl }}"
+                            <a href="{{ $reservationsUrl }}"
                                 class="block rounded-xl border border-gray-200 bg-gray-50 p-4 transition hover:border-[#284625]/40 hover:bg-[#284625]/5">
-                                    <p class="font-bold text-gray-900">Réservations</p>
-                                    <p class="mt-1 text-sm text-gray-500">
-                                        Gérer les réservations du client.
-                                    </p>
-                                </a>
+                                <p class="font-bold text-gray-900">Réservations</p>
+                                <p class="mt-1 text-sm text-gray-500">
+                                    Gérer les réservations du client.
+                                </p>
+                            </a>
 
-                                <a href="{{ $contractsUrl }}"
+                            <a href="{{ $contractsUrl }}"
                                 class="block rounded-xl border border-gray-200 bg-gray-50 p-4 transition hover:border-[#284625]/40 hover:bg-[#284625]/5">
-                                    <p class="font-bold text-gray-900">Contrats</p>
-                                    <p class="mt-1 text-sm text-gray-500">
-                                        Consulter les contrats liés.
-                                    </p>
-                                </a>
+                                <p class="font-bold text-gray-900">Contrats</p>
+                                <p class="mt-1 text-sm text-gray-500">
+                                    Consulter les contrats liés.
+                                </p>
+                            </a>
 
-                                <a href="{{ $paymentsUrl }}"
+                            <a href="{{ $paymentsUrl }}"
                                 class="block rounded-xl border border-gray-200 bg-gray-50 p-4 transition hover:border-[#284625]/40 hover:bg-[#284625]/5">
-                                    <p class="font-bold text-gray-900">Paiements</p>
-                                    <p class="mt-1 text-sm text-gray-500">
-                                        Suivre les échéances et paiements.
-                                    </p>
-                                </a>
+                                <p class="font-bold text-gray-900">Paiements</p>
+                                <p class="mt-1 text-sm text-gray-500">
+                                    Suivre les échéances et paiements.
+                                </p>
+                            </a>
                             @else
-                                <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                    <p class="font-bold text-amber-800">
-                                        Réservations, contrats et paiements disponibles après conversion.
-                                    </p>
-                                    <p class="mt-1 text-sm text-amber-700">
-                                        Convertissez d’abord ce prospect en client.
-                                    </p>
-                                </div>
+                            <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                <p class="font-bold text-amber-800">
+                                    Réservations, contrats et paiements disponibles après conversion.
+                                </p>
+                                <p class="mt-1 text-sm text-amber-700">
+                                    Convertissez d’abord ce prospect en client.
+                                </p>
+                            </div>
                             @endif
                         </div>
                     </div>

@@ -300,7 +300,7 @@ class ProspectController extends Controller
         return $redirect;
     }
 
-    public function markLost(Prospect $prospect)
+    public function markLost(Request $request, Prospect $prospect)
     {
         if ($prospect->crm_status === 'converted') {
             return back()->withErrors([
@@ -308,8 +308,16 @@ class ProspectController extends Controller
             ]);
         }
 
+        $validated = $request->validate([
+            'lost_reason' => ['required', 'string', 'max:1000'],
+        ], [
+            'lost_reason.required' => 'La raison de perte est obligatoire.',
+            'lost_reason.max' => 'La raison de perte ne doit pas dépasser 1000 caractères.',
+        ]);
+
         $prospect->update([
             'crm_status' => 'lost',
+            'lost_reason' => $validated['lost_reason'],
         ]);
 
         return redirect()

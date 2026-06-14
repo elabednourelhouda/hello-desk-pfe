@@ -23,6 +23,7 @@ class Prospect extends Model
         'budget',
         'source',
         'crm_status',
+        'lost_reason',
         'notes',
         'assigned_to',
         'converted_client_id',
@@ -34,6 +35,7 @@ class Prospect extends Model
         'converted_at' => 'datetime',
         'desired_start_date' => 'date',
         'desired_rental_period' => 'string',
+        'lost_reason' => 'string',
     ];
     public function preferredCampus()
     {
