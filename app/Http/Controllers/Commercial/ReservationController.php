@@ -44,13 +44,13 @@ class ReservationController extends Controller
                         ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('phone', 'like', "%{$search}%");
                 })
-                ->orWhereHas('space', function ($spaceQuery) use ($search) {
-                    $spaceQuery->where('name', 'like', "%{$search}%")
-                        ->orWhere('code', 'like', "%{$search}%");
-                })
-                ->orWhereHas('contract', function ($contractQuery) use ($search) {
-                    $contractQuery->where('title', 'like', "%{$search}%");
-                });
+                    ->orWhereHas('space', function ($spaceQuery) use ($search) {
+                        $spaceQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('code', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('contract', function ($contractQuery) use ($search) {
+                        $contractQuery->where('title', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -100,7 +100,7 @@ class ReservationController extends Controller
 
         $clients = $this->commercialClientsQuery($scope)
             ->get()
-            ->sortByDesc(fn ($client) => $client->hasCompleteLegalFile())
+            ->sortByDesc(fn($client) => $client->hasCompleteLegalFile())
             ->values();
 
         $spacesQuery = Space::with(['campus', 'floor', 'spaceType'])
@@ -115,12 +115,26 @@ class ReservationController extends Controller
         $selectedSpace = null;
 
         if ($request->filled('space_id')) {
-            $selectedSpaceQuery = Space::with(['campus', 'floor', 'spaceType'])
-                ->where('is_active', true);
+            $requestedSpace = Space::with(['campus', 'floor', 'spaceType'])
+                ->where('is_active', true)
+                ->find($request->space_id);
 
-            $this->applySpaceScopeToSpaceQuery($selectedSpaceQuery, $scope);
+            if (! $requestedSpace) {
+                return redirect()
+                    ->route('commercial.interactive-map.index')
+                    ->with('error', 'Espace introuvable ou indisponible.');
+            }
 
-            $selectedSpace = $selectedSpaceQuery->findOrFail($request->space_id);
+            if (! $this->canManageSpace($requestedSpace, $scope)) {
+                return redirect()
+                    ->route('commercial.interactive-map.index', [
+                        'campus_id' => $requestedSpace->campus_id,
+                        'floor_id' => $requestedSpace->floor_id,
+                    ])
+                    ->with('error', 'Cet espace est hors de votre périmètre commercial. Consultation en lecture seule uniquement.');
+            }
+
+            $selectedSpace = $requestedSpace;
 
             $selectedSpace->display_price_per_hour = $selectedSpace->price_per_hour ?? 0;
             $selectedSpace->display_price_per_day = $selectedSpace->price_per_day ?? 0;
@@ -272,7 +286,7 @@ class ReservationController extends Controller
         }
 
         $userColumn = collect(['user_id', 'commercial_id', 'staff_id'])
-            ->first(fn ($column) => Schema::hasColumn('staff_assignments', $column));
+            ->first(fn($column) => Schema::hasColumn('staff_assignments', $column));
 
         if (! $userColumn) {
             return [
@@ -300,19 +314,19 @@ class ReservationController extends Controller
         $assignments = $query->get();
 
         $campusIds = $assignments
-            ->filter(fn ($assignment) => filled($assignment->campus_id ?? null) && blank($assignment->floor_id ?? null))
+            ->filter(fn($assignment) => filled($assignment->campus_id ?? null) && blank($assignment->floor_id ?? null))
             ->pluck('campus_id')
             ->filter()
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->unique()
             ->values()
             ->all();
 
         $floorIds = $assignments
-            ->filter(fn ($assignment) => filled($assignment->floor_id ?? null))
+            ->filter(fn($assignment) => filled($assignment->floor_id ?? null))
             ->pluck('floor_id')
             ->filter()
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->unique()
             ->values()
             ->all();
@@ -324,7 +338,7 @@ class ReservationController extends Controller
                 ->whereIn('id', $floorIds)
                 ->pluck('campus_id')
                 ->filter()
-                ->map(fn ($id) => (int) $id)
+                ->map(fn($id) => (int) $id)
                 ->unique()
                 ->values()
                 ->all();
