@@ -122,7 +122,6 @@ class ProspectController extends Controller
             'preferred_space_type_id' => ['nullable', 'exists:space_types,id'],
             'budget' => ['nullable', 'numeric', 'min:0'],
             'source' => ['nullable', 'string', 'max:255'],
-            'crm_status' => ['required', Rule::in(array_keys($this->editableCrmStatuses()))],
             'notes' => ['nullable', 'string'],
         ], [
             'full_name.required' => 'Le nom complet est obligatoire.',
@@ -133,6 +132,7 @@ class ProspectController extends Controller
 
         $validated['registered_at'] = $validated['registered_at'] ?? now()->toDateString();
         $validated['assigned_to'] = $userId;
+        $validated['crm_status'] = 'new';
 
         $prospect = Prospect::create($validated);
 

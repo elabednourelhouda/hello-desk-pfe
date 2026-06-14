@@ -128,20 +128,6 @@
                 <div class="grid gap-5 md:grid-cols-2">
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-gray-700">
-                            Statut CRM
-                        </label>
-                        <select name="crm_status"
-                                class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                            @foreach($statuses as $key => $label)
-                                <option value="{{ $key }}" @selected(old('crm_status', 'new') === $key)>
-                                    {{ $label }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-gray-700">
                             Commercial responsable
                         </label>
 

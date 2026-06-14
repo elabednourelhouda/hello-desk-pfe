@@ -111,7 +111,6 @@ class ProspectController extends Controller
             'source' => ['nullable', 'string', 'max:100'],
             'budget' => ['nullable', 'numeric', 'min:0'],
 
-            'crm_status' => ['required', 'string'],
             'notes' => ['nullable', 'string'],
             'assigned_to' => ['nullable', 'exists:users,id'],
         ], [
@@ -128,6 +127,7 @@ class ProspectController extends Controller
         ]);
 
         $validated['registered_at'] = $validated['registered_at'] ?? now()->toDateString();
+        $validated['crm_status'] = 'new';
 
         $prospect = Prospect::create($validated);
 
@@ -136,7 +136,7 @@ class ProspectController extends Controller
             ->with('success', 'Prospect ajouté avec succès.');
     }
 
-    public function show(Prospect $prospect) 
+    public function show(Prospect $prospect)
     {
         $prospect->load([
             'preferredCampus',
