@@ -254,7 +254,7 @@
     // Admin only
     ['label' => 'Commerciaux', 'route' => 'admin.commercials.index'],
 
-    ['label' => 'Carte interactive', 'route' => 'admin.interactive-map.index'],
+    ['label' => 'Vue Espace', 'route' => 'admin.interactive-map.index'],
     ['label' => 'Réservations', 'route' => 'admin.reservations.index'],
     ['label' => 'Contrats', 'route' => 'admin.contracts.index'],
     ['label' => 'Paiements', 'route' => 'admin.payments.index'],
@@ -267,7 +267,7 @@
     ['label' => 'Tableau de bord', 'route' => 'commercial.dashboard'],
     ['label' => 'Prospects', 'route' => 'commercial.prospects.index'],
     ['label' => 'Clients', 'route' => 'commercial.clients.index'],
-    ['label' => 'Carte interactive', 'route' => 'commercial.interactive-map.index'],
+    ['label' => 'Vue Espace', 'route' => 'commercial.interactive-map.index'],
     ['label' => 'Réservations', 'route' => 'commercial.reservations.index'],
     ['label' => 'Contrats', 'route' => 'commercial.contracts.index'],
     ['label' => 'Paiements', 'route' => 'commercial.payments.index'],
