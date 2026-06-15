@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Carte interactive - Administration')
+@section('title', 'Vue Espace - Administration')
 
 @section('content')
 @php
@@ -49,7 +49,7 @@
                     </p>
 
                     <h1 class="mt-2 text-3xl font-bold text-gray-900">
-                        Carte interactive
+                        Vue Espace
                     </h1>
 
                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-500">
