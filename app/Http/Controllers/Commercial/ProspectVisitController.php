@@ -14,20 +14,35 @@ class ProspectVisitController extends Controller
     {
         $this->authorizeCommercialProspect($prospect);
 
-        $data = $request->validate([
+        $validated = $request->validate([
             'visit_date' => ['required', 'date'],
             'visit_time' => ['nullable', 'date_format:H:i'],
-            'campus_id' => ['nullable', 'exists:campuses,id'],
-            'space_type_id' => ['nullable', 'exists:space_types,id'],
-            'status' => ['required', 'in:planned,done,cancelled'],
-            'notes' => ['nullable', 'string'],
+            'contact_type' => ['required', 'in:appel_telephonique,whatsapp,email,message_recu,note_interne'],
+            'summary' => ['required', 'string', 'max:2000'],
         ]);
 
-        $prospect->visits()->create($data);
+        $contactTypes = [
+            'appel_telephonique' => 'Appel téléphonique',
+            'whatsapp' => 'Message WhatsApp',
+            'email' => 'Email',
+            'message_recu' => 'Message reçu',
+            'note_interne' => 'Note interne',
+        ];
 
-        return redirect()
-            ->route('commercial.prospects.show', $prospect)
-            ->with('success', 'La visite a été ajoutée avec succès.');
+        $typeLabel = $contactTypes[$validated['contact_type']] ?? 'Suivi';
+
+        $prospect->visits()->create([
+            'commercial_id' => Auth::id(),
+            'created_by' => Auth::id(),
+            'visit_date' => $validated['visit_date'],
+            'visit_time' => $validated['visit_time'] ?? null,
+            'campus_id' => null,
+            'space_type_id' => null,
+            'status' => 'done',
+            'notes' => "Type de contact : {$typeLabel}\nRésumé : {$validated['summary']}",
+        ]);
+
+        return back()->with('success', 'Suivi ajouté à l’archive avec succès.');
     }
 
     public function markDone(ProspectVisit $visit)
@@ -40,7 +55,7 @@ class ProspectVisitController extends Controller
 
         return redirect()
             ->route('commercial.prospects.show', $visit->prospect)
-            ->with('success', 'La visite a été marquée comme effectuée.');
+            ->with('success', 'Le suivi a été marqué comme effectué.');
     }
 
     public function cancel(ProspectVisit $visit)
@@ -53,7 +68,7 @@ class ProspectVisitController extends Controller
 
         return redirect()
             ->route('commercial.prospects.show', $visit->prospect)
-            ->with('success', 'La visite a été annulée.');
+            ->with('success', 'Le suivi a été annulé.');
     }
 
     public function destroy(ProspectVisit $visit)
@@ -64,9 +79,7 @@ class ProspectVisitController extends Controller
 
         $visit->delete();
 
-        return redirect()
-            ->route('commercial.prospects.show', $prospect)
-            ->with('success', 'La visite a été supprimée.');
+        return back()->with('success', 'Suivi supprimé avec succès.');
     }
 
     private function authorizeCommercialProspect(Prospect $prospect): void

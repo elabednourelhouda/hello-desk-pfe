@@ -374,16 +374,7 @@ class ProspectController extends Controller
             'assignedCommercial',
         ]);
 
-        $statuses = [
-            'new' => 'Nouveau',
-            'contacted' => 'Contacté',
-            'visit_planned' => 'Visite planifiée',
-            'visit_done' => 'Visite effectuée',
-            'proposal_sent' => 'Proposition envoyée',
-            'negotiation' => 'En négociation',
-            'converted' => 'Converti en client',
-            'lost' => 'Perdu',
-        ];
+        $statuses = $this->crmStatuses();
 
         $campuses = \App\Models\Campus::orderBy('name')->get();
         $spaceTypes = \App\Models\SpaceType::orderBy('name')->get();
@@ -401,8 +392,8 @@ class ProspectController extends Controller
         return [
             'new' => 'Nouveau',
             'contacted' => 'Contacté',
-            'visit_scheduled' => 'Visite planifiée',
-            'visited' => 'Visite effectuée',
+            'visit_scheduled' => 'Relance planifiée',
+            'visited' => 'Suivi effectué',
             'proposal_sent' => 'Proposition envoyée',
             'negotiation' => 'En négociation',
             'converted' => 'Converti en client',
@@ -421,8 +412,8 @@ class ProspectController extends Controller
         return [
             'new' => 'Nouveau',
             'contacted' => 'Contacté',
-            'visit_scheduled' => 'Visite planifiée',
-            'visited' => 'Visite effectuée',
+            'visit_scheduled' => 'Relance planifiée',
+            'visited' => 'Suivi effectué',
             'proposal_sent' => 'Proposition envoyée',
             'negotiation' => 'En négociation',
             'lost' => 'Perdu',

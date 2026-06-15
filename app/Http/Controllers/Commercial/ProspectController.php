@@ -167,6 +167,24 @@ class ProspectController extends Controller
         ]);
     }
 
+    public function crm(int $prospect)
+    {
+        $prospect = $this->findScopedProspect($prospect);
+
+        $prospect->load([
+            'visits',
+            'requests',
+            'assignedCommercial',
+        ]);
+
+        $statuses = $this->crmStatuses();
+
+        return view('commercial.prospects.crm', compact(
+            'prospect',
+            'statuses'
+        ));
+    }
+
     public function convert(Request $request, int $prospect)
     {
         $prospect = $this->findScopedProspect($prospect);
@@ -421,8 +439,8 @@ class ProspectController extends Controller
         return [
             'new' => 'Nouveau',
             'contacted' => 'Contacté',
-            'visit_scheduled' => 'Visite planifiée',
-            'visited' => 'Visite effectuée',
+            'visit_scheduled' => 'Relance planifiée',
+            'visited' => 'Suivi effectué',
             'proposal_sent' => 'Proposition envoyée',
             'negotiation' => 'En négociation',
             'converted' => 'Converti en client',
@@ -435,8 +453,8 @@ class ProspectController extends Controller
         return [
             'new' => 'Nouveau',
             'contacted' => 'Contacté',
-            'visit_scheduled' => 'Visite planifiée',
-            'visited' => 'Visite effectuée',
+            'visit_scheduled' => 'Relance planifiée',
+            'visited' => 'Suivi effectué',
             'proposal_sent' => 'Proposition envoyée',
             'negotiation' => 'En négociation',
             'lost' => 'Perdu',

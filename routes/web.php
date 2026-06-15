@@ -270,6 +270,9 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
         Route::resource('prospects', CommercialProspectController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
+        Route::get('/prospects/{prospect}/crm', [CommercialProspectController::class, 'crm'])
+            ->name('prospects.crm');
+
         Route::resource('clients', CommercialClientController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
@@ -306,7 +309,7 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
         Route::get('/carte-interactive', [CommercialInteractiveMapController::class, 'index'])
             ->name('interactive-map.index');
 
-                /*
+        /*
         |--------------------------------------------------------------------------
         | Commercial reservations
         |--------------------------------------------------------------------------
@@ -315,7 +318,7 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
         Route::resource('reservations', CommercialReservationController::class)
             ->only(['index', 'create', 'store', 'show']);
 
-                /*
+        /*
         |--------------------------------------------------------------------------
         | Commercial contracts
         |--------------------------------------------------------------------------

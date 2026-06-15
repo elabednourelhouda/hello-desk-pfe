@@ -78,6 +78,11 @@
                                 {{ $statuses[$prospect->crm_status] ?? $prospect->crm_status }}
                             </span>
 
+                            <a href="{{ route('commercial.prospects.crm', ['prospect' => $prospect, 'return_url' => request('return_url', route('commercial.prospects.index', ['view' => 'active']))]) }}"
+                                class="inline-flex h-10 items-center justify-center rounded-xl border border-[#284625]/20 bg-[#284625]/10 px-4 text-sm font-bold text-[#284625] transition hover:bg-[#284625]/15">
+                                Suivi CRM
+                            </a>
+
                             <a href="{{ route('commercial.prospects.edit', $prospect) }}"
                                 class="inline-flex h-10 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-blue-700 transition hover:bg-blue-100">
                                 Modifier
@@ -370,7 +375,7 @@
                     <h2 class="text-lg font-bold text-gray-900">Prochaines étapes</h2>
 
                     <div class="mt-4 space-y-3 text-sm text-gray-600">
-                        <p>1. Ajouter une visite si nécessaire.</p>
+                        <p>1. Ajouter un suivi si nécessaire.</p>
                         <p>2. Convertir le prospect en client.</p>
                         <p>3. Créer une réservation après conversion.</p>
                         <p>4. Associer un contrat à la réservation.</p>
@@ -383,192 +388,6 @@
 
             </aside>
         </div>
-
-        {{-- FULL WIDTH CRM SECTION --}}
-        <section class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
-                    <p class="text-sm font-semibold text-[#284625]">Suivi CRM</p>
-                    <h2 class="mt-1 text-xl font-bold text-gray-900">
-                        Visites du prospect
-                    </h2>
-                    <p class="mt-2 text-sm leading-6 text-gray-500">
-                        Ici, vous pouvez garder l’historique des visites planifiées, effectuées ou annulées pour ce prospect.
-                    </p>
-                </div>
-
-                <div class="flex flex-wrap gap-2">
-                    <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-                        {{ $prospect->visits->count() }} visite(s)
-                    </span>
-                </div>
-            </div>
-
-            <div class="space-y-6">
-                {{-- Visites --}}
-                <div class="rounded-2xl border border-gray-200 bg-gray-50 p-5">
-                    <h3 class="text-base font-bold text-gray-900">Ajouter une visite</h3>
-                    <p class="mt-1 text-sm text-gray-500">
-                        Exemple : visite planifiée, visite effectuée ou visite annulée.
-                    </p>
-
-                    <form method="POST"
-                        action="{{ route('commercial.prospects.visits.store', $prospect) }}"
-                        class="mt-5 space-y-4 rounded-xl bg-white p-4">
-                        @csrf
-
-                        <div class="grid gap-4 md:grid-cols-2">
-                            <div>
-                                <label class="mb-2 block text-sm font-semibold text-gray-700">Date de visite</label>
-                                <input type="date"
-                                    name="visit_date"
-                                    value="{{ old('visit_date', now()->toDateString()) }}"
-                                    required
-                                    class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                            </div>
-
-                            <div>
-                                <label class="mb-2 block text-sm font-semibold text-gray-700">Heure</label>
-                                <input type="time"
-                                    name="visit_time"
-                                    value="{{ old('visit_time') }}"
-                                    class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                            </div>
-                        </div>
-
-                        <div class="grid gap-4 md:grid-cols-3">
-                            <div>
-                                <label class="mb-2 block text-sm font-semibold text-gray-700">Campus</label>
-                                <select name="campus_id"
-                                    class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                                    <option value="">Non précisé</option>
-                                    @foreach($campuses as $campus)
-                                    <option value="{{ $campus->id }}">{{ $campus->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="mb-2 block text-sm font-semibold text-gray-700">Type d’espace</label>
-                                <select name="space_type_id"
-                                    class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                                    <option value="">Non précisé</option>
-                                    @foreach($spaceTypes as $type)
-                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="mb-2 block text-sm font-semibold text-gray-700">Statut</label>
-                                <select name="status"
-                                    class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                                    <option value="planned">Planifiée</option>
-                                    <option value="done">Effectuée</option>
-                                    <option value="cancelled">Annulée</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="mb-2 block text-sm font-semibold text-gray-700">Notes</label>
-                            <textarea name="notes"
-                                rows="3"
-                                class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]"
-                                placeholder="Exemple : le prospect a visité le bureau B12.">{{ old('notes') }}</textarea>
-                        </div>
-
-                        <button type="submit"
-                            class="inline-flex h-11 items-center justify-center rounded-xl bg-[#284625] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1f351d]">
-                            Ajouter la visite
-                        </button>
-                    </form>
-
-                    <div class="mt-5 space-y-3">
-                        @forelse($prospect->visits->sortByDesc('visit_date') as $visit)
-                        <div class="rounded-xl border border-gray-200 bg-white p-4">
-                            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                                <div>
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <p class="font-semibold text-gray-900">
-                                            {{ $visit->visit_date?->format('d/m/Y') }}
-                                            @if($visit->visit_time)
-                                            à {{ \Illuminate\Support\Str::limit($visit->visit_time, 5, '') }}
-                                            @endif
-                                        </p>
-
-                                        <span class="rounded-full bg-[#284625]/10 px-2.5 py-1 text-xs font-semibold text-[#284625]">
-                                            @switch($visit->status)
-                                            @case('planned') Planifiée @break
-                                            @case('done') Effectuée @break
-                                            @case('cancelled') Annulée @break
-                                            @default {{ $visit->status }}
-                                            @endswitch
-                                        </span>
-                                    </div>
-
-                                    <p class="mt-2 text-sm text-gray-600">
-                                        {{ $visit->campus?->name ?? 'Campus non précisé' }}
-                                        —
-                                        {{ $visit->spaceType?->name ?? 'Type non précisé' }}
-                                    </p>
-
-                                    @if($visit->notes)
-                                    <p class="mt-2 text-sm leading-6 text-gray-700">
-                                        {{ $visit->notes }}
-                                    </p>
-                                    @endif
-                                </div>
-
-                                <div class="flex flex-wrap items-center justify-end gap-2">
-                                    @if($visit->status === 'planned')
-                                    <form method="POST" action="{{ route('commercial.prospects.visits.done', $visit) }}">
-                                        @csrf
-                                        @method('PATCH')
-
-                                        <button type="submit"
-                                            class="inline-flex h-9 items-center justify-center rounded-lg border border-green-200 bg-green-50 px-4 text-xs font-bold text-green-700 transition hover:bg-green-100">
-                                            Marquer effectuée
-                                        </button>
-                                    </form>
-
-                                    <form method="POST"
-                                        action="{{ route('commercial.prospects.visits.cancel', $visit) }}"
-                                        onsubmit="return confirm('Annuler cette visite ?')">
-                                        @csrf
-                                        @method('PATCH')
-
-                                        <button type="submit"
-                                            class="inline-flex h-9 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-4 text-xs font-bold text-amber-700 transition hover:bg-amber-100">
-                                            Annuler
-                                        </button>
-                                    </form>
-                                    @endif
-
-                                    <form method="POST"
-                                        action="{{ route('commercial.prospects.visits.destroy', $visit) }}"
-                                        onsubmit="return confirm('Supprimer cette visite ?')">
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button type="submit"
-                                            class="inline-flex h-9 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-4 text-xs font-bold text-red-700 transition hover:bg-red-100">
-                                            Supprimer
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        @empty
-                        <p class="rounded-xl border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-500">
-                            Aucune visite ajoutée pour ce prospect.
-                        </p>
-                        @endforelse
-                    </div>
-                </div>
-
-            </div>
-        </section>
     </div>
 </div>
 @endsection
