@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ClientAttachmentController;
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\SpaceController as AdminSpaceController;
@@ -182,6 +183,18 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
         Route::resource('clients', AdminClientController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
+        Route::post('/clients/{client}/attachments', [ClientAttachmentController::class, 'store'])
+            ->name('clients.attachments.store');
+
+        Route::get('/client-attachments/{attachment}/preview', [ClientAttachmentController::class, 'preview'])
+            ->name('clients.attachments.preview');
+
+        Route::get('/client-attachments/{attachment}/download', [ClientAttachmentController::class, 'download'])
+            ->name('clients.attachments.download');
+
+        Route::delete('/client-attachments/{attachment}', [ClientAttachmentController::class, 'destroy'])
+            ->name('clients.attachments.destroy');
+
         Route::patch('/clients/{client}/deactivate', [AdminClientController::class, 'deactivate'])
             ->name('clients.deactivate');
 
@@ -275,6 +288,18 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
 
         Route::resource('clients', CommercialClientController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+
+        Route::post('/clients/{client}/attachments', [ClientAttachmentController::class, 'store'])
+            ->name('clients.attachments.store');
+
+        Route::get('/client-attachments/{attachment}/preview', [ClientAttachmentController::class, 'preview'])
+            ->name('clients.attachments.preview');
+
+        Route::get('/client-attachments/{attachment}/download', [ClientAttachmentController::class, 'download'])
+            ->name('clients.attachments.download');
+
+        Route::delete('/client-attachments/{attachment}', [ClientAttachmentController::class, 'destroy'])
+            ->name('clients.attachments.destroy');
 
         Route::post('/prospects/{prospect}/convert', [CommercialProspectController::class, 'convert'])
             ->name('prospects.convert');

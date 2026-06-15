@@ -8,7 +8,7 @@
 
         <div class="mb-6">
             <a href="{{ route('commercial.clients.index') }}"
-               class="text-sm font-semibold text-[#284625] hover:underline">
+                class="text-sm font-semibold text-[#284625] hover:underline">
                 ← Retour aux clients
             </a>
         </div>
@@ -29,31 +29,32 @@
         </div>
 
         @if($assignedCampuses->isNotEmpty())
-            <div class="mb-6 rounded-xl border border-[#284625]/20 bg-[#284625]/5 px-4 py-3 text-sm text-[#284625]">
-                <span class="font-bold">Votre périmètre :</span>
-                {{ $assignedCampuses->pluck('name')->join(', ') }}
-            </div>
+        <div class="mb-6 rounded-xl border border-[#284625]/20 bg-[#284625]/5 px-4 py-3 text-sm text-[#284625]">
+            <span class="font-bold">Votre périmètre :</span>
+            {{ $assignedCampuses->pluck('name')->join(', ') }}
+        </div>
         @else
-            <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Aucune affectation trouvée. Vous ne devriez pas créer un client hors périmètre.
-            </div>
+        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Aucune affectation trouvée. Vous ne devriez pas créer un client hors périmètre.
+        </div>
         @endif
 
         @if ($errors->any())
-            <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <p class="font-bold">Veuillez corriger les erreurs suivantes :</p>
+        <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p class="font-bold">Veuillez corriger les erreurs suivantes :</p>
 
-                <ul class="mt-2 list-inside list-disc">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
+            <ul class="mt-2 list-inside list-disc">
+                @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
         @endif
 
         <form method="POST"
-              action="{{ route('commercial.clients.store') }}"
-              class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            action="{{ route('commercial.clients.store') }}"
+            enctype="multipart/form-data"
+            class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             @csrf
 
             <div class="grid gap-5 md:grid-cols-2">
@@ -63,11 +64,11 @@
                         Nom complet <span class="text-red-500">*</span>
                     </label>
                     <input type="text"
-                           name="full_name"
-                           value="{{ old('full_name') }}"
-                           required
-                           placeholder="Ex: Sara Benali"
-                           class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                        name="full_name"
+                        value="{{ old('full_name') }}"
+                        required
+                        placeholder="Ex: Sara Benali"
+                        class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                 </div>
 
                 <div>
@@ -75,9 +76,9 @@
                         Date d’entrée client
                     </label>
                     <input type="date"
-                           name="registered_at"
-                           value="{{ old('registered_at', now()->toDateString()) }}"
-                           class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                        name="registered_at"
+                        value="{{ old('registered_at', now()->toDateString()) }}"
+                        class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                 </div>
 
                 <div>
@@ -85,11 +86,11 @@
                         Email <span class="text-red-500">*</span>
                     </label>
                     <input type="email"
-                           name="email"
-                           value="{{ old('email') }}"
-                           required
-                           placeholder="Ex: client@email.com"
-                           class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                        name="email"
+                        value="{{ old('email') }}"
+                        required
+                        placeholder="Ex: client@email.com"
+                        class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                 </div>
 
                 <div>
@@ -97,10 +98,10 @@
                         Téléphone
                     </label>
                     <input type="text"
-                           name="phone"
-                           value="{{ old('phone') }}"
-                           placeholder="Ex: 06 00 00 00 00"
-                           class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                        name="phone"
+                        value="{{ old('phone') }}"
+                        placeholder="Ex: 06 00 00 00 00"
+                        class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                 </div>
 
                 <div>
@@ -108,18 +109,18 @@
                         Campus principal
                     </label>
                     <select name="main_campus_id"
-                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                        class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                         <option value="">Aucun campus</option>
 
                         @foreach($campuses as $campus)
-                            <option value="{{ $campus->id }}" @selected(old('main_campus_id') == $campus->id)>
-                                {{ $campus->name }}
-                            </option>
+                        <option value="{{ $campus->id }}" @selected(old('main_campus_id')==$campus->id)>
+                            {{ $campus->name }}
+                        </option>
                         @endforeach
                     </select>
 
                     @error('main_campus_id')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -130,20 +131,24 @@
                         Notes
                     </label>
                     <textarea name="notes"
-                              rows="5"
-                              placeholder="Notes internes sur le client..."
-                              class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">{{ old('notes') }}</textarea>
+                        rows="5"
+                        placeholder="Notes internes sur le client..."
+                        class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">{{ old('notes') }}</textarea>
                 </div>
             </div>
 
+            @include('shared.clients._attachments_create')
+
             <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <a href="{{ route('commercial.clients.index') }}"
-                   class="inline-flex h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                    class="inline-flex h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 hover:bg-slate-50">
                     Annuler
                 </a>
 
+                <div class="my-8 border-t border-slate-100"></div>
+
                 <button type="submit"
-                        class="inline-flex h-12 items-center justify-center rounded-xl bg-[#284625] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#1f351d]">
+                    class="inline-flex h-12 items-center justify-center rounded-xl bg-[#284625] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#1f351d]">
                     Créer le client
                 </button>
             </div>

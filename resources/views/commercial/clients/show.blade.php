@@ -385,6 +385,8 @@ default => 'Non renseigné',
                     </div>
                 </section>
 
+                @include('shared.clients._attachments', ['client' => $client, 'mode' => 'view'])
+
                 <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h2 class="mb-4 text-lg font-bold text-slate-900">Notes</h2>
                     <p class="text-sm leading-7 text-slate-700">

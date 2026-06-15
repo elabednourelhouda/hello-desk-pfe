@@ -203,13 +203,20 @@ class ClientController extends Controller
             'email.email' => 'Veuillez saisir une adresse email valide.',
             'email.unique' => 'Cet email est déjà utilisé.',
             'main_campus_id.in' => 'Ce campus ne fait pas partie de votre périmètre affecté.',
+
+            'attachments' => ['nullable', 'array'],
+            'attachments.*.document_type' => [
+                'nullable',
+                'in:cin_recto,cin_verso,passeport,carte_sejour,ice,rc,patente,cnss,contrat,facture,autre',
+            ],
+            'attachments.*.title' => ['nullable', 'string', 'max:255'],
+            'attachments.*.notes' => ['nullable', 'string', 'max:1000'],
+            'attachments.*.file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
         $temporaryPassword = 'HD-' . Str::upper(Str::random(8));
 
-        $client = null;
-
-        DB::transaction(function () use ($validated, $temporaryPassword, &$client, $userId) {
+        $client = DB::transaction(function () use ($validated, $temporaryPassword, $userId) {
             $user = User::create([
                 'name' => $validated['full_name'],
                 'email' => $validated['email'],
@@ -249,7 +256,11 @@ class ClientController extends Controller
             if (! empty($updates)) {
                 DB::table('clients')->where('id', $client->id)->update($updates);
             }
+
+            return $client;
         });
+
+        $this->storeInitialAttachments($request, $client);
 
         return redirect()
             ->route('commercial.clients.show', $client)
@@ -273,6 +284,7 @@ class ClientController extends Controller
             'contracts.reservation.space',
             'payments.contract',
             'complaints',
+            'attachments.uploader',
         ]);
 
         return view('commercial.clients.show', [
@@ -286,6 +298,7 @@ class ClientController extends Controller
         $assignedCampusIds = $this->assignedCampusIds($userId);
 
         $client = $this->findScopedClient($client);
+        $client->load('attachments.uploader');
 
         return view('commercial.clients.edit', [
             'client' => $client,
@@ -477,5 +490,30 @@ class ClientController extends Controller
         }
 
         return $query->get();
+    }
+
+    private function storeInitialAttachments(Request $request, Client $client): void
+    {
+        foreach ($request->file('attachments', []) as $index => $attachmentData) {
+            if (! isset($attachmentData['file'])) {
+                continue;
+            }
+
+            $file = $attachmentData['file'];
+            $input = $request->input("attachments.$index", []);
+
+            $path = $file->store("client-attachments/{$client->id}", 'local');
+
+            $client->attachments()->create([
+                'uploaded_by' => Auth::id(),
+                'document_type' => $input['document_type'] ?? 'autre',
+                'title' => $input['title'] ?? null,
+                'original_name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+                'notes' => $input['notes'] ?? null,
+            ]);
+        }
     }
 }

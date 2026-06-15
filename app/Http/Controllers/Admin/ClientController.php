@@ -7,6 +7,7 @@ use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 use App\Models\Campus;
 use App\Models\User;
@@ -107,7 +108,7 @@ class ClientController extends Controller
     public function store(Request $request)
     {
         $validated = $this->normalizeClientData(
-            $request->validate($this->clientRules(), [
+            $request->validate(array_merge($this->clientRules(), $this->attachmentRules()), [
                 'full_name.required' => 'Le nom complet est obligatoire.',
                 'email.required' => 'L’email est obligatoire.',
                 'email.email' => 'Veuillez saisir une adresse email valide.',
@@ -179,6 +180,8 @@ class ClientController extends Controller
                 'legal_representative_email' => $validated['legal_representative_email'] ?? null,
             ]);
         });
+
+        $this->storeInitialAttachments($request, $client);
 
         return redirect()
             ->route('admin.clients.show', $client)
@@ -279,6 +282,7 @@ class ClientController extends Controller
             'prospect.preferredCampus',
             'prospect.preferredSpaceType',
             'mainCampus',
+            'attachments.uploader',
         ]);
 
         return view('admin.clients.show', [
@@ -294,6 +298,7 @@ class ClientController extends Controller
             'prospect.preferredCampus',
             'prospect.preferredSpaceType',
             'mainCampus',
+            'attachments.uploader',
         ]);
 
         return view('admin.clients.edit', [
@@ -439,5 +444,44 @@ class ClientController extends Controller
         ]);
 
         return back()->with('success', 'Legal file status updated successfully.');
+    }
+
+    private function attachmentRules(): array
+    {
+        return [
+            'attachments' => ['nullable', 'array'],
+            'attachments.*.document_type' => [
+                'nullable',
+                'in:cin_recto,cin_verso,passeport,carte_sejour,ice,rc,patente,cnss,contrat,facture,autre',
+            ],
+            'attachments.*.title' => ['nullable', 'string', 'max:255'],
+            'attachments.*.notes' => ['nullable', 'string', 'max:1000'],
+            'attachments.*.file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
+        ];
+    }
+
+    private function storeInitialAttachments(Request $request, Client $client): void
+    {
+        foreach ($request->file('attachments', []) as $index => $attachmentData) {
+            if (! isset($attachmentData['file'])) {
+                continue;
+            }
+
+            $file = $attachmentData['file'];
+            $input = $request->input("attachments.$index", []);
+
+            $path = $file->store("client-attachments/{$client->id}", 'local');
+
+            $client->attachments()->create([
+                'uploaded_by' => Auth::id(),
+                'document_type' => $input['document_type'] ?? 'autre',
+                'title' => $input['title'] ?? null,
+                'original_name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+                'notes' => $input['notes'] ?? null,
+            ]);
+        }
     }
 }
