@@ -14,6 +14,8 @@ class Reservation extends Model
         'starts_at',
         'ends_at',
         'duration_type',
+        'engagement_duration_value',
+        'engagement_duration_unit',
         'negotiated_price',
         'status',
         'created_by',
@@ -24,6 +26,7 @@ class Reservation extends Model
     protected $casts = [
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
+        'engagement_duration_value' => 'integer',
         'negotiated_price' => 'decimal:2',
     ];
 

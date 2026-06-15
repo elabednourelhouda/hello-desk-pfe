@@ -246,6 +246,36 @@
                 </select>
             </div>
 
+            <div class="md:col-span-2 grid gap-4 md:grid-cols-2">
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700">
+                        Durée d’engagement <span class="text-red-500">*</span>
+                    </label>
+
+                    <input type="number"
+                           name="engagement_duration_value"
+                           min="1"
+                           max="999"
+                           required
+                           value="{{ old('engagement_duration_value', 1) }}"
+                           class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700">
+                        Unité <span class="text-red-500">*</span>
+                    </label>
+
+                    <select name="engagement_duration_unit"
+                            required
+                            class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                        <option value="hour" @selected(old('engagement_duration_unit') === 'hour')>Heure</option>
+                        <option value="half_day" @selected(old('engagement_duration_unit') === 'half_day')>Demi-journée</option>
+                        <option value="day" @selected(old('engagement_duration_unit') === 'day')>Jour</option>
+                        <option value="month" @selected(old('engagement_duration_unit', 'month') === 'month')>Mois</option>
+                    </select>
+                </div>
+            </div>
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">
                     Prix négocié <span class="text-red-500">*</span>

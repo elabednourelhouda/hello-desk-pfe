@@ -11,6 +11,14 @@
         'custom' => 'Personnalisée',
     ];
 
+    $engagementDurationValue = $reservation->engagement_duration_value;
+
+    $engagementUnitLabels = [
+        'hour' => (int) $engagementDurationValue === 1 ? 'heure' : 'heures',
+        'half_day' => (int) $engagementDurationValue === 1 ? 'demi-journée' : 'demi-journées',
+        'day' => (int) $engagementDurationValue === 1 ? 'jour' : 'jours',
+        'month' => 'mois',
+    ];
     $reservationStatusLabels = $reservationStatuses ?? [
         'pending' => 'En attente',
         'confirmed' => 'Confirmée',
@@ -167,6 +175,17 @@
                         </dd>
                     </div>
 
+                    <div class="rounded-xl bg-gray-50 p-4">
+                        <dt class="text-xs font-semibold uppercase text-gray-400">Durée d’engagement</dt>
+                        <dd class="mt-1 text-sm text-gray-700">
+                            @if($reservation->engagement_duration_value && $reservation->engagement_duration_unit)
+                                {{ $reservation->engagement_duration_value }}
+                                {{ $engagementUnitLabels[$reservation->engagement_duration_unit] ?? $reservation->engagement_duration_unit }}
+                            @else
+                                Non précisée
+                            @endif
+                        </dd>
+                    </div>
                     <div class="rounded-xl bg-gray-50 p-4">
                         <dt class="text-xs font-semibold uppercase text-gray-400">Prix négocié</dt>
                         <dd class="mt-1 text-sm font-semibold text-gray-900">
