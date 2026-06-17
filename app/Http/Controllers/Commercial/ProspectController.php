@@ -257,7 +257,9 @@ class ProspectController extends Controller
             ->with('success', 'Prospect converti en client avec succès.');
 
         if ($temporaryPassword) {
-            $redirect->with('temporary_password', $temporaryPassword);
+            $redirect
+                ->with('client_email', $validated['client_email'])
+                ->with('temporary_password', $temporaryPassword);
         }
 
         if ($usedExistingClient) {

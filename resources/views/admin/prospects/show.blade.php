@@ -28,12 +28,21 @@
         @if(session('temporary_password'))
         <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
             <p class="font-semibold">Compte client créé.</p>
-            <p class="mt-1">
+
+            <p class="mt-2">
+                Email de connexion :
+                <span class="rounded bg-white px-2 py-1 font-mono font-bold">
+                    {{ session('client_email', $prospect->email) }}
+                </span>
+            </p>
+
+            <p class="mt-2">
                 Mot de passe temporaire :
                 <span class="rounded bg-white px-2 py-1 font-mono font-bold">
                     {{ session('temporary_password') }}
                 </span>
             </p>
+
             <p class="mt-2 text-xs">
                 Pour l’instant, copiez ces informations. Plus tard, on pourra les envoyer automatiquement par email.
             </p>
