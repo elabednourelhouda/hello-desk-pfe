@@ -359,7 +359,21 @@ $lostRate = round((($counts['lost'] ?? 0) / $total) * 100);
                             </td>
 
                             <td class="px-6 py-4 text-sm text-gray-700">
-                                {{ \Illuminate\Support\Str::limit($prospect->need ?? '-', 42) }}
+                                <div class="space-y-1">
+                                    <p class="font-semibold text-gray-900">
+                                        {{ $prospect->preferredSpaceType->name ?? 'Type non précisé' }}
+                                    </p>
+
+                                    <p class="text-xs text-gray-500">
+                                        {{ $prospect->people_count ? $prospect->people_count . ' personne(s)' : 'Nombre non précisé' }}
+                                    </p>
+
+                                    @if($prospect->need)
+                                    <p class="text-xs text-gray-500">
+                                        {{ \Illuminate\Support\Str::limit($prospect->need, 42) }}
+                                    </p>
+                                    @endif
+                                </div>
                             </td>
 
                             <td class="px-6 py-4 text-sm text-gray-700">

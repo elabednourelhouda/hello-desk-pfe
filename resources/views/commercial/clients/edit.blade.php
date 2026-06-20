@@ -58,6 +58,16 @@
                     </div>
 
                     <div>
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">
+                            Date d’entrée client
+                        </label>
+                        <input type="date"
+                            name="registered_at"
+                            value="{{ old('registered_at', $client->registered_at ? $client->registered_at->format('Y-m-d') : now()->toDateString()) }}"
+                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                    </div>
+
+                    <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-700">Téléphone</label>
                         <input type="text" name="phone" value="{{ old('phone', $client->phone) }}"
                             class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
@@ -102,77 +112,7 @@
                 </h2>
 
                 <div class="mt-5 grid gap-5 md:grid-cols-2">
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Type client</label>
-                        <select name="client_type"
-                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                            <option value="">Non précisé</option>
-                            <option value="physique" @selected(old('client_type', $client->client_type) === 'physique')>Personne physique</option>
-                            <option value="morale" @selected(old('client_type', $client->client_type) === 'morale')>Personne morale</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Email de facturation</label>
-                        <input type="email" name="billing_email" value="{{ old('billing_email', $client->billing_email) }}"
-                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Prénom</label>
-                        <input type="text" name="first_name" value="{{ old('first_name', $client->first_name) }}"
-                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Nom</label>
-                        <input type="text" name="last_name" value="{{ old('last_name', $client->last_name) }}"
-                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Type pièce d’identité</label>
-                        <input type="text" name="identity_document_type" value="{{ old('identity_document_type', $client->identity_document_type) }}"
-                            placeholder="CIN, Passeport..."
-                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Numéro pièce d’identité</label>
-                        <input type="text" name="identity_document_number" value="{{ old('identity_document_number', $client->identity_document_number) }}"
-                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Forme juridique</label>
-                        <input type="text" name="legal_form" value="{{ old('legal_form', $client->legal_form) }}"
-                            placeholder="SARL, SA..."
-                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">ICE</label>
-                        <input type="text" name="ice_number" value="{{ old('ice_number', $client->ice_number) }}"
-                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Représentant légal</label>
-                        <input type="text" name="legal_representative_full_name" value="{{ old('legal_representative_full_name', $client->legal_representative_full_name) }}"
-                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Type pièce représentant</label>
-                        <input type="text" name="legal_representative_identity_document_type" value="{{ old('legal_representative_identity_document_type', $client->legal_representative_identity_document_type) }}"
-                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Numéro pièce représentant</label>
-                        <input type="text" name="legal_representative_identity_document_number" value="{{ old('legal_representative_identity_document_number', $client->legal_representative_identity_document_number) }}"
-                            class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    </div>
+                    @include('admin.clients._legal-fields', ['client' => $client])
                 </div>
             </section>
 

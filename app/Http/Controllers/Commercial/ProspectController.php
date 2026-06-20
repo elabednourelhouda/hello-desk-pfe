@@ -104,6 +104,7 @@ class ProspectController extends Controller
     public function store(Request $request)
     {
         $userId = (int) Auth::id();
+
         $assignedCampusIds = $this->assignedCampusIds($userId);
 
         $campusRule = ['nullable', 'exists:campuses,id'];
@@ -117,6 +118,9 @@ class ProspectController extends Controller
             'need' => ['nullable', 'string'],
             'preferred_campus_id' => $campusRule,
             'preferred_space_type_id' => ['nullable', 'exists:space_types,id'],
+            'people_count' => ['nullable', 'integer', 'min:1'],
+            'desired_start_date' => ['nullable', 'date'],
+            'desired_rental_period' => ['nullable', Rule::in(['hourly', 'daily', 'monthly', 'custom'])],
             'budget' => ['nullable', 'numeric', 'min:0'],
             'source' => ['nullable', Rule::in(array_keys($this->prospectSources()))],
             'notes' => ['nullable', 'string'],
@@ -500,7 +504,7 @@ class ProspectController extends Controller
             'people_count' => ['nullable', 'integer', 'min:1'],
             'budget' => ['nullable', 'numeric', 'min:0'],
             'desired_start_date' => ['nullable', 'date'],
-            'desired_rental_period' => ['nullable', 'in:hourly,daily,monthly,custom'],
+            'desired_rental_period' => ['nullable', Rule::in(['hourly', 'daily', 'monthly', 'custom'])],
 
             'source' => ['nullable', Rule::in(array_keys($this->prospectSources()))],
             'need' => ['nullable', 'string'],

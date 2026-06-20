@@ -39,7 +39,7 @@
             <div class="mt-6 grid gap-5 md:grid-cols-2">
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">
-                        Nom complet
+                        Nom complet <span class="text-red-500">*</span>
                     </label>
 
                     <input type="text"
@@ -56,7 +56,7 @@
 
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">
-                        Email professionnel
+                        Email professionnel <span class="text-red-500">*</span>
                     </label>
 
                     <input type="email"
@@ -96,7 +96,7 @@
             <div class="mt-6 grid gap-5 md:grid-cols-2">
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">
-                        Type d’affectation
+                        Type d’affectation <span class="text-red-500">*</span>
                     </label>
 
                     <select id="assignment_type"
@@ -121,7 +121,7 @@
 
                 <div id="campus_block">
                     <label class="mb-2 block text-sm font-semibold text-gray-700">
-                        Campus
+                        Campus <span class="text-red-500">*</span>
                     </label>
 
                     <select id="campus_id"
