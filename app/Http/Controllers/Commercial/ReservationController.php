@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Commercial;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Services\ClientRiskService;
 use App\Models\Contract;
 use App\Models\Reservation;
 use App\Models\Space;
@@ -99,6 +100,10 @@ class ReservationController extends Controller
         $durationTypes = $this->durationTypes();
 
         $clients = $this->commercialClientsQuery($scope)
+            ->where(function ($query) {
+                $query->whereNull('risk_status')
+                    ->orWhere('risk_status', 'clear');
+            })
             ->get()
             ->sortByDesc(fn($client) => $client->hasCompleteLegalFile())
             ->values();
@@ -174,6 +179,24 @@ class ReservationController extends Controller
 
         $client = Client::findOrFail($data['client_id']);
 
+        $client = app(ClientRiskService::class)->apply($client);
+
+        if ($client->risk_status === 'blocked') {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'client_id' => $client->risk_reason ?? 'Ce client est bloqué pour risque de fraude.',
+                ]);
+        }
+
+        if ($client->risk_status === 'watchlist') {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'client_id' => $client->risk_reason ?? 'Ce client nécessite une vérification manuelle avant réservation.',
+                ]);
+        }
+
         if (! $this->canManageClient($client, $scope)) {
             return back()
                 ->withInput()
@@ -184,6 +207,22 @@ class ReservationController extends Controller
             return back()
                 ->withInput()
                 ->with('error', 'Impossible de créer la réservation : le dossier juridique du client est incomplet.');
+        }
+
+        if ($client->isBlockedForReservation()) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'client_id' => 'Ce client ne peut pas créer une réservation car son compte est bloqué.',
+                ]);
+        }
+
+        if ($client->hasLateUnpaidPayments()) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'client_id' => 'Ce client a des paiements en retard. La réservation est bloquée jusqu’à régularisation.',
+                ]);
         }
 
         $space = Space::findOrFail($data['space_id']);

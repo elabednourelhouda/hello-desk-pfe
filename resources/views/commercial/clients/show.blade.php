@@ -17,6 +17,18 @@ default => 'Non renseigné',
 <div class="min-h-screen bg-slate-50">
     <div class="mx-auto max-w-6xl px-6 py-8">
 
+        @if($client->risk_status === 'blocked')
+        <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
+            <p class="font-semibold">Risque de fraude détecté</p>
+            <p class="mt-1">{{ $client->risk_reason }}</p>
+        </div>
+        @elseif($client->risk_status === 'watchlist')
+        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+            <p class="font-semibold">Vérification manuelle recommandée</p>
+            <p class="mt-1">{{ $client->risk_reason }}</p>
+        </div>
+        @endif
+
         <div class="mb-6">
             <a href="{{ route('commercial.clients.index') }}"
                 class="text-sm font-semibold text-[#284625] hover:underline">

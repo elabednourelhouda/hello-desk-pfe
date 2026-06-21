@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Services\ClientRiskService;
 use App\Models\Contract;
 use App\Models\Reservation;
 use App\Models\Space;
@@ -37,13 +38,13 @@ class ReservationController extends Controller
                         ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('phone', 'like', "%{$search}%");
                 })
-                ->orWhereHas('space', function ($spaceQuery) use ($search) {
-                    $spaceQuery->where('name', 'like', "%{$search}%")
-                        ->orWhere('code', 'like', "%{$search}%");
-                })
-                ->orWhereHas('contract', function ($contractQuery) use ($search) {
-                    $contractQuery->where('title', 'like', "%{$search}%");
-                });
+                    ->orWhereHas('space', function ($spaceQuery) use ($search) {
+                        $spaceQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('code', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('contract', function ($contractQuery) use ($search) {
+                        $contractQuery->where('title', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -82,9 +83,13 @@ class ReservationController extends Controller
     {
         $durationTypes = $this->durationTypes();
 
-        $clients = Client::orderBy('full_name')
+        $clients = Client::where(function ($query) {
+            $query->whereNull('risk_status')
+                ->orWhere('risk_status', 'clear');
+        })
+            ->orderBy('full_name')
             ->get()
-            ->sortByDesc(fn ($client) => $client->hasCompleteLegalFile())
+            ->sortByDesc(fn($client) => $client->hasCompleteLegalFile())
             ->values();
 
         $spaces = Space::with(['campus', 'floor', 'spaceType'])
@@ -129,10 +134,44 @@ class ReservationController extends Controller
 
         $client = Client::findOrFail($data['client_id']);
 
+        $client = app(ClientRiskService::class)->apply($client);
+
+        if ($client->risk_status === 'blocked') {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'client_id' => $client->risk_reason ?? 'Ce client est bloqué pour risque de fraude.',
+                ]);
+        }
+
+        if ($client->risk_status === 'watchlist') {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'client_id' => $client->risk_reason ?? 'Ce client nécessite une vérification manuelle avant réservation.',
+                ]);
+        }
+
         if (! $client->hasCompleteLegalFile()) {
             return back()
                 ->withInput()
                 ->with('error', 'Impossible de créer la réservation : le dossier juridique du client est incomplet.');
+        }
+
+        if ($client->isBlockedForReservation()) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'client_id' => 'Ce client ne peut pas créer une réservation car son compte est bloqué.',
+                ]);
+        }
+
+        if ($client->hasLateUnpaidPayments()) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'client_id' => 'Ce client a des paiements en retard. La réservation est bloquée jusqu’à régularisation.',
+                ]);
         }
 
         $space = Space::findOrFail($data['space_id']);

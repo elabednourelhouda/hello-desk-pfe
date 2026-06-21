@@ -140,7 +140,7 @@
                     @endforeach
                 </select>
                 <p class="mt-2 text-xs text-gray-500">
-                    Seuls les clients avec un dossier juridique complet peuvent avoir une réservation et un contrat.
+                    Seuls les clients avec un dossier juridique complet et sans risque détecté peuvent avoir une réservation et un contrat.
                 </p>
             </div>
 

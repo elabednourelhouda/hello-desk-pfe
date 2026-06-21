@@ -3,7 +3,6 @@
 @section('title', 'Détail client - Administration')
 
 @section('content')
-
 @php
 $legalFileComplete = $client->hasCompleteLegalFile();
 
@@ -12,10 +11,38 @@ $clientTypeLabel = match($client->client_type) {
 'morale' => 'Personne morale',
 default => 'Non renseigné',
 };
+
+$statusLabel = match($client->status) {
+'active' => 'Actif',
+'inactive' => 'Inactif',
+'payment_hold' => 'Bloqué paiement',
+'banned' => 'Banni',
+default => ucfirst(str_replace('_', ' ', $client->status ?? '')),
+};
+
+$statusBadgeClass = match($client->status) {
+'active' => 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+'inactive' => 'bg-slate-100 text-slate-700 ring-slate-200',
+'payment_hold' => 'bg-amber-50 text-amber-700 ring-amber-200',
+'banned' => 'bg-red-50 text-red-700 ring-red-200',
+default => 'bg-slate-100 text-slate-700 ring-slate-200',
+};
 @endphp
 
 <div class="min-h-screen bg-slate-50">
     <div class="mx-auto max-w-6xl px-6 py-8">
+
+        @if($client->risk_status === 'blocked')
+        <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
+            <p class="font-semibold">Risque de fraude détecté</p>
+            <p class="mt-1">{{ $client->risk_reason }}</p>
+        </div>
+        @elseif($client->risk_status === 'watchlist')
+        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+            <p class="font-semibold">Vérification manuelle recommandée</p>
+            <p class="mt-1">{{ $client->risk_reason }}</p>
+        </div>
+        @endif
 
         <div class="mb-6">
             <a href="{{ route('admin.clients.index') }}"
@@ -89,15 +116,9 @@ default => 'Non renseigné',
                         </div>
 
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                            @if($client->status === 'active')
-                            <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
-                                Actif
+                            <span class="rounded-full px-3 py-1 text-xs font-bold ring-1 {{ $statusBadgeClass }}">
+                                {{ $statusLabel }}
                             </span>
-                            @else
-                            <span class="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700 ring-1 ring-red-200">
-                                Inactif
-                            </span>
-                            @endif
 
                             <a href="{{ route('admin.clients.edit', $client) }}"
                                 class="inline-flex h-10 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-blue-700 transition hover:bg-blue-100">
@@ -445,7 +466,7 @@ default => 'Non renseigné',
                             Désactiver le compte
                         </button>
                     </form>
-                    @else
+                    @elseif($client->status === 'inactive')
                     <form method="POST"
                         action="{{ route('admin.clients.reactivate', $client) }}"
                         class="mt-4">
@@ -457,6 +478,145 @@ default => 'Non renseigné',
                             Réactiver le compte
                         </button>
                     </form>
+                    @endif
+                </section>
+
+                <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-lg font-bold text-slate-900">Gestion du risque client</h2>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-500">
+                        Permet de bloquer les nouvelles réservations en cas d'impayé ou d'abus.
+                    </p>
+
+                    @if($client->status === 'payment_hold')
+                    <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                        <p class="font-bold">Client bloqué pour impayé</p>
+
+                        @if($client->block_reason)
+                        <p class="mt-2 leading-6">
+                            {{ $client->block_reason }}
+                        </p>
+                        @endif
+
+                        @if($client->blocked_at)
+                        <p class="mt-2 text-xs">
+                            Bloqué le {{ $client->blocked_at->format('d/m/Y H:i') }}
+                        </p>
+                        @endif
+                    </div>
+                    @elseif($client->status === 'banned')
+                    <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                        <p class="font-bold">Client banni</p>
+
+                        @if($client->block_reason)
+                        <p class="mt-2 leading-6">
+                            {{ $client->block_reason }}
+                        </p>
+                        @endif
+
+                        @if($client->blocked_at)
+                        <p class="mt-2 text-xs">
+                            Banni le {{ $client->blocked_at->format('d/m/Y H:i') }}
+                        </p>
+                        @endif
+                    </div>
+                    @endif
+
+                    @if($client->status === 'active')
+                    <form method="POST"
+                        action="{{ route('admin.clients.block-payment', $client) }}"
+                        class="mt-5"
+                        onsubmit="return confirm('Bloquer ce client pour impayé ?');">
+                        @csrf
+                        @method('PATCH')
+
+                        <label class="text-sm font-bold text-slate-700">
+                            Raison du blocage
+                        </label>
+
+                        <select
+                            name="block_reason"
+                            required
+                            class="mt-2 h-11 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-[#284625] focus:outline-none focus:ring-2 focus:ring-[#284625]/20">
+                            <option value="">Choisir une raison</option>
+                            <option value="late_payment">Paiement en retard non régularisé</option>
+                            <option value="unpaid_invoice">Facture impayée</option>
+                            <option value="repeated_payment_delay">Retards de paiement répétés</option>
+                            <option value="payment_promise_not_respected">Promesse de paiement non respectée</option>
+                            <option value="pending_regularization">En attente de régularisation</option>
+                        </select>
+
+                        <label class="mt-3 block text-sm font-bold text-slate-700">
+                            Note complémentaire
+                        </label>
+
+                        <textarea
+                            name="block_note"
+                            rows="2"
+                            class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#284625] focus:outline-none focus:ring-2 focus:ring-[#284625]/20"
+                            placeholder="Optionnel : ajoutez un détail si nécessaire."></textarea>
+
+                        <button type="submit"
+                            class="mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-4 text-sm font-bold text-amber-700 hover:bg-amber-100">
+                            Bloquer pour impayé
+                        </button>
+                    </form>
+
+                    <form method="POST"
+                        action="{{ route('admin.clients.ban', $client) }}"
+                        class="mt-5"
+                        onsubmit="return confirm('Bannir ce client ?');">
+                        @csrf
+                        @method('PATCH')
+
+                        <label class="text-sm font-bold text-slate-700">
+                            Raison du bannissement
+                        </label>
+
+                        <select
+                            name="block_reason"
+                            required
+                            class="mt-2 h-11 w-full rounded-xl border border-slate-300 px-3 text-sm focus:border-[#284625] focus:outline-none focus:ring-2 focus:ring-[#284625]/20">
+                            <option value="">Choisir une raison</option>
+                            <option value="repeated_unpaid_reservations">Réservations répétées sans paiement</option>
+                            <option value="fake_identity_attempt">Tentative d’utilisation d’une fausse identité</option>
+                            <option value="abusive_behavior">Comportement abusif</option>
+                            <option value="fraud_suspicion">Suspicion de fraude</option>
+                            <option value="management_decision">Décision administrative</option>
+                        </select>
+
+                        <label class="mt-3 block text-sm font-bold text-slate-700">
+                            Note complémentaire
+                        </label>
+
+                        <textarea
+                            name="block_note"
+                            rows="2"
+                            class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-[#284625] focus:outline-none focus:ring-2 focus:ring-[#284625]/20"
+                            placeholder="Optionnel : ajoutez un détail si nécessaire."></textarea>
+
+                        <button type="submit"
+                            class="mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-700 hover:bg-red-100">
+                            Bannir le client
+                        </button>
+                    </form>
+                    @elseif(in_array($client->status, ['payment_hold', 'banned']))
+                    <form method="POST"
+                        action="{{ route('admin.clients.reactivate', $client) }}"
+                        class="mt-5"
+                        onsubmit="return confirm('Réactiver ce client ?');">
+                        @csrf
+                        @method('PATCH')
+
+                        <button type="submit"
+                            class="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#284625] px-4 text-sm font-bold text-white hover:opacity-90">
+                            Réactiver le client
+                        </button>
+                    </form>
+                    @else
+                    <div class="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                        Le compte est inactif. Réactivez-le avant d'appliquer une action de risque.
+                    </div>
                     @endif
                 </section>
             </aside>

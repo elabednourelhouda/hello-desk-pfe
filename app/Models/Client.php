@@ -17,6 +17,9 @@ class Client extends Model
         'company_name',
         'main_campus_id',
         'status',
+        'blocked_at',
+        'blocked_by',
+        'block_reason',
         'billing_info',
         'registered_at',
         'joined_at',
@@ -52,12 +55,18 @@ class Client extends Model
         'legal_file_status',
         'legal_file_completed_at',
         'legal_file_notes',
+
+        'risk_status',
+        'risk_reason',
+        'risk_checked_at',
     ];
 
     protected $casts = [
         'joined_at' => 'date',
+        'blocked_at' => 'datetime',
         'registered_at' => 'date',
         'legal_file_completed_at' => 'datetime',
+        'risk_checked_at' => 'datetime',
     ];
 
     public function user()
@@ -131,5 +140,28 @@ class Client extends Model
     public function attachments(): HasMany
     {
         return $this->hasMany(ClientAttachment::class)->latest();
+    }
+
+    public function blocker()
+    {
+        return $this->belongsTo(User::class, 'blocked_by');
+    }
+
+    public function isBlockedForReservation(): bool
+    {
+        return in_array($this->status, ['inactive', 'payment_hold', 'banned'], true);
+    }
+
+    public function hasLateUnpaidPayments(): bool
+    {
+        return $this->payments()
+            ->where(function ($query) {
+                $query->where('status', 'late')
+                    ->orWhere(function ($subQuery) {
+                        $subQuery->where('status', 'due')
+                            ->whereDate('due_date', '<', now()->toDateString());
+                    });
+            })
+            ->exists();
     }
 }

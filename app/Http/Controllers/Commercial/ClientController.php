@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Commercial;
 use App\Http\Controllers\Controller;
 use App\Models\Campus;
 use App\Models\Client;
+use App\Services\ClientRiskService;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -271,6 +272,8 @@ class ClientController extends Controller
     public function show(int $client)
     {
         $client = $this->findScopedClient($client);
+
+        $client = app(ClientRiskService::class)->apply($client);
 
         $client->load([
             'user',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Services\ClientRiskService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -22,7 +23,11 @@ class ClientController extends Controller
             ->latest();
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'inactive') {
+                $query->whereIn('status', ['inactive', 'payment_hold', 'banned']);
+            } elseif (in_array($request->status, ['active', 'payment_hold', 'banned'], true)) {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->filled('client_type')) {
@@ -88,13 +93,24 @@ class ClientController extends Controller
             });
         }
 
+        if ($request->filled('risk_status')) {
+            if (in_array($request->risk_status, ['clear', 'watchlist', 'blocked'], true)) {
+                $query->where('risk_status', $request->risk_status);
+            }
+        }
+
         $clients = $query->paginate(10)->withQueryString();
 
         return view('admin.clients.index', [
             'clients' => $clients,
             'activeCount' => Client::where('status', 'active')->count(),
-            'inactiveCount' => Client::where('status', 'inactive')->count(),
+            'inactiveCount' => Client::whereIn('status', ['inactive', 'payment_hold', 'banned'])->count(),
+            'paymentHoldCount' => Client::where('status', 'payment_hold')->count(),
+            'bannedCount' => Client::where('status', 'banned')->count(),
             'totalCount' => Client::count(),
+            'clearRiskCount' => Client::where('risk_status', 'clear')->count(),
+            'watchlistRiskCount' => Client::where('risk_status', 'watchlist')->count(),
+            'blockedRiskCount' => Client::where('risk_status', 'blocked')->count(),
         ]);
     }
 
@@ -274,8 +290,39 @@ class ClientController extends Controller
         return $validated;
     }
 
+    public function analyzeRisks(ClientRiskService $riskService)
+    {
+        $scanned = 0;
+        $blocked = 0;
+        $watchlist = 0;
+
+        Client::query()
+            ->orderBy('id')
+            ->chunkById(100, function ($clients) use ($riskService, &$scanned, &$blocked, &$watchlist) {
+                foreach ($clients as $client) {
+                    $updatedClient = $riskService->apply($client);
+
+                    $scanned++;
+
+                    if ($updatedClient->risk_status === 'blocked') {
+                        $blocked++;
+                    }
+
+                    if ($updatedClient->risk_status === 'watchlist') {
+                        $watchlist++;
+                    }
+                }
+            });
+
+        return redirect()
+            ->route('admin.clients.index', ['risk_status' => 'blocked'])
+            ->with('success', "Analyse terminée : {$scanned} client(s) analysé(s), {$blocked} bloqué(s), {$watchlist} à vérifier.");
+    }
+
     public function show(Client $client)
     {
+        $client = app(ClientRiskService::class)->apply($client);
+
         $client->load([
             'user',
             'prospect.assignedCommercial',
@@ -406,7 +453,12 @@ class ClientController extends Controller
     {
         $client->update([
             'status' => 'active',
+            'blocked_at' => null,
+            'blocked_by' => null,
+            'block_reason' => null,
         ]);
+
+        return back()->with('success', 'Client réactivé avec succès.');
 
         return redirect()
             ->route('admin.clients.show', $client)
@@ -483,5 +535,67 @@ class ClientController extends Controller
                 'notes' => $input['notes'] ?? null,
             ]);
         }
+    }
+
+    public function blockForPayment(Request $request, Client $client)
+    {
+        $reasons = [
+            'late_payment' => 'Paiement en retard non régularisé',
+            'unpaid_invoice' => 'Facture impayée',
+            'repeated_payment_delay' => 'Retards de paiement répétés',
+            'payment_promise_not_respected' => 'Promesse de paiement non respectée',
+            'pending_regularization' => 'En attente de régularisation',
+        ];
+
+        $data = $request->validate([
+            'block_reason' => ['required', Rule::in(array_keys($reasons))],
+            'block_note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $reason = $reasons[$data['block_reason']];
+
+        if (! empty($data['block_note'])) {
+            $reason .= ' — ' . $data['block_note'];
+        }
+
+        $client->update([
+            'status' => 'payment_hold',
+            'blocked_at' => now(),
+            'blocked_by' => Auth::id(),
+            'block_reason' => $reason,
+        ]);
+
+        return back()->with('success', 'Client bloqué pour impayé avec succès.');
+    }
+
+    public function ban(Request $request, Client $client)
+    {
+        $reasons = [
+            'repeated_unpaid_reservations' => 'Réservations répétées sans paiement',
+            'fake_identity_attempt' => 'Tentative d’utilisation d’une fausse identité',
+            'abusive_behavior' => 'Comportement abusif',
+            'fraud_suspicion' => 'Suspicion de fraude',
+            'management_decision' => 'Décision administrative',
+        ];
+
+        $data = $request->validate([
+            'block_reason' => ['required', Rule::in(array_keys($reasons))],
+            'block_note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $reason = $reasons[$data['block_reason']];
+
+        if (! empty($data['block_note'])) {
+            $reason .= ' — ' . $data['block_note'];
+        }
+
+        $client->update([
+            'status' => 'banned',
+            'blocked_at' => now(),
+            'blocked_by' => Auth::id(),
+            'block_reason' => $reason,
+        ]);
+
+        return back()->with('success', 'Client banni avec succès.');
     }
 }

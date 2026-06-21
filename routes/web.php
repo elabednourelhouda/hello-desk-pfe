@@ -183,6 +183,9 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
         Route::resource('clients', AdminClientController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
+        Route::post('/clients/analyze-risks', [AdminClientController::class, 'analyzeRisks'])
+            ->name('clients.analyzeRisks');
+
         Route::post('/clients/{client}/attachments', [ClientAttachmentController::class, 'store'])
             ->name('clients.attachments.store');
 
@@ -203,6 +206,15 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
 
         Route::patch('/clients/{client}/reset-password', [AdminClientController::class, 'resetPassword'])
             ->name('clients.resetPassword');
+
+        Route::patch('/clients/{client}/block-payment', [\App\Http\Controllers\Admin\ClientController::class, 'blockForPayment'])
+            ->name('clients.block-payment');
+
+        Route::patch('/clients/{client}/ban', [\App\Http\Controllers\Admin\ClientController::class, 'ban'])
+            ->name('clients.ban');
+
+        Route::patch('/clients/{client}/reactivate', [\App\Http\Controllers\Admin\ClientController::class, 'reactivate'])
+            ->name('clients.reactivate');
 
         /*
         |--------------------------------------------------------------------------
