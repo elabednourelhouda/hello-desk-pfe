@@ -213,9 +213,6 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
         Route::patch('/clients/{client}/ban', [\App\Http\Controllers\Admin\ClientController::class, 'ban'])
             ->name('clients.ban');
 
-        Route::patch('/clients/{client}/reactivate', [\App\Http\Controllers\Admin\ClientController::class, 'reactivate'])
-            ->name('clients.reactivate');
-
         /*
         |--------------------------------------------------------------------------
         | Reservations
@@ -300,6 +297,9 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
 
         Route::resource('clients', CommercialClientController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+
+        Route::post('/clients/{client}/report-to-admin', [CommercialClientController::class, 'reportToAdmin'])
+            ->name('clients.report-to-admin');
 
         Route::post('/clients/{client}/attachments', [ClientAttachmentController::class, 'store'])
             ->name('clients.attachments.store');

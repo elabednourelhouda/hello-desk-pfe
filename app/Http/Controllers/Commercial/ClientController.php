@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use App\Notifications\ClientReportedToAdminNotification;
+use Illuminate\Http\RedirectResponse;
 
 class ClientController extends Controller
 {
@@ -518,5 +520,50 @@ class ClientController extends Controller
                 'notes' => $input['notes'] ?? null,
             ]);
         }
+    }
+
+    public function reportToAdmin(Request $request, Client $client): RedirectResponse
+    {
+        /** @var \App\Models\User $commercial */
+        $commercial = $request->user();
+
+        abort_unless($commercial && $commercial->isCommercial(), 403);
+
+        if ($client->main_campus_id) {
+            abort_unless(
+                in_array((int) $client->main_campus_id, $commercial->manageableCampusIds(), true),
+                403
+            );
+        }
+
+        $validated = $request->validate([
+            'request_type' => ['required', Rule::in([
+                'password_reset',
+                'fraud_suspicion',
+                'payment_block',
+                'reactivation',
+                'other',
+            ])],
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $admins = User::query()
+            ->where('role', 'admin')
+            ->get();
+
+        if ($admins->isEmpty()) {
+            return back()->with('error', 'Aucun administrateur trouvé pour recevoir le signalement.');
+        }
+
+        foreach ($admins as $admin) {
+            $admin->notify(new ClientReportedToAdminNotification(
+                client: $client,
+                commercial: $commercial,
+                reason: $validated['reason'],
+                requestType: $validated['request_type']
+            ));
+        }
+
+        return back()->with('success', 'Demande envoyée à l’administrateur.');
     }
 }

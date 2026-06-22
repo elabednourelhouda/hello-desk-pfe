@@ -436,6 +436,64 @@ default => 'Non renseigné',
                         Modifier le dossier
                     </a>
 
+                    <form method="POST"
+                        action="{{ route('commercial.clients.report-to-admin', $client) }}"
+                        class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                        @csrf
+
+                        <label for="request_type" class="block text-sm font-bold text-red-800">
+                            Demander une action admin
+                        </label>
+
+                        <p class="mt-1 text-xs text-red-700">
+                            Choisissez le type de demande à envoyer à l’administrateur.
+                        </p>
+
+                        <select
+                            id="request_type"
+                            name="request_type"
+                            required
+                            class="mt-3 w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100">
+                            <option value="">Sélectionner une action</option>
+                            <option value="password_reset" @selected(old('request_type')==='password_reset' )>
+                                Réinitialisation du mot de passe client
+                            </option>
+                            <option value="fraud_suspicion" @selected(old('request_type')==='fraud_suspicion' )>
+                                Risque de fraude / comportement suspect
+                            </option>
+                            <option value="payment_block" @selected(old('request_type')==='payment_block' )>
+                                Blocage pour impayé
+                            </option>
+                            <option value="reactivation" @selected(old('request_type')==='reactivation' )>
+                                Réactivation / déblocage
+                            </option>
+                            <option value="other" @selected(old('request_type')==='other' )>
+                                Autre demande
+                            </option>
+                        </select>
+
+                        @error('request_type')
+                        <p class="mt-2 text-xs font-semibold text-red-700">{{ $message }}</p>
+                        @enderror
+
+                        <textarea
+                            id="report_reason"
+                            name="reason"
+                            rows="3"
+                            required
+                            class="mt-3 w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                            placeholder="Expliquez brièvement la raison de la demande...">{{ old('reason') }}</textarea>
+
+                        @error('reason')
+                        <p class="mt-2 text-xs font-semibold text-red-700">{{ $message }}</p>
+                        @enderror
+
+                        <button type="submit"
+                            class="mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-bold text-white transition hover:bg-red-700">
+                            Envoyer à l’admin
+                        </button>
+                    </form>
+
                     @if($client->prospect)
                     <a href="{{ route('commercial.prospects.show', $client->prospect) }}"
                         class="mt-4 inline-flex h-12 w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-700 hover:bg-slate-100">
