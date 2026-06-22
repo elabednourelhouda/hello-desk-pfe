@@ -54,17 +54,17 @@ class PaymentDeadlineNotification extends Notification
         $role = $notifiable->role ?? null;
 
         if ($role === 'admin' && Route::has('admin.payments.show')) {
-            return route('admin.payments.show', $this->payment);
+            return route('admin.payments.show', $this->payment, false);
         }
 
         if ($role === 'commercial' && Route::has('commercial.payments.show')) {
-            return route('commercial.payments.show', $this->payment);
+            return route('commercial.payments.show', $this->payment, false);
         }
 
         if ($role === 'client' && Route::has('client.dashboard')) {
-            return route('client.dashboard');
+            return route('client.dashboard', [], false);
         }
 
-        return url('/');
+        return '/';
     }
 }

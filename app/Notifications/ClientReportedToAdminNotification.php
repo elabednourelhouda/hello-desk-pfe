@@ -33,7 +33,7 @@ class ClientReportedToAdminNotification extends Notification
             'reason' => $this->reason,
             'client_id' => $this->client->id,
             'commercial_id' => $this->commercial->id,
-            'url' => route('admin.clients.show', $this->client),
+            'url' => route('admin.clients.show', $this->client, false),
         ];
     }
 
