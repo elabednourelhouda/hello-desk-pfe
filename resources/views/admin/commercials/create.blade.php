@@ -121,7 +121,7 @@
 
                 <div id="campus_block">
                     <label class="mb-2 block text-sm font-semibold text-gray-700">
-                        Campus <span class="text-red-500">*</span>
+                        Site <span class="text-red-500">*</span>
                     </label>
 
                     <select id="campus_id"
