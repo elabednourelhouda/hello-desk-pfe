@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Accessory;
 use App\Models\Campus;
 use App\Models\Floor;
 use App\Models\Space;
@@ -125,6 +126,7 @@ class SpaceController extends Controller
             'campuses' => Campus::where('is_active', true)->orderBy('name')->get(),
             'floors' => Floor::where('is_active', true)->with('campus')->orderBy('level')->get(),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
+            'accessories' => Accessory::where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->statuses,
             'prefillCampusId' => $request->integer('campus_id') ?: null,
             'prefillFloorId' => $request->integer('floor_id') ?: null,
@@ -134,17 +136,36 @@ class SpaceController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateData($request);
+        $accessoryIds = $validated['accessory_ids'] ?? [];
+        unset($validated['accessory_ids']);
 
         $space = Space::create($validated);
+        $space->accessories()->sync($accessoryIds);
 
         return redirect()
             ->route('admin.settings.sites.floors.show', [$space->campus_id, $space->floor_id])
             ->with('success', "Espace « {$space->name} » créé avec succès.");
     }
 
+    /**
+     * Shows every stored detail about the space: full pricing, capacity,
+     * description, equipment (accessories), and who is currently booked
+     * in it (or the next upcoming reservation), plus the full booking
+     * history for this space.
+     */
     public function show(Space $space): View
     {
-        $space->load(['campus', 'floor', 'spaceType']);
+        $space->load([
+            'campus',
+            'floor',
+            'spaceType',
+            'accessories',
+            'currentReservation.client',
+            'nextReservation.client',
+            'reservations' => function ($query) {
+                $query->with('client')->latest('starts_at');
+            },
+        ]);
 
         return view('admin.spaces.show', [
             'space' => $space,
@@ -154,11 +175,15 @@ class SpaceController extends Controller
 
     public function edit(Space $space): View
     {
+        $space->load('accessories');
+
         return view('admin.spaces.edit', [
             'space' => $space,
             'campuses' => Campus::where('is_active', true)->orWhere('id', $space->campus_id)->orderBy('name')->get(),
             'floors' => Floor::where('is_active', true)->orWhere('id', $space->floor_id)->with('campus')->orderBy('level')->get(),
             'spaceTypes' => SpaceType::where('is_active', true)->orWhere('id', $space->space_type_id)->orderBy('name')->get(),
+            'accessories' => Accessory::where('is_active', true)->orderBy('name')->get(),
+            'selectedAccessoryIds' => $space->accessories->pluck('id')->all(),
             'statuses' => $this->statuses,
         ]);
     }
@@ -166,8 +191,11 @@ class SpaceController extends Controller
     public function update(Request $request, Space $space): RedirectResponse
     {
         $validated = $this->validateData($request, $space->id);
+        $accessoryIds = $validated['accessory_ids'] ?? [];
+        unset($validated['accessory_ids']);
 
         $space->update($validated);
+        $space->accessories()->sync($accessoryIds);
 
         return redirect()
             ->route('admin.settings.sites.floors.show', [$space->campus_id, $space->floor_id])
@@ -220,6 +248,8 @@ class SpaceController extends Controller
             'status' => ['required', 'in:' . implode(',', array_keys($this->statuses))],
             'description' => ['nullable', 'string', 'max:2000'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'accessory_ids' => ['nullable', 'array'],
+            'accessory_ids.*' => ['integer', 'exists:accessories,id'],
         ], [
             'campus_id.required' => 'Le site est obligatoire.',
             'floor_id.required' => 'L’étage est obligatoire.',

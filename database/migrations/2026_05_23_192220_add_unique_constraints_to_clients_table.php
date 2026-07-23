@@ -1,24 +1,18 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('clients', function (Blueprint $table) {
-            $table->unique('user_id', 'clients_user_id_unique');
-            $table->unique('prospect_id', 'clients_prospect_id_unique');
-        });
+        // Duplicate migration kept intentionally.
+        // clients_user_id_unique and clients_prospect_id_unique are already
+        // created by 2026_05_23_190118_create_clients_table.php.
     }
 
     public function down(): void
     {
-        Schema::table('clients', function (Blueprint $table) {
-            $table->dropUnique('clients_user_id_unique');
-            $table->dropUnique('clients_prospect_id_unique');
-        });
+        // Do nothing — the base migration owns these constraints.
     }
 };

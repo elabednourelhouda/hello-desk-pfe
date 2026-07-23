@@ -15,7 +15,7 @@
                 </p>
             </div>
 
-            <a href="#"
+            <a href="{{ route('admin.spaces.create') }}"
                 class="inline-flex items-center justify-center rounded-xl bg-[#284625] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1f351d]">
                 + Ajouter un espace
             </a>
@@ -125,7 +125,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-5 py-4">
                                 <div class="font-semibold text-gray-900">{{ $space->name }}</div>
-                                <div class="text-xs text-gray-500">{{ $space->internal_code ?? 'Sans code' }}</div>
+                                <div class="text-xs text-gray-500">{{ $space->code ?? 'Sans code' }}</div>
                             </td>
 
                             <td class="px-5 py-4 text-sm text-gray-700">
