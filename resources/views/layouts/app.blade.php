@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 
 <head>
@@ -261,6 +261,7 @@
 
     ['label' => 'Réclamations', 'route' => 'admin.complaints.index'],
     ['label' => 'Notifications', 'route' => 'admin.notifications.index'],
+    ['label' => 'Configuration', 'route' => 'admin.settings.index'],
     ];
 
     $commercialLinks = [

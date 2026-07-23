@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\InteractiveMapController;
 use App\Http\Controllers\Admin\ContractController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ComplaintController as AdminComplaintController;
+use App\Http\Controllers\Admin\FloorController;
 
 use App\Http\Controllers\Commercial\DashboardController as CommercialDashboardController;
 use App\Http\Controllers\Commercial\ProspectController as CommercialProspectController;
@@ -30,6 +31,9 @@ use App\Http\Controllers\Commercial\ContractController as CommercialContractCont
 use App\Http\Controllers\Commercial\PaymentController as CommercialPaymentController;
 use App\Http\Controllers\Commercial\InteractiveMapController as CommercialInteractiveMapController;
 use App\Http\Controllers\Commercial\ComplaintController as CommercialComplaintController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\SpaceTypeController;
+use App\Http\Controllers\Admin\CampusController;
 
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
 use App\Http\Controllers\Client\ReservationController as ClientReservationController;
@@ -113,6 +117,57 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
 
         Route::get('/spaces', [AdminSpaceController::class, 'index'])
             ->name('spaces.index');
+
+        Route::get('/spaces/create', [AdminSpaceController::class, 'create'])
+            ->name('spaces.create');
+
+        Route::post('/spaces', [AdminSpaceController::class, 'store'])
+            ->name('spaces.store');
+
+        Route::get('/spaces/{space}', [AdminSpaceController::class, 'show'])
+            ->name('spaces.show');
+
+        Route::get('/spaces/{space}/edit', [AdminSpaceController::class, 'edit'])
+            ->name('spaces.edit');
+
+        Route::put('/spaces/{space}', [AdminSpaceController::class, 'update'])
+            ->name('spaces.update');
+
+        Route::delete('/spaces/{space}', [AdminSpaceController::class, 'destroy'])
+            ->name('spaces.destroy');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Settings / configuration (configurable dropdown lists)
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('settings')->name('settings.')->group(function () {
+            Route::get('/', [SettingsController::class, 'index'])
+                ->name('index');
+
+            Route::resource('space-types', SpaceTypeController::class)
+                ->except(['show'])
+                ->names('space-types');
+
+            Route::patch('/space-types/{spaceType}/toggle-active', [SpaceTypeController::class, 'toggleActive'])
+                ->name('space-types.toggleActive');
+
+            Route::resource('sites', CampusController::class)
+                ->parameters(['sites' => 'campus'])
+                ->names('sites');
+
+            Route::patch('/sites/{campus}/toggle-active', [CampusController::class, 'toggleActive'])
+                ->name('sites.toggleActive');
+
+            Route::resource('sites.floors', FloorController::class)
+                ->except(['index'])
+                ->parameters(['sites' => 'campus', 'floors' => 'floor'])
+                ->names('sites.floors');
+
+            Route::patch('/sites/{campus}/floors/{floor}/toggle-active', [FloorController::class, 'toggleActive'])
+                ->name('sites.floors.toggleActive');
+        });
 
         /*
         |--------------------------------------------------------------------------
