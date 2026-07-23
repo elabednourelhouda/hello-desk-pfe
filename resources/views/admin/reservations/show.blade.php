@@ -141,7 +141,7 @@
                     </div>
 
                     <div class="rounded-xl bg-gray-50 p-4">
-                        <dt class="text-xs font-semibold uppercase text-gray-400">Campus</dt>
+                        <dt class="text-xs font-semibold uppercase text-gray-400">Site</dt>
                         <dd class="mt-1 text-sm text-gray-700">
                             {{ $reservation->campus?->name ?? $reservation->space?->campus?->name ?? 'Non précisé' }}
                         </dd>

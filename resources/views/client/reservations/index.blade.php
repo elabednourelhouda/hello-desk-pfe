@@ -212,7 +212,7 @@
 
                                 <td class="px-5 py-4">
                                     <p class="text-sm font-bold text-slate-800">
-                                        {{ $reservation->campus?->name ?? $space?->campus?->name ?? 'Campus non précisé' }}
+                                        {{ $reservation->campus?->name ?? $space?->campus?->name ?? 'Site non précisé' }}
                                     </p>
 
                                     <p class="mt-1 text-xs text-slate-500">

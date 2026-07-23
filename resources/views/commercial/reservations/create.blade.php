@@ -72,7 +72,7 @@
                         </span>
 
                         <span class="rounded-full bg-white px-3 py-1 text-gray-700">
-                            Campus: {{ $selectedSpace->campus?->name ?? 'Non spécifié' }}
+                            Site: {{ $selectedSpace->campus?->name ?? 'Non spécifié' }}
                         </span>
 
                         <span class="rounded-full bg-white px-3 py-1 text-gray-700">

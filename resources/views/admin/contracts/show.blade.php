@@ -166,7 +166,7 @@
 
                 <div>
                     <h2 class="text-lg font-bold text-gray-900">Réservation liée</h2>
-                    <p class="text-sm text-gray-500">Espace, campus et statut de réservation.</p>
+                    <p class="text-sm text-gray-500">Espace, site et statut de réservation.</p>
                 </div>
             </div>
 
@@ -179,7 +179,7 @@
                 </div>
 
                 <div>
-                    <p class="text-xs font-semibold uppercase text-gray-400">Campus</p>
+                    <p class="text-xs font-semibold uppercase text-gray-400">Site</p>
                     <p class="mt-1 text-gray-700">
                         {{ $contract->reservation?->campus?->name ?? 'Non précisé' }}
                     </p>

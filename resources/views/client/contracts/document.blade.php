@@ -281,7 +281,7 @@
                 <p class="row"><span class="label">Espace :</span> {{ $space?->name ?? 'Non précisé' }}</p>
                 <p class="row"><span class="label">Code :</span> {{ $space?->code ?? 'Non précisé' }}</p>
                 <p class="row"><span class="label">Type :</span> {{ $space?->spaceType?->name ?? 'Non précisé' }}</p>
-                <p class="row"><span class="label">Campus :</span> {{ $reservation?->campus?->name ?? 'Non précisé' }}</p>
+                <p class="row"><span class="label">Site :</span> {{ $reservation?->campus?->name ?? 'Non précisé' }}</p>
                 <p class="row"><span class="label">Étage :</span> {{ $reservation?->floor?->name ?? 'Non précisé' }}</p>
             </div>
         </div>

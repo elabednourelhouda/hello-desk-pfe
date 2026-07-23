@@ -106,11 +106,11 @@
 
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-slate-700">
-                        Campus principal
+                        Site principal
                     </label>
                     <select name="main_campus_id"
                         class="h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                        <option value="">Aucun campus</option>
+                        <option value="">Aucun site</option>
 
                         @foreach($campuses as $campus)
                         <option value="{{ $campus->id }}" @selected(old('main_campus_id')==$campus->id)>

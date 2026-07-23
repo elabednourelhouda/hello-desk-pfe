@@ -30,7 +30,7 @@
 
                     <p class="mt-3 max-w-2xl text-sm leading-6 text-white/80">
                         Consultez les clients liés à votre périmètre commercial, leurs informations
-                        de contact, leur campus principal et l’état de leur dossier juridique.
+                        de contact, leur site principal et l’état de leur dossier juridique.
                     </p>
 
                     <div class="mt-6 flex flex-wrap gap-3">
@@ -89,7 +89,7 @@
             </div>
         @else
             <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Aucune affectation campus trouvée. Les clients affichés restent limités à votre compte commercial ou aux données accessibles pour la démonstration.
+                Aucune affectation site trouvée. Les clients affichés restent limités à votre compte commercial ou aux données accessibles pour la démonstration.
             </div>
         @endif
 
@@ -276,7 +276,7 @@
                                 Contact
                             </th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">
-                                Campus principal
+                                Site principal
                             </th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">
                                 Statut

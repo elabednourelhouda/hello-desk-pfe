@@ -11,7 +11,7 @@
                 <p class="text-sm font-semibold text-[#284625]">Administration</p>
                 <h1 class="mt-1 text-3xl font-bold text-slate-900">Carte interactive des espaces</h1>
                 <p class="mt-2 max-w-2xl text-sm text-slate-500">
-                    Visualisez les bureaux, salles de réunion et positions par campus et par étage.
+                    Visualisez les bureaux, salles de réunion et positions par site et par étage.
                 </p>
             </div>
 
@@ -25,7 +25,7 @@
             <form method="GET" action="{{ route('admin.map.index') }}" class="grid gap-4 md:grid-cols-3">
 
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-slate-700">Campus</label>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Site</label>
                     <select name="campus_id"
                             onchange="this.form.submit()"
                             class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
@@ -53,7 +53,7 @@
                 <div class="flex items-end">
                     <div class="w-full rounded-xl bg-[#284625]/5 px-4 py-3 text-sm text-[#284625]">
                         <span class="font-semibold">Vue actuelle :</span>
-                        {{ $selectedCampus->name ?? 'Aucun campus' }}
+                        {{ $selectedCampus->name ?? 'Aucun site' }}
                         @if($selectedFloor)
                             — {{ $selectedFloor->name }}
                         @endif
@@ -190,7 +190,7 @@
 
                     <div class="space-y-3 text-sm">
                         <div class="rounded-xl bg-slate-50 p-3">
-                            <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Campus</div>
+                            <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Site</div>
                             <div class="mt-1 font-medium text-slate-800" id="detailCampus">-</div>
                         </div>
 

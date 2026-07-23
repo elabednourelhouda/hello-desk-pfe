@@ -11,7 +11,7 @@
                 <p class="text-sm font-medium text-[#284625]">Administration</p>
                 <h1 class="mt-1 text-3xl font-bold text-gray-900">Gestion des espaces</h1>
                 <p class="mt-2 text-sm text-gray-500">
-                    Consultez les bureaux, salles de réunion et positions par campus et par étage.
+                    Consultez les bureaux, salles de réunion et positions par site et par étage.
                 </p>
             </div>
 
@@ -25,9 +25,9 @@
             <form method="GET" action="{{ route('admin.spaces.index') }}" class="grid gap-4 md:grid-cols-5">
 
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-gray-700">Campus</label>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Site</label>
                     <select name="campus_id" class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                        <option value="">Tous les campus</option>
+                        <option value="">Tous les sites</option>
                         @foreach($campuses as $campus)
                             <option value="{{ $campus->id }}" @selected(request('campus_id') == $campus->id)>
                                 {{ $campus->name }}
@@ -92,7 +92,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Espace</th>
-                            <th class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Campus</th>
+                            <th class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Site</th>
                             <th class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Étage</th>
                             <th class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Type</th>
                             <th class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Capacité</th>

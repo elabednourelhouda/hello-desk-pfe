@@ -28,7 +28,7 @@
 
                     <p class="mt-3 max-w-2xl text-sm leading-6 text-white/80">
                         Créez, consultez et suivez les comptes du personnel commercial Hello Desk,
-                        ainsi que leurs affectations par campus ou étage.
+                        ainsi que leurs affectations par site ou étage.
                     </p>
 
                     <div class="mt-6 flex flex-wrap gap-3">

@@ -114,7 +114,7 @@
 
                     <div class="rounded-2xl bg-slate-50 p-4">
                         <p class="text-xs font-black uppercase tracking-wide text-slate-400">
-                            Campus
+                            Site
                         </p>
                         <p class="mt-2 text-sm font-semibold text-slate-700">
                             {{ $contract->reservation?->campus?->name ?? 'Non précisé' }}

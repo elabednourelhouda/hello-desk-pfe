@@ -165,7 +165,7 @@ class DashboardController extends Controller
             $floorId = $row->floor_id ?? null;
 
             return [
-                'campus' => $campusId ? ($campusNames[$campusId] ?? 'Campus #' . $campusId) : 'Tous les campus',
+                'campus' => $campusId ? ($campusNames[$campusId] ?? 'Site #' . $campusId) : 'Tous les sites',
                 'floor' => $floorId ? ($floorNames[$floorId] ?? 'Étage #' . $floorId) : 'Tous les étages',
             ];
         });

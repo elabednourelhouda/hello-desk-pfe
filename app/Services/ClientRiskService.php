@@ -77,9 +77,11 @@ class ClientRiskService
             ];
         }
 
+        $matchedClient = $matchedClients->first();
+
         return [
             'status' => 'watchlist',
-            'reason' => 'Identité légale déjà utilisée par un autre client. Vérification manuelle recommandée avant réservation.',
+            'reason' => "Identité légale déjà utilisée par {$matchedClient->full_name}. Vérification manuelle recommandée avant réservation.",
         ];
     }
 

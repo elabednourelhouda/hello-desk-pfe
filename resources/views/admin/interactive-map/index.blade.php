@@ -53,7 +53,7 @@
                     </h1>
 
                     <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-500">
-                        Visualisez les espaces par campus et par étage, consultez leur disponibilité
+                        Visualisez les espaces par site et par étage, consultez leur disponibilité
                         et accédez rapidement à la réservation d’un espace disponible.
                     </p>
                 </div>
@@ -80,7 +80,7 @@
 
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">
-                        Campus
+                        Site
                     </label>
 
                     <select name="campus_id"
@@ -227,7 +227,7 @@
                                 </p>
 
                                 <p class="mt-1 text-sm text-gray-500">
-                                    Ajoutez des espaces pour ce campus et cet étage.
+                                    Ajoutez des espaces pour ce site et cet étage.
                                 </p>
                             </div>
                         </div>

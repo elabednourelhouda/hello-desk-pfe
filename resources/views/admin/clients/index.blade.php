@@ -33,7 +33,7 @@ $riskyClientCount = $watchlistRiskCount + $blockedRiskCount;
 
                     <p class="mt-3 max-w-2xl text-sm leading-6 text-white/80">
                         Consultez les clients créés après conversion des prospects ou ajoutés directement,
-                        avec leur statut, leur campus principal et leurs informations de contact.
+                        avec leur statut, leur site principal et leurs informations de contact.
                     </p>
 
                     <div class="mt-6 flex flex-wrap gap-3">
@@ -152,7 +152,7 @@ $riskyClientCount = $watchlistRiskCount + $blockedRiskCount;
                 </div>
             </a>
 
-            <a href="{{ route('admin.clients.index', ['risk_status' => 'blocked']) }}#clients-list"
+            <a href="{{ route('admin.clients.index', ['risk_status' => 'risky']) }}#clients-list"
                 class="rounded-2xl border border-red-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
                 <div class="flex items-start justify-between gap-4">
                     <div>
@@ -300,7 +300,7 @@ $riskyClientCount = $watchlistRiskCount + $blockedRiskCount;
                         </h2>
 
                         <p class="mt-1 text-sm text-gray-500">
-                            Consultez les dossiers clients, leurs coordonnées et leur campus principal.
+                            Consultez les dossiers clients, leurs coordonnées et leur site principal.
                         </p>
                     </div>
 
@@ -321,7 +321,7 @@ $riskyClientCount = $watchlistRiskCount + $blockedRiskCount;
                                 Contact
                             </th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">
-                                Campus principal
+                                Site principal
                             </th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">
                                 Statut

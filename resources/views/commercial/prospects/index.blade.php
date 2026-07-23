@@ -96,7 +96,7 @@ $lostRate = round((($counts['lost'] ?? 0) / $total) * 100);
         </div>
         @else
         <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Aucune affectation campus trouvée. Les prospects affichés restent limités à votre compte commercial.
+            Aucune affectation site trouvée. Les prospects affichés restent limités à votre compte commercial.
         </div>
         @endif
 
@@ -201,7 +201,7 @@ $lostRate = round((($counts['lost'] ?? 0) / $total) * 100);
                     </h2>
 
                     <p class="mt-1 text-sm text-gray-500">
-                        Filtrez vos prospects par contact, campus ou statut CRM.
+                        Filtrez vos prospects par contact, site ou statut CRM.
                     </p>
                 </div>
 
@@ -231,11 +231,11 @@ $lostRate = round((($counts['lost'] ?? 0) / $total) * 100);
 
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">
-                        Campus préféré
+                        Site préféré
                     </label>
                     <select name="preferred_campus_id"
                         class="filter-auto h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                        <option value="">Tous les campus accessibles</option>
+                        <option value="">Tous les sites accessibles</option>
                         @foreach($campuses as $campus)
                         <option value="{{ $campus->id }}" @selected(request('preferred_campus_id')==$campus->id)>
                             {{ $campus->name }}
@@ -294,7 +294,7 @@ $lostRate = round((($counts['lost'] ?? 0) / $total) * 100);
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Prospect</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Contact</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Besoin</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Campus</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Site</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Statut</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Responsable</th>
                             <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wide text-gray-500">Actions</th>

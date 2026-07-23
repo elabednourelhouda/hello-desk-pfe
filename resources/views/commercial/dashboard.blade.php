@@ -327,7 +327,7 @@
                             </span>
                         </div>
                         <p class="mt-2 text-sm text-emerald-700">
-                            Consultation des espaces par campus et étage.
+                            Consultation des espaces par site et étage.
                         </p>
                     </a>
 

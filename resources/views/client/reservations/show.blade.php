@@ -154,7 +154,7 @@
                     </div>
 
                     <div>
-                        <p class="text-sm font-medium text-slate-500">Campus</p>
+                        <p class="text-sm font-medium text-slate-500">Site</p>
                         <p class="mt-1 text-sm font-semibold text-slate-900">
                             {{ $reservation->campus->name ?? $space->campus->name ?? '—' }}
                         </p>

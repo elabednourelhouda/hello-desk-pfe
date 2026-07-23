@@ -30,8 +30,8 @@ $objectifs = [
 
 $modules = [
 [
-'title' => 'Campus et étages',
-'text' => 'Organiser les deux campus Hello Desk, leurs étages et la répartition des espaces.',
+'title' => 'Sites et étages',
+'text' => 'Organiser les deux sites Hello Desk, leurs étages et la répartition des espaces.',
 'color' => 'bg-sky-50 text-sky-700 ring-sky-100',
 'line' => 'from-sky-400 to-cyan-300',
 ],
@@ -93,7 +93,7 @@ $modules = [
                 </h1>
 
                 <p class="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-                    Cette plateforme centralise la gestion des campus, des étages, des bureaux,
+                    Cette plateforme centralise la gestion des sites, des étages, des bureaux,
                     des salles de réunion, des positions open space, des clients, des réservations,
                     des contrats et des réclamations.
                 </p>
@@ -169,7 +169,7 @@ $modules = [
                             <div>
                                 <p class="text-sm font-black text-slate-900">Carte interactive</p>
                                 <p class="mt-1 text-xs font-semibold text-slate-500">
-                                    Campus, étages et statuts visibles dans l’espace connecté.
+                                    Sites, étages et statuts visibles dans l’espace connecté.
                                 </p>
                             </div>
 

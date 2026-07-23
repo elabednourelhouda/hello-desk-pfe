@@ -94,7 +94,9 @@ class ClientController extends Controller
         }
 
         if ($request->filled('risk_status')) {
-            if (in_array($request->risk_status, ['clear', 'watchlist', 'blocked'], true)) {
+            if ($request->risk_status === 'risky') {
+                $query->whereIn('risk_status', ['watchlist', 'blocked']);
+            } elseif (in_array($request->risk_status, ['clear', 'watchlist', 'blocked'], true)) {
                 $query->where('risk_status', $request->risk_status);
             }
         }

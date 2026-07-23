@@ -134,14 +134,14 @@
                     <div class="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
                         <div>
                             <p class="font-semibold text-gray-900">
-                                {{ $assignment->campus->name ?? 'Campus supprimé' }}
+                                {{ $assignment->campus->name ?? 'Site supprimé' }}
                             </p>
 
                             <p class="mt-1 text-sm text-gray-600">
                                 @if($assignment->floor)
                                 Étage : {{ $assignment->floor->name }}
                                 @else
-                                Tous les étages du campus
+                                Tous les étages du site
                                 @endif
                             </p>
 
@@ -190,7 +190,7 @@
                 </h2>
 
                 <p class="mt-2 text-sm leading-6 text-gray-600">
-                    Affectez ce commercial à tous les campus, à un campus complet ou à plusieurs étages.
+                    Affectez ce commercial à tous les sites, à un site complet ou à plusieurs étages.
                 </p>
 
                 <form method="POST"
@@ -208,13 +208,13 @@
                             required
                             class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                             <option value="campus" @selected(old('assignment_type', 'campus' )==='campus' )>
-                                Un campus complet
+                                Un site complet
                             </option>
                             <option value="floors" @selected(old('assignment_type')==='floors' )>
                                 Plusieurs étages
                             </option>
                             <option value="all_campuses" @selected(old('assignment_type')==='all_campuses' )>
-                                Tous les campus
+                                Tous les sites
                             </option>
                         </select>
 
@@ -225,13 +225,13 @@
 
                     <div id="campus_block">
                         <label class="mb-2 block text-sm font-semibold text-gray-700">
-                            Campus
+                            Site
                         </label>
 
                         <select id="campus_id"
                             name="campus_id"
                             class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                            <option value="">Choisir un campus</option>
+                            <option value="">Choisir un site</option>
 
                             @foreach($campuses as $campus)
                             <option value="{{ $campus->id }}" @selected(old('campus_id')==$campus->id)>
@@ -251,7 +251,7 @@
                         </p>
 
                         <p class="mt-1 text-xs text-gray-500">
-                            Sélectionnez un ou plusieurs étages du campus choisi.
+                            Sélectionnez un ou plusieurs étages du site choisi.
                         </p>
 
                         <div class="mt-4 space-y-3">
@@ -268,7 +268,7 @@
                                 </label>
                                 @empty
                                 <p class="rounded-xl bg-white px-4 py-3 text-sm text-gray-500">
-                                    Aucun étage actif pour ce campus.
+                                    Aucun étage actif pour ce site.
                                 </p>
                                 @endforelse
                             </div>

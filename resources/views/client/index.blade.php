@@ -93,7 +93,7 @@
                         <tr>
                             <th class="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Client</th>
                             <th class="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Contact</th>
-                            <th class="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Campus</th>
+                            <th class="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Site</th>
                             <th class="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Compte</th>
                             <th class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Action</th>
                         </tr>

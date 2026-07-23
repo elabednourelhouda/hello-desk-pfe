@@ -16,7 +16,7 @@ $prospectForNeed = $prospect ?? null;
     <div class="grid gap-5 md:grid-cols-2">
         <div>
             <label class="mb-2 block text-sm font-semibold text-gray-700">
-                Campus souhaité
+                Site souhaité
             </label>
             <select name="preferred_campus_id"
                 class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">

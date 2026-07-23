@@ -187,7 +187,7 @@ class CommercialController extends Controller
 
         if ($validated['assignment_type'] !== 'all_campuses' && empty($validated['campus_id'])) {
             throw ValidationException::withMessages([
-                'campus_id' => 'Veuillez choisir un campus.',
+                'campus_id' => 'Veuillez choisir un site.',
             ]);
         }
 

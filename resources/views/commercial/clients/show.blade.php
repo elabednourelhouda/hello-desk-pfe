@@ -141,7 +141,7 @@ default => 'Non renseigné',
                         </div>
 
                         <div class="rounded-xl bg-slate-50 p-4">
-                            <p class="text-xs font-bold uppercase text-slate-400">Campus principal</p>
+                            <p class="text-xs font-bold uppercase text-slate-400">Site principal</p>
                             <p class="mt-1 text-sm font-medium text-slate-800">{{ $client->mainCampus->name ?? '-' }}</p>
                         </div>
 
@@ -189,7 +189,7 @@ default => 'Non renseigné',
                         </div>
 
                         <div class="rounded-xl bg-slate-50 p-4">
-                            <p class="text-xs font-bold uppercase text-slate-400">Campus préféré initial</p>
+                            <p class="text-xs font-bold uppercase text-slate-400">Site préféré initial</p>
                             <p class="mt-1 text-sm font-medium text-slate-800">
                                 {{ $client->prospect->preferredCampus?->name ?? '-' }}
                             </p>

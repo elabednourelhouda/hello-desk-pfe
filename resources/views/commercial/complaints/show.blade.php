@@ -252,7 +252,7 @@
                         </div>
 
                         <div>
-                            <p class="text-xs font-semibold uppercase text-gray-400">Campus / étage</p>
+                            <p class="text-xs font-semibold uppercase text-gray-400">Site / étage</p>
                             <p class="mt-1 text-gray-700">
                                 {{ $complaint->reservation?->campus?->name ?? 'Non précisé' }}
                                 —

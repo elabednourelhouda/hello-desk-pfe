@@ -130,7 +130,7 @@
                         </div>
 
                         <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Campus préféré</p>
+                            <p class="text-xs font-semibold uppercase text-gray-400">Site préféré</p>
                             <p class="mt-1 text-sm font-medium text-gray-800">
                                 {{ $prospect->preferredCampus->name ?? '-' }}
                             </p>

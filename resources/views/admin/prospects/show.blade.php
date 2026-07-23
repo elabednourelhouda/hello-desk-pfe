@@ -130,7 +130,7 @@
                         </div>
 
                         <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Campus préféré</p>
+                            <p class="text-xs font-semibold uppercase text-gray-400">Site préféré</p>
                             <p class="mt-1 text-sm font-medium text-gray-800">
                                 {{ $prospect->preferredCampus->name ?? '-' }}
                             </p>
@@ -208,7 +208,7 @@
                         <div>
                             <h2 class="text-lg font-bold text-gray-900">Besoin recherché</h2>
                             <p class="mt-1 text-sm text-gray-500">
-                                Besoin, campus, espace, budget et durée souhaitée.
+                                Besoin, site, espace, budget et durée souhaitée.
                             </p>
                         </div>
 
@@ -229,7 +229,7 @@
 
                         <div class="mt-5 grid gap-4 md:grid-cols-2">
                             <div class="rounded-xl border border-gray-100 bg-white p-4">
-                                <p class="text-xs font-semibold uppercase text-gray-400">Campus souhaité</p>
+                                <p class="text-xs font-semibold uppercase text-gray-400">Site souhaité</p>
                                 <p class="mt-1 text-sm font-semibold text-gray-800">
                                     {{ $prospect->preferredCampus->name ?? 'Non précisé' }}
                                 </p>

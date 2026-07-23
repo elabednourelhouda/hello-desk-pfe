@@ -97,7 +97,7 @@
 
                         @if($clientProfile->mainCampus)
                             <span class="rounded-full bg-white/15 px-3 py-1 text-white">
-                                Campus : {{ $clientProfile->mainCampus->name }}
+                                Site : {{ $clientProfile->mainCampus->name }}
                             </span>
                         @endif
                     </div>
@@ -205,7 +205,7 @@
                                     </p>
 
                                     <p class="mt-1 text-sm text-gray-600">
-                                        {{ $reservation->campus?->name ?? 'Campus non précisé' }}
+                                        {{ $reservation->campus?->name ?? 'Site non précisé' }}
                                         —
                                         {{ $reservation->floor?->name ?? 'Étage non précisé' }}
                                     </p>
