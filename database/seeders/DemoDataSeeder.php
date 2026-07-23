@@ -137,7 +137,7 @@ class DemoDataSeeder extends Seeder
                 'budget' => 1800,
                 'source' => 'Appel téléphonique',
                 'crm_status' => 'lost',
-                'notes' => 'Prospect perdu : budget insuffisant.',
+                'notes' => 'Prospect abandonné : budget insuffisant.',
             ],
             [
                 'full_name' => 'Anas Chraibi',

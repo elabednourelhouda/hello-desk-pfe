@@ -77,7 +77,7 @@
 
                     <div>
                         <div class="mb-2 flex items-center justify-between text-sm">
-                            <span class="font-semibold text-gray-600">Prospects perdus</span>
+                            <span class="font-semibold text-gray-600">Prospects abandonnés</span>
                             <span class="font-bold text-rose-600">{{ $lostRate }}%</span>
                         </div>
                         <div class="h-2.5 overflow-hidden rounded-full bg-gray-100">
@@ -180,7 +180,7 @@
                     </span>
                     <span class="inline-flex items-center gap-2 text-rose-600">
                         <span class="h-2.5 w-2.5 rounded-full bg-rose-500"></span>
-                        Perdus
+                        abandonnés
                     </span>
                 </div>
 
@@ -205,7 +205,7 @@
                 </div>
 
                 <div class="rounded-2xl bg-rose-50 p-5">
-                    <p class="text-sm font-semibold text-rose-700">Perdus</p>
+                    <p class="text-sm font-semibold text-rose-700">abandonnés</p>
                     <p class="mt-3 text-3xl font-bold text-gray-900">{{ $lostProspectsCount }}</p>
                     <p class="mt-1 text-sm text-gray-500">{{ $lostRate }}% du pipeline</p>
                 </div>

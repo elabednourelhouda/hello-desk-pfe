@@ -76,7 +76,7 @@ $lostRate = round((($counts['lost'] ?? 0) / $total) * 100);
 
                         <div>
                             <div class="mb-2 flex justify-between text-sm">
-                                <span class="font-semibold text-gray-600">Perdus</span>
+                                <span class="font-semibold text-gray-600">abandonné</span>
                                 <span class="font-bold text-rose-600">{{ $lostRate }}%</span>
                             </div>
                             <div class="h-2.5 overflow-hidden rounded-full bg-gray-100">
@@ -158,7 +158,7 @@ $lostRate = round((($counts['lost'] ?? 0) / $total) * 100);
                {{ $view === 'lost' ? 'ring-2 ring-rose-200' : '' }}">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-sm font-semibold text-gray-500">Perdus</p>
+                        <p class="text-sm font-semibold text-gray-500">Abandonnés</p>
                         <p class="mt-3 text-3xl font-bold text-gray-900">{{ $counts['lost'] }}</p>
                     </div>
 

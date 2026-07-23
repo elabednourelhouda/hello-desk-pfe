@@ -240,7 +240,7 @@
 
                     @elseif($prospect->crm_status === 'lost')
                     <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                        <p class="font-semibold">Prospect perdu</p>
+                        <p class="font-semibold">Prospect abandonné</p>
                         <p class="mt-1 text-xs">
                             Réactivez ce prospect avant de le convertir en client.
                         </p>
@@ -283,7 +283,7 @@
 
                     @if($prospect->crm_status === 'lost')
                     <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                        <p class="font-semibold">Ce prospect est marqué comme perdu.</p>
+                        <p class="font-semibold">Ce prospect est marqué comme abandonné.</p>
                         <p class="mt-1 text-xs">
                             Vous pouvez le réactiver si la discussion reprend.
                         </p>
@@ -291,7 +291,7 @@
                         @if($prospect->lost_reason)
                         <div class="mt-4 rounded-xl border border-red-100 bg-white/70 p-4">
                             <p class="text-xs font-bold uppercase tracking-wide text-red-700">
-                                Raison de perte
+                                Raison d'abandon
                             </p>
                             <p class="mt-2 text-sm leading-6 text-red-900">
                                 {{ $prospect->lost_reason }}
@@ -316,14 +316,14 @@
                     <div class="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
                         <p class="font-semibold">Ce prospect est déjà converti en client.</p>
                         <p class="mt-1 text-xs">
-                            Aucune action “Perdu” n’est disponible après conversion.
+                            Aucune action “Abandonné” n’est disponible après conversion.
                         </p>
                     </div>
 
                     @else
                     <form method="POST"
                         action="{{ route('commercial.prospects.markLost', $prospect) }}"
-                        onsubmit="return confirm('Marquer ce prospect comme perdu ?');"
+                        onsubmit="return confirm('Marquer ce prospect comme abandonné ?');"
                         class="mt-4">
                         @csrf
                         @method('PATCH')
@@ -331,7 +331,7 @@
                         <div class="space-y-4">
                             <div>
                                 <label for="lost_reason_key" class="mb-2 block text-sm font-semibold text-gray-700">
-                                    Raison de perte <span class="text-red-500">*</span>
+                                    Raison d'abandon <span class="text-red-500">*</span>
                                 </label>
 
                                 <select
@@ -373,7 +373,7 @@
 
                         <button type="submit"
                             class="mt-4 inline-flex h-11 w-full items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-700 transition hover:bg-red-100">
-                            Marquer comme perdu
+                            Marquer comme abandonné
                         </button>
                     </form>
                     @endif

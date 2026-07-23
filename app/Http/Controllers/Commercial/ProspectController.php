@@ -279,7 +279,7 @@ class ProspectController extends Controller
 
         if ($prospect->crm_status === 'converted') {
             return back()->withErrors([
-                'prospect' => 'Un prospect déjà converti ne peut pas être marqué comme perdu.',
+                'prospect' => 'Un prospect déjà converti ne peut pas être marqué comme abandonné.',
             ]);
         }
 
@@ -313,7 +313,7 @@ class ProspectController extends Controller
 
         return redirect()
             ->route('commercial.prospects.index', ['view' => 'lost'])
-            ->with('success', 'Prospect marqué comme perdu.');
+            ->with('success', 'Prospect marqué comme Abandonné.');
     }
 
     public function reactivate(int $prospect)
@@ -450,7 +450,7 @@ class ProspectController extends Controller
             'proposal_sent' => 'Proposition envoyée',
             'negotiation' => 'En négociation',
             'converted' => 'Converti en client',
-            'lost' => 'Perdu',
+            'lost' => 'Abandonné',
         ];
     }
 
@@ -463,7 +463,7 @@ class ProspectController extends Controller
             'visited' => 'Suivi effectué',
             'proposal_sent' => 'Proposition envoyée',
             'negotiation' => 'En négociation',
-            'lost' => 'Perdu',
+            'lost' => 'Abandonné',
         ];
     }
 
