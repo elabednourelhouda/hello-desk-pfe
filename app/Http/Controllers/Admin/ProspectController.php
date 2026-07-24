@@ -321,14 +321,14 @@ class ProspectController extends Controller
             'lost_reason_key' => ['required', Rule::in(array_keys($this->lostReasons()))],
             'lost_reason_details' => ['nullable', 'string', 'max:1000'],
         ], [
-            'lost_reason_key.required' => 'Veuillez choisir une raison de perte.',
-            'lost_reason_key.in' => 'La raison de perte sélectionnée est invalide.',
+            'lost_reason_key.required' => 'Veuillez choisir une raison d\'abandon.',
+            'lost_reason_key.in' => 'La raison d\'abandon sélectionnée est invalide.',
             'lost_reason_details.max' => 'Le détail ne doit pas dépasser 1000 caractères.',
         ]);
 
         if ($validated['lost_reason_key'] === 'autre' && blank($validated['lost_reason_details'] ?? null)) {
             return back()
-                ->withErrors(['lost_reason_details' => 'Veuillez préciser la raison de perte.'])
+                ->withErrors(['lost_reason_details' => 'Veuillez préciser la raison d\'abandon.'])
                 ->withInput();
         }
 

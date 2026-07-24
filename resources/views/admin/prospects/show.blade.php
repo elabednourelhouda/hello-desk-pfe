@@ -377,7 +377,7 @@
                         @if($prospect->lost_reason)
                         <div class="mt-4 rounded-xl border border-red-100 bg-white/70 p-4">
                             <p class="text-xs font-bold uppercase tracking-wide text-red-700">
-                                Raison de perte
+                                Raison d’abandon
                             </p>
                             <p class="mt-2 text-sm leading-6 text-red-900">
                                 {{ $prospect->lost_reason }}
@@ -417,7 +417,7 @@
                         <div class="space-y-4">
                             <div>
                                 <label for="lost_reason_key" class="mb-2 block text-sm font-semibold text-gray-700">
-                                    Raison de perte <span class="text-red-500">*</span>
+                                    Raison d’abandon <span class="text-red-500">*</span>
                                 </label>
 
                                 <select
