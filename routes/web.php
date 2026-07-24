@@ -33,6 +33,7 @@ use App\Http\Controllers\Commercial\InteractiveMapController as CommercialIntera
 use App\Http\Controllers\Commercial\ComplaintController as CommercialComplaintController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SpaceTypeController;
+use App\Http\Controllers\Admin\ProspectSourceController;
 use App\Http\Controllers\Admin\CampusController;
 
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
@@ -167,6 +168,13 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
 
             Route::patch('/sites/{campus}/floors/{floor}/toggle-active', [FloorController::class, 'toggleActive'])
                 ->name('sites.floors.toggleActive');
+
+            Route::resource('prospect-sources', ProspectSourceController::class)
+                ->except(['show'])
+                ->names('prospect-sources');
+
+            Route::patch('/prospect-sources/{prospectSource}/toggle-active', [ProspectSourceController::class, 'toggleActive'])
+                ->name('prospect-sources.toggleActive');
         });
 
         /*
