@@ -116,6 +116,45 @@
                         </div>
 
                         <div class="rounded-xl bg-gray-50 p-4">
+                            <p class="text-xs font-semibold uppercase text-gray-400">Origine du prospect</p>
+                            <p class="mt-1 text-sm font-medium text-gray-800">
+                                @switch($prospect->origin)
+                                    @case('local')
+                                        Local
+                                        @break
+                                    @case('etranger')
+                                        Étranger
+                                        @break
+                                    @default
+                                        -
+                                @endswitch
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <p class="text-xs font-semibold uppercase text-gray-400">Type de client</p>
+                            <p class="mt-1 text-sm font-medium text-gray-800">
+                                @switch($prospect->customer_type)
+                                    @case('physique')
+                                        Personne Physique
+                                        @break
+                                    @case('morale')
+                                        Personne Morale
+                                        @break
+                                    @default
+                                        -
+                                @endswitch
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <p class="text-xs font-semibold uppercase text-gray-400">Secteur d’activité</p>
+                            <p class="mt-1 text-sm font-medium text-gray-800">
+                                {{ $prospect->activitySector->name ?? '-' }}
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-4">
                             <p class="text-xs font-semibold uppercase text-gray-400">Date d’entrée CRM</p>
                             <p class="mt-1 text-sm font-medium text-gray-800">
                                 {{ $prospect->registered_at ? \Carbon\Carbon::parse($prospect->registered_at)->format('d/m/Y') : '-' }}
@@ -129,20 +168,6 @@
                             </p>
                         </div>
 
-                        <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Site préféré</p>
-                            <p class="mt-1 text-sm font-medium text-gray-800">
-                                {{ $prospect->preferredCampus->name ?? '-' }}
-                            </p>
-                        </div>
-
-                        <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Type d’espace recherché</p>
-                            <p class="mt-1 text-sm font-medium text-gray-800">
-                                {{ $prospect->preferredSpaceType->name ?? '-' }}
-                            </p>
-                        </div>
-
                         <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
                             <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 Source du prospect
@@ -152,71 +177,110 @@
                                 {{ $sources[$prospect->source] ?? ($prospect->source ?: 'Non renseignée') }}
                             </p>
                         </div>
-
-                        <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Nombre de personnes / postes</p>
-                            <p class="mt-1 text-sm font-medium text-gray-800">
-                                {{ $prospect->people_count ?? '-' }}
-                            </p>
-                        </div>
-
-                        <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Budget approximatif</p>
-                            <p class="mt-1 text-sm font-medium text-gray-800">
-                                {{ $prospect->budget ? number_format($prospect->budget, 2, ',', ' ') . ' DH' : '-' }}
-                            </p>
-                        </div>
-
-                        <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Date de début souhaitée</p>
-                            <p class="mt-1 text-sm font-medium text-gray-800">
-                                {{ $prospect->desired_start_date ? \Carbon\Carbon::parse($prospect->desired_start_date)->format('d/m/Y') : '-' }}
-                            </p>
-                        </div>
-
-                        <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Durée souhaitée</p>
-                            <p class="mt-1 text-sm font-medium text-gray-800">
-                                @switch($prospect->desired_rental_period)
-                                @case('hourly')
-                                À l’heure
-                                @break
-
-                                @case('daily')
-                                À la journée
-                                @break
-
-                                @case('monthly')
-                                Au mois
-                                @break
-
-                                @case('custom')
-                                Personnalisée
-                                @break
-
-                                @default
-                                -
-                                @endswitch
-                            </p>
-                        </div>
                     </div>
                 </section>
 
-                {{-- Need --}}
-                <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                    <h2 class="mb-4 text-lg font-bold text-gray-900">Besoin recherché</h2>
-                    <p class="text-sm leading-7 text-gray-700">
-                        {{ $prospect->need ?? 'Aucun besoin précisé.' }}
-                    </p>
-                </section>
+                {{-- Besoin recherché --}}
+                <details class="group rounded-2xl border border-gray-200 bg-white shadow-sm">
+                    <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">Besoin recherché</h2>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Besoin, site, espace, budget et durée souhaitée.
+                            </p>
+                        </div>
 
-                {{-- Notes --}}
-                <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                    <h2 class="mb-4 text-lg font-bold text-gray-900">Notes commerciales</h2>
-                    <p class="text-sm leading-7 text-gray-700">
-                        {{ $prospect->notes ?? 'Aucune note commerciale.' }}
-                    </p>
-                </section>
+                        <span class="text-sm font-semibold text-[#284625] group-open:hidden">
+                            Afficher
+                        </span>
+                        <span class="hidden text-sm font-semibold text-[#284625] group-open:inline">
+                            Masquer
+                        </span>
+                    </summary>
+
+                    <div class="border-t border-gray-100 px-6 pb-6 pt-5">
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <p class="text-sm leading-7 text-gray-700">
+                                {{ $prospect->need ?? 'Aucun besoin précisé.' }}
+                            </p>
+                        </div>
+
+                        <div class="mt-5 grid gap-4 md:grid-cols-2">
+                            <div class="rounded-xl border border-gray-100 bg-white p-4">
+                                <p class="text-xs font-semibold uppercase text-gray-400">Site souhaité</p>
+                                <p class="mt-1 text-sm font-semibold text-gray-800">
+                                    {{ $prospect->preferredCampus->name ?? 'Non précisé' }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-xl border border-gray-100 bg-white p-4">
+                                <p class="text-xs font-semibold uppercase text-gray-400">Espace recherché</p>
+                                <p class="mt-1 text-sm font-semibold text-gray-800">
+                                    {{ $prospect->preferredSpaceType->name ?? 'Non précisé' }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-xl border border-gray-100 bg-white p-4">
+                                <p class="text-xs font-semibold uppercase text-gray-400">Nombre de personnes / postes</p>
+                                <p class="mt-1 text-sm font-semibold text-gray-800">
+                                    {{ $prospect->people_count ?? 'Non précisé' }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-xl border border-gray-100 bg-white p-4">
+                                <p class="text-xs font-semibold uppercase text-gray-400">Budget approximatif</p>
+                                <p class="mt-1 text-sm font-semibold text-gray-800">
+                                    {{ $prospect->budget ? number_format($prospect->budget, 2, ',', ' ') . ' DH' : 'Non précisé' }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-xl border border-gray-100 bg-white p-4">
+                                <p class="text-xs font-semibold uppercase text-gray-400">Date souhaitée</p>
+                                <p class="mt-1 text-sm font-semibold text-gray-800">
+                                    {{ $prospect->desired_start_date ? \Carbon\Carbon::parse($prospect->desired_start_date)->format('d/m/Y') : 'Non précisée' }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-xl border border-gray-100 bg-white p-4">
+                                <p class="text-xs font-semibold uppercase text-gray-400">Durée souhaitée</p>
+                                <p class="mt-1 text-sm font-semibold text-gray-800">
+                                    @switch($prospect->desired_rental_period)
+                                    @case('hourly') À l’heure @break
+                                    @case('daily') À la journée @break
+                                    @case('monthly') Au mois @break
+                                    @case('custom') Personnalisée @break
+                                    @default Non précisée
+                                    @endswitch
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                {{-- Notes commerciales --}}
+                <details class="group rounded-2xl border border-gray-200 bg-white shadow-sm">
+                    <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">Notes commerciales</h2>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Notes internes visibles par l’administration et le commercial.
+                            </p>
+                        </div>
+
+                        <span class="text-sm font-semibold text-[#284625] group-open:hidden">
+                            Afficher
+                        </span>
+                        <span class="hidden text-sm font-semibold text-[#284625] group-open:inline">
+                            Masquer
+                        </span>
+                    </summary>
+
+                    <div class="border-t border-gray-100 px-6 pb-6 pt-5">
+                        <p class="whitespace-pre-line text-sm leading-7 text-gray-700">
+                            {{ $prospect->notes ?: 'Aucune note commerciale pour le moment.' }}
+                        </p>
+                    </div>
+                </details>
             </div>
 
             {{-- RIGHT SIDE --}}
@@ -291,7 +355,7 @@
                         @if($prospect->lost_reason)
                         <div class="mt-4 rounded-xl border border-red-100 bg-white/70 p-4">
                             <p class="text-xs font-bold uppercase tracking-wide text-red-700">
-                                Raison d'abandon
+                                Raison d’abandon
                             </p>
                             <p class="mt-2 text-sm leading-6 text-red-900">
                                 {{ $prospect->lost_reason }}
@@ -331,7 +395,7 @@
                         <div class="space-y-4">
                             <div>
                                 <label for="lost_reason_key" class="mb-2 block text-sm font-semibold text-gray-700">
-                                    Raison d'abandon <span class="text-red-500">*</span>
+                                    Raison d’abandon <span class="text-red-500">*</span>
                                 </label>
 
                                 <select

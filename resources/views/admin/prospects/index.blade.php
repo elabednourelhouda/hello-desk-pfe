@@ -219,7 +219,7 @@
 
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">
-                        Site préféré
+                        Site souhaité
                     </label>
                     <select name="preferred_campus_id"
                             class="filter-auto h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
@@ -281,9 +281,8 @@
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Prospect</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Contact</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Date prise de contact</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Besoin</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Site</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Statut</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Commercial</th>
                             <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wide text-gray-500">Actions</th>
                         </tr>
@@ -291,34 +290,6 @@
 
                     <tbody class="divide-y divide-gray-100 bg-white">
                         @forelse($prospects as $prospect)
-                            @php
-                                $statusClasses = [
-                                    'new' => 'bg-slate-100 text-slate-700 ring-slate-500/20',
-                                    'contacted' => 'bg-blue-50 text-blue-700 ring-blue-600/20',
-                                    'visit_planned' => 'bg-indigo-50 text-indigo-700 ring-indigo-600/20',
-                                    'visit_done' => 'bg-purple-50 text-purple-700 ring-purple-600/20',
-                                    'visit_scheduled' => 'bg-indigo-50 text-indigo-700 ring-indigo-600/20',
-                                    'visited' => 'bg-purple-50 text-purple-700 ring-purple-600/20',
-                                    'proposal_sent' => 'bg-amber-50 text-amber-700 ring-amber-600/20',
-                                    'negotiation' => 'bg-orange-50 text-orange-700 ring-orange-600/20',
-                                    'converted' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-                                    'lost' => 'bg-rose-50 text-rose-700 ring-rose-600/20',
-                                ];
-
-                                $statusDotClasses = [
-                                    'new' => 'bg-slate-400',
-                                    'contacted' => 'bg-blue-500',
-                                    'visit_planned' => 'bg-indigo-500',
-                                    'visit_done' => 'bg-purple-500',
-                                    'visit_scheduled' => 'bg-indigo-500',
-                                    'visited' => 'bg-purple-500',
-                                    'proposal_sent' => 'bg-amber-500',
-                                    'negotiation' => 'bg-orange-500',
-                                    'converted' => 'bg-emerald-500',
-                                    'lost' => 'bg-rose-500',
-                                ];
-                            @endphp
-
                             <tr class="transition hover:bg-gray-50">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
@@ -347,18 +318,45 @@
                                 </td>
 
                                 <td class="px-6 py-4 text-sm text-gray-700">
-                                    {{ \Illuminate\Support\Str::limit($prospect->need ?? '-', 42) }}
+                                    {{ optional($prospect->registered_at)->format('d/m/Y') ?? '-' }}
                                 </td>
 
                                 <td class="px-6 py-4 text-sm text-gray-700">
-                                    {{ $prospect->preferredCampus->name ?? '-' }}
-                                </td>
+                                    <div class="space-y-1">
+                                        <p class="font-semibold text-gray-900">
+                                            {{ $prospect->preferredSpaceType->name ?? 'Type non précisé' }}
+                                        </p>
 
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold ring-1 ring-inset {{ $statusClasses[$prospect->crm_status] ?? 'bg-slate-100 text-slate-700 ring-slate-500/20' }}">
-                                        <span class="h-2 w-2 rounded-full {{ $statusDotClasses[$prospect->crm_status] ?? 'bg-slate-400' }}"></span>
-                                        {{ $statuses[$prospect->crm_status] ?? $prospect->crm_status }}
-                                    </span>
+                                        <p class="text-xs text-gray-500">
+                                            {{ $prospect->people_count ? $prospect->people_count . ' personne(s)' : 'Nombre non précisé' }}
+                                        </p>
+
+                                        <p class="text-xs text-gray-500">
+                                            {{ $prospect->preferredCampus->name ?? 'Site non précisé' }}
+                                        </p>
+
+                                        @if($prospect->crm_followup_color)
+                                            <span class="inline-flex items-center gap-1.5 text-xs font-semibold
+                                                {{ match($prospect->crm_followup_color) {
+                                                    'green' => 'text-green-700',
+                                                    'yellow' => 'text-amber-700',
+                                                    'red' => 'text-red-700',
+                                                } }}">
+                                                <span class="h-2.5 w-2.5 rounded-full
+                                                    {{ match($prospect->crm_followup_color) {
+                                                        'green' => 'bg-green-500',
+                                                        'yellow' => 'bg-amber-400',
+                                                        'red' => 'bg-red-500',
+                                                    } }}"></span>
+                                                {{ $prospect->crm_followup_label }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500">
+                                                <span class="h-2.5 w-2.5 rounded-full bg-gray-300"></span>
+                                                {{ $statuses[$prospect->crm_status] ?? $prospect->crm_status }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
 
                                 <td class="px-6 py-4 text-sm text-gray-700">
@@ -381,7 +379,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-14 text-center">
+                                <td colspan="6" class="px-6 py-14 text-center">
                                     <div class="mx-auto max-w-sm">
                                         <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-xl font-bold text-slate-400">
                                             +

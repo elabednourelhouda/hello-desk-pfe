@@ -198,7 +198,7 @@ default => 'bg-slate-100 text-slate-700 ring-slate-200',
                         </div>
 
                         <div class="rounded-xl bg-slate-50 p-4">
-                            <p class="text-xs font-bold uppercase text-slate-400">Site préféré initial</p>
+                            <p class="text-xs font-bold uppercase text-slate-400">Site souhaité initial</p>
                             <p class="mt-1 text-sm font-medium text-slate-800">
                                 {{ $client->prospect->preferredCampus?->name ?? '-' }}
                             </p>

@@ -8,6 +8,7 @@ use App\Models\Client;
 use App\Models\Prospect;
 use App\Models\SpaceType;
 use App\Models\User;
+use App\Models\ActivitySector;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -41,6 +42,7 @@ class ProspectController extends Controller
                 'preferredSpaceType',
                 'assignedCommercial',
                 'convertedClient',
+                'latestVisit',
             ])
             ->latest();
 
@@ -96,6 +98,7 @@ class ProspectController extends Controller
             'campuses' => $this->availableCampuses($assignedCampusIds),
             'assignedCampuses' => $this->assignedCampuses($assignedCampusIds),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
+            'activitySectors' => ActivitySector::where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->editableCrmStatuses(),
             'sources' => $this->prospectSources(),
         ]);
@@ -123,6 +126,9 @@ class ProspectController extends Controller
             'desired_rental_period' => ['nullable', Rule::in(['hourly', 'daily', 'monthly', 'custom'])],
             'budget' => ['nullable', 'numeric', 'min:0'],
             'source' => ['nullable', Rule::in(array_keys($this->prospectSources()))],
+            'origin' => ['nullable', 'in:local,etranger'],
+            'customer_type' => ['nullable', 'in:physique,morale'],
+            'activity_sector_id' => ['nullable', 'exists:activity_sectors,id'],
             'notes' => ['nullable', 'string'],
         ], [
             'full_name.required' => 'Le nom complet est obligatoire.',
@@ -151,6 +157,7 @@ class ProspectController extends Controller
         $prospect->load([
             'preferredCampus',
             'preferredSpaceType',
+            'activitySector',
             'assignedCommercial',
             'convertedClient',
             'visits.campus',
@@ -166,6 +173,7 @@ class ProspectController extends Controller
             'assignedCampuses' => $this->assignedCampuses($assignedCampusIds),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->crmStatuses(),
+            'activitySectors' => ActivitySector::where('is_active', true)->orderBy('name')->get(),
             'sources' => $this->prospectSources(),
             'lostReasons' => $this->lostReasons(),
         ]);
@@ -479,6 +487,7 @@ class ProspectController extends Controller
             'campuses' => $this->availableCampuses($assignedCampusIds),
             'assignedCampuses' => $this->assignedCampuses($assignedCampusIds),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
+            'activitySectors' => ActivitySector::where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->editableCrmStatuses(),
             'sources' => $this->prospectSources(),
         ]);
@@ -507,6 +516,9 @@ class ProspectController extends Controller
             'desired_rental_period' => ['nullable', Rule::in(['hourly', 'daily', 'monthly', 'custom'])],
 
             'source' => ['nullable', Rule::in(array_keys($this->prospectSources()))],
+            'origin' => ['nullable', 'in:local,etranger'],
+            'customer_type' => ['nullable', 'in:physique,morale'],
+            'activity_sector_id' => ['nullable', 'exists:activity_sectors,id'],
             'need' => ['nullable', 'string'],
             'crm_status' => ['required', 'in:new,contacted,visit_scheduled,visited,proposal_sent,negotiation,converted,lost'],
             'notes' => ['nullable', 'string'],

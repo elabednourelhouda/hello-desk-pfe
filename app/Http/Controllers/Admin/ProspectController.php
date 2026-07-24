@@ -8,6 +8,7 @@ use App\Models\Client;
 use App\Models\Prospect;
 use App\Models\SpaceType;
 use App\Models\User;
+use App\Models\ActivitySector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -34,6 +35,7 @@ class ProspectController extends Controller
             'preferredSpaceType',
             'assignedCommercial',
             'convertedClient',
+            'latestVisit',
         ])->latest();
 
         if ($view === 'active') {
@@ -72,6 +74,7 @@ class ProspectController extends Controller
         return view('admin.prospects.index', [
             'prospects' => $prospects,
             'campuses' => Campus::where('is_active', true)->orderBy('name')->get(),
+            'activitySectors' => ActivitySector::where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->crmStatuses(),
             'view' => $view,
             'counts' => $counts,
@@ -82,6 +85,7 @@ class ProspectController extends Controller
     {
         return view('admin.prospects.create', [
             'campuses' => Campus::where('is_active', true)->orderBy('name')->get(),
+            'activitySectors' => ActivitySector::where('is_active', true)->orderBy('name')->get(),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
             'commercials' => User::where('role', 'commercial')->orderBy('name')->get(),
             'statuses' => $this->crmStatuses(),
@@ -105,6 +109,9 @@ class ProspectController extends Controller
             'need' => ['nullable', 'string'],
             'preferred_campus_id' => ['nullable', 'exists:campuses,id'],
             'preferred_space_type_id' => ['nullable', 'exists:space_types,id'],
+            'origin' => ['nullable', 'in:local,etranger'],
+            'customer_type' => ['nullable', 'in:physique,morale'],
+            'activity_sector_id' => ['nullable', 'exists:activity_sectors,id'],
 
             'people_count' => ['nullable', 'integer', 'min:1', 'max:100'],
             'desired_start_date' => ['nullable', 'date'],
@@ -143,6 +150,7 @@ class ProspectController extends Controller
         $prospect->load([
             'preferredCampus',
             'preferredSpaceType',
+            'activitySector',
             'assignedCommercial',
             'convertedClient',
             'visits.campus',
@@ -157,6 +165,7 @@ class ProspectController extends Controller
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
             'sources' => $this->prospectSources(),
             'lostReasons' => $this->lostReasons(),
+            'activitySectors' => ActivitySector::where('is_active', true)->orderBy('name')->get(),
         ]);
     }
 
@@ -176,6 +185,7 @@ class ProspectController extends Controller
             'commercials' => User::where('role', 'commercial')->orderBy('name')->get(),
             'statuses' => $this->editableCrmStatuses($prospect),
             'sources' => $this->prospectSources(),
+            'activitySectors' => ActivitySector::where('is_active', true)->orderBy('name')->get(),
         ]);
     }
 
@@ -197,7 +207,9 @@ class ProspectController extends Controller
             'desired_start_date' => ['nullable', 'date'],
             'desired_rental_period' => ['nullable', 'in:hourly,daily,monthly,custom'],
             'source' => ['nullable', Rule::in(array_keys($this->prospectSources()))],
-
+            'origin' => ['nullable', 'in:local,etranger'],
+            'customer_type' => ['nullable', 'in:physique,morale'],
+            'activity_sector_id' => ['nullable', 'exists:activity_sectors,id'],
             'crm_status' => ['required', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],
             'assigned_to' => ['nullable', 'exists:users,id'],

@@ -116,6 +116,8 @@
                             placeholder="Ex: Atlas Consulting"
                             class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                     </div>
+
+                    @include('shared.prospects._identity_form')
                 </div>
 
                 {{-- Divider --}}

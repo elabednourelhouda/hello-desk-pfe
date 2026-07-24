@@ -122,6 +122,22 @@
 
                             <div>
                                 <label class="mb-2 block text-sm font-semibold text-gray-700">
+                                    Date de prochaine relance
+                                </label>
+                                <input type="date"
+                                    name="next_followup_at"
+                                    value="{{ old('next_followup_at') }}"
+                                    class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Laissez vide si aucune relance n’est nécessaire pour l’instant.
+                                </p>
+                                @error('next_followup_at')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold text-gray-700">
                                     Type de contact <span class="text-red-500">*</span>
                                 </label>
 
@@ -189,6 +205,12 @@
                                             {!! nl2br(e($visit->notes)) !!}
                                         </p>
                                         @endif
+
+                                        @if($visit->next_followup_at)
+                                        <p class="mt-2 text-xs font-semibold text-[#284625]">
+                                            → Prochaine relance prévue le {{ \Carbon\Carbon::parse($visit->next_followup_at)->format('d/m/Y') }}
+                                        </p>
+                                        @endif
                                     </div>
 
                                     <div class="flex flex-wrap items-center justify-end gap-2">
@@ -222,6 +244,24 @@
                     <h2 class="text-lg font-bold text-gray-900">Résumé CRM</h2>
 
                     <dl class="mt-5 space-y-4 text-sm">
+                        <div>
+                            <dt class="text-gray-500">Statut de relance</dt>
+                            <dd class="mt-1 flex items-center gap-2 font-semibold text-gray-900">
+                                @if($prospect->crm_followup_color)
+                                    <span class="h-3 w-3 rounded-full
+                                        {{ match($prospect->crm_followup_color) {
+                                            'green' => 'bg-green-500',
+                                            'yellow' => 'bg-amber-400',
+                                            'red' => 'bg-red-500',
+                                            default => 'bg-gray-300',
+                                        } }}"></span>
+                                    {{ $prospect->crm_followup_label }}
+                                @else
+                                    <span class="text-gray-400">Non applicable</span>
+                                @endif
+                            </dd>
+                        </div>
+
                         <div>
                             <dt class="text-gray-500">Statut actuel</dt>
                             <dd class="mt-1 font-semibold text-gray-900">

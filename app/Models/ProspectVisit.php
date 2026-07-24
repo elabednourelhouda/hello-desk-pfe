@@ -14,12 +14,14 @@ class ProspectVisit extends Model
         'space_type_id',
         'visit_date',
         'visit_time',
+        'next_followup_at',
         'status',
         'notes',
     ];
 
     protected $casts = [
         'visit_date' => 'date',
+        'next_followup_at' => 'date',
     ];
 
     public function prospect()

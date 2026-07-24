@@ -34,6 +34,7 @@ use App\Http\Controllers\Commercial\ComplaintController as CommercialComplaintCo
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SpaceTypeController;
 use App\Http\Controllers\Admin\ProspectSourceController;
+use App\Http\Controllers\Admin\ActivitySectorController;
 use App\Http\Controllers\Admin\CampusController;
 
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
@@ -175,6 +176,13 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
 
             Route::patch('/prospect-sources/{prospectSource}/toggle-active', [ProspectSourceController::class, 'toggleActive'])
                 ->name('prospect-sources.toggleActive');
+
+            Route::resource('activity-sectors', ActivitySectorController::class)
+                ->except(['show'])
+                ->names('activity-sectors');
+
+            Route::patch('/activity-sectors/{activitySector}/toggle-active', [ActivitySectorController::class, 'toggleActive'])
+                ->name('activity-sectors.toggleActive');
         });
 
         /*

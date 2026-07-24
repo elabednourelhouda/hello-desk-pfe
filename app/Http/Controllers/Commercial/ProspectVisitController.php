@@ -19,6 +19,9 @@ class ProspectVisitController extends Controller
             'visit_time' => ['nullable', 'date_format:H:i'],
             'contact_type' => ['required', 'in:appel_telephonique,whatsapp,email,message_recu,note_interne'],
             'summary' => ['required', 'string', 'max:2000'],
+            'next_followup_at' => ['nullable', 'date', 'after_or_equal:visit_date'],
+        ], [
+            'next_followup_at.after_or_equal' => 'La date de prochaine relance doit être après la date de ce suivi.',
         ]);
 
         $contactTypes = [
@@ -36,6 +39,7 @@ class ProspectVisitController extends Controller
             'created_by' => Auth::id(),
             'visit_date' => $validated['visit_date'],
             'visit_time' => $validated['visit_time'] ?? null,
+            'next_followup_at' => $validated['next_followup_at'] ?? null,
             'campus_id' => null,
             'space_type_id' => null,
             'status' => 'done',

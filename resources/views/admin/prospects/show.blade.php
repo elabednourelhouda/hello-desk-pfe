@@ -116,6 +116,45 @@
                         </div>
 
                         <div class="rounded-xl bg-gray-50 p-4">
+                            <p class="text-xs font-semibold uppercase text-gray-400">Origine du prospect</p>
+                            <p class="mt-1 text-sm font-medium text-gray-800">
+                                @switch($prospect->origin)
+                                    @case('local')
+                                        Local
+                                        @break
+                                    @case('etranger')
+                                        Étranger
+                                        @break
+                                    @default
+                                        -
+                                @endswitch
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <p class="text-xs font-semibold uppercase text-gray-400">Type de client</p>
+                            <p class="mt-1 text-sm font-medium text-gray-800">
+                                @switch($prospect->customer_type)
+                                    @case('physique')
+                                        Personne Physique
+                                        @break
+                                    @case('morale')
+                                        Personne Morale
+                                        @break
+                                    @default
+                                        -
+                                @endswitch
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-4">
+                            <p class="text-xs font-semibold uppercase text-gray-400">Secteur d’activité</p>
+                            <p class="mt-1 text-sm font-medium text-gray-800">
+                                {{ $prospect->activitySector->name ?? '-' }}
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl bg-gray-50 p-4">
                             <p class="text-xs font-semibold uppercase text-gray-400">Date d’entrée CRM</p>
                             <p class="mt-1 text-sm font-medium text-gray-800">
                                 {{ $prospect->registered_at ? \Carbon\Carbon::parse($prospect->registered_at)->format('d/m/Y') : '-' }}
@@ -129,20 +168,6 @@
                             </p>
                         </div>
 
-                        <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Site préféré</p>
-                            <p class="mt-1 text-sm font-medium text-gray-800">
-                                {{ $prospect->preferredCampus->name ?? '-' }}
-                            </p>
-                        </div>
-
-                        <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Type d’espace recherché</p>
-                            <p class="mt-1 text-sm font-medium text-gray-800">
-                                {{ $prospect->preferredSpaceType->name ?? '-' }}
-                            </p>
-                        </div>
-
                         <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
                             <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 Source du prospect
@@ -150,53 +175,6 @@
 
                             <p class="mt-1 text-sm font-semibold text-gray-900">
                                 {{ $sources[$prospect->source] ?? ($prospect->source ?: 'Non renseignée') }}
-                            </p>
-                        </div>
-
-                        <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Nombre de personnes / postes</p>
-                            <p class="mt-1 text-sm font-medium text-gray-800">
-                                {{ $prospect->people_count ?? '-' }}
-                            </p>
-                        </div>
-
-                        <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Budget approximatif</p>
-                            <p class="mt-1 text-sm font-medium text-gray-800">
-                                {{ $prospect->budget ? number_format($prospect->budget, 2, ',', ' ') . ' DH' : '-' }}
-                            </p>
-                        </div>
-
-                        <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Date de début souhaitée</p>
-                            <p class="mt-1 text-sm font-medium text-gray-800">
-                                {{ $prospect->desired_start_date ? \Carbon\Carbon::parse($prospect->desired_start_date)->format('d/m/Y') : '-' }}
-                            </p>
-                        </div>
-
-                        <div class="rounded-xl bg-gray-50 p-4">
-                            <p class="text-xs font-semibold uppercase text-gray-400">Durée souhaitée</p>
-                            <p class="mt-1 text-sm font-medium text-gray-800">
-                                @switch($prospect->desired_rental_period)
-                                @case('hourly')
-                                À l’heure
-                                @break
-
-                                @case('daily')
-                                À la journée
-                                @break
-
-                                @case('monthly')
-                                Au mois
-                                @break
-
-                                @case('custom')
-                                Personnalisée
-                                @break
-
-                                @default
-                                -
-                                @endswitch
                             </p>
                         </div>
                     </div>
