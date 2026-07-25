@@ -9,6 +9,7 @@ use App\Models\Prospect;
 use App\Models\SpaceType;
 use App\Models\User;
 use App\Models\ActivitySector;
+use App\Models\ProspectSource;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -40,7 +41,6 @@ class ProspectController extends Controller
             ->with([
                 'preferredCampus',
                 'preferredSpaceType',
-                'assignedCommercial',
                 'convertedClient',
                 'latestVisit',
             ])
@@ -100,7 +100,7 @@ class ProspectController extends Controller
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
             'activitySectors' => ActivitySector::where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->editableCrmStatuses(),
-            'sources' => $this->prospectSources(),
+            'sources' => $this->prospectSourceOptions(),
         ]);
     }
 
@@ -125,7 +125,7 @@ class ProspectController extends Controller
             'desired_start_date' => ['nullable', 'date'],
             'desired_rental_period' => ['nullable', Rule::in(['hourly', 'daily', 'monthly', 'custom'])],
             'budget' => ['nullable', 'numeric', 'min:0'],
-            'source' => ['nullable', Rule::in(array_keys($this->prospectSources()))],
+            'source' => ['nullable', 'exists:prospect_sources,code'],
             'origin' => ['nullable', 'in:local,etranger'],
             'customer_type' => ['nullable', 'in:physique,morale'],
             'activity_sector_id' => ['nullable', 'exists:activity_sectors,id'],
@@ -174,7 +174,7 @@ class ProspectController extends Controller
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->crmStatuses(),
             'activitySectors' => ActivitySector::where('is_active', true)->orderBy('name')->get(),
-            'sources' => $this->prospectSources(),
+            'sources' => $this->allProspectSourceLabels(),
             'lostReasons' => $this->lostReasons(),
         ]);
     }
@@ -489,7 +489,7 @@ class ProspectController extends Controller
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
             'activitySectors' => ActivitySector::where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->editableCrmStatuses(),
-            'sources' => $this->prospectSources(),
+            'sources' => $this->prospectSourceOptions($prospect->source),
         ]);
     }
 
@@ -515,7 +515,7 @@ class ProspectController extends Controller
             'desired_start_date' => ['nullable', 'date'],
             'desired_rental_period' => ['nullable', Rule::in(['hourly', 'daily', 'monthly', 'custom'])],
 
-            'source' => ['nullable', Rule::in(array_keys($this->prospectSources()))],
+            'source' => ['nullable', 'exists:prospect_sources,code'],
             'origin' => ['nullable', 'in:local,etranger'],
             'customer_type' => ['nullable', 'in:physique,morale'],
             'activity_sector_id' => ['nullable', 'exists:activity_sectors,id'],
@@ -534,22 +534,36 @@ class ProspectController extends Controller
             ->with('success', 'Le prospect a été modifié avec succès.');
     }
 
-    private function prospectSources(): array
+    /**
+     * Options for the "Source du prospect" dropdown when the user can
+     * still pick from the list (create, or edit — where $currentCode
+     * keeps the prospect's current source selectable even if an admin
+     * has since deactivated it in Configuration > Sources de prospects).
+     */
+    private function prospectSourceOptions(?string $currentCode = null): array
     {
-        return [
-            'passage_direct' => 'Passage direct',
-            'appel_telephonique' => 'Appel téléphonique',
-            'whatsapp' => 'WhatsApp',
-            'email' => 'Email',
-            'site_web' => 'Site web',
-            'instagram' => 'Instagram',
-            'facebook' => 'Facebook',
-            'google_maps' => 'Google / Maps',
-            'recommandation' => 'Recommandation',
-            'ancien_client' => 'Ancien client',
-            'evenement' => 'Événement / networking',
-            'autre' => 'Autre',
-        ];
+        return ProspectSource::query()
+            ->where(function ($q) use ($currentCode) {
+                $q->where('is_active', true);
+
+                if ($currentCode) {
+                    $q->orWhere('code', $currentCode);
+                }
+            })
+            ->orderBy('name')
+            ->pluck('name', 'code')
+            ->toArray();
+    }
+
+    /**
+     * Every source label (active or not), for read-only displays like
+     * the prospect's "Dossier" page, where we just need to resolve
+     * whatever code is already stored — never used to populate a
+     * selectable dropdown.
+     */
+    private function allProspectSourceLabels(): array
+    {
+        return ProspectSource::orderBy('name')->pluck('name', 'code')->toArray();
     }
 
     private function lostReasons(): array

@@ -295,7 +295,7 @@ $lostRate = round((($counts['lost'] ?? 0) / $total) * 100);
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Contact</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Date prise de contact</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Besoin</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Responsable</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Date prochaine relance</th>
                             <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wide text-gray-500">Actions</th>
                         </tr>
                     </thead>
@@ -346,33 +346,60 @@ $lostRate = round((($counts['lost'] ?? 0) / $total) * 100);
                                     <p class="text-xs text-gray-500">
                                         {{ $prospect->preferredCampus->name ?? 'Site non précisé' }}
                                     </p>
-
-                                    @if($prospect->crm_followup_color)
-                                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold
-                                            {{ match($prospect->crm_followup_color) {
-                                                'green' => 'text-green-700',
-                                                'yellow' => 'text-amber-700',
-                                                'red' => 'text-red-700',
-                                            } }}">
-                                            <span class="h-2.5 w-2.5 rounded-full
-                                                {{ match($prospect->crm_followup_color) {
-                                                    'green' => 'bg-green-500',
-                                                    'yellow' => 'bg-amber-400',
-                                                    'red' => 'bg-red-500',
-                                                } }}"></span>
-                                            {{ $prospect->crm_followup_label }}
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500">
-                                            <span class="h-2.5 w-2.5 rounded-full bg-gray-300"></span>
-                                            {{ $statuses[$prospect->crm_status] ?? $prospect->crm_status }}
-                                        </span>
-                                    @endif
                                 </div>
                             </td>
 
                             <td class="px-6 py-4 text-sm text-gray-700">
-                                {{ $prospect->assignedCommercial->name ?? 'Non affecté' }}
+                                @php
+                                    $nextFollowupAt = $prospect->latestVisit?->next_followup_at;
+                                    $followupColor = $prospect->crm_followup_color;
+
+                                    $followupDayDiff = $nextFollowupAt
+                                        ? now()->startOfDay()->diffInDays($nextFollowupAt->copy()->startOfDay(), false)
+                                        : null;
+
+                                    $followupRelative = match(true) {
+                                        $followupDayDiff === null => null,
+                                        $followupDayDiff === 0 => "Aujourd'hui",
+                                        $followupDayDiff > 0 => 'Dans ' . $followupDayDiff . ' j',
+                                        default => 'En retard de ' . abs($followupDayDiff) . ' j',
+                                    };
+                                @endphp
+
+                                @if($nextFollowupAt)
+                                    <p class="font-semibold text-gray-900">
+                                        {{ $nextFollowupAt->format('d/m/Y') }}
+                                    </p>
+                                    <p class="mt-0.5 text-xs text-gray-500">
+                                        {{ $followupRelative }}
+                                    </p>
+                                @else
+                                    <p class="font-semibold text-gray-900">
+                                        Aucune relance planifiée
+                                    </p>
+                                @endif
+
+                                @if($followupColor)
+                                    <span class="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold
+                                        {{ match($followupColor) {
+                                            'green' => 'text-green-700',
+                                            'yellow' => 'text-amber-700',
+                                            'red' => 'text-red-700',
+                                        } }}">
+                                        <span class="h-2.5 w-2.5 rounded-full
+                                            {{ match($followupColor) {
+                                                'green' => 'bg-green-500',
+                                                'yellow' => 'bg-amber-400',
+                                                'red' => 'bg-red-500',
+                                            } }}"></span>
+                                        {{ $prospect->crm_followup_label }}
+                                    </span>
+                                @else
+                                    <span class="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500">
+                                        <span class="h-2.5 w-2.5 rounded-full bg-gray-300"></span>
+                                        {{ $statuses[$prospect->crm_status] ?? $prospect->crm_status }}
+                                    </span>
+                                @endif
                             </td>
 
                             <td class="px-6 py-4">
