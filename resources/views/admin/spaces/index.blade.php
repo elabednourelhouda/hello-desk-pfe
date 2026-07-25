@@ -64,11 +64,9 @@
                     <label class="mb-1 block text-sm font-medium text-gray-700">Statut</label>
                     <select name="status" class="w-full rounded-xl border-gray-300 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                         <option value="">Tous les statuts</option>
-                        <option value="available" @selected(request('status')==='available' )>Disponible</option>
-                        <option value="occupied" @selected(request('status')==='occupied' )>Occupé</option>
-                        <option value="reserved" @selected(request('status')==='reserved' )>Réservé</option>
-                        <option value="unavailable" @selected(request('status')==='unavailable' )>Indisponible</option>
-                        <option value="maintenance" @selected(request('status')==='maintenance' )>En maintenance</option>
+                        @foreach($statuses as $code => $label)
+                        <option value="{{ $code }}" @selected(request('status')===$code)>{{ $label }}</option>
+                        @endforeach
                     </select>
                 </div>
 
@@ -105,18 +103,9 @@
                     <tbody class="divide-y divide-gray-100 bg-white">
                         @forelse($spaces as $space)
                         @php
-                        $statusLabels = [
-                        'available' => 'Disponible',
-                        'occupied' => 'Occupé',
-                        'reserved' => 'Réservé',
-                        'unavailable' => 'Indisponible',
-                        'maintenance' => 'Maintenance',
-                        ];
-
                         $statusClasses = [
                         'available' => 'bg-green-50 text-green-700 ring-green-600/20',
                         'occupied' => 'bg-blue-50 text-blue-700 ring-blue-600/20',
-                        'reserved' => 'bg-amber-50 text-amber-700 ring-amber-600/20',
                         'unavailable' => 'bg-gray-100 text-gray-700 ring-gray-500/20',
                         'maintenance' => 'bg-red-50 text-red-700 ring-red-600/20',
                         ];
@@ -164,7 +153,7 @@
 
                             <td class="px-5 py-4">
                                 <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset {{ $statusClasses[$space->status] ?? 'bg-gray-100 text-gray-700 ring-gray-500/20' }}">
-                                    {{ $statusLabels[$space->status] ?? $space->status }}
+                                    {{ $statuses[$space->status] ?? $space->status }}
                                 </span>
                             </td>
 

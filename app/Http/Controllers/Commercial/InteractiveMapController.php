@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Campus;
 use App\Models\Floor;
 use App\Models\Space;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -30,6 +31,8 @@ class InteractiveMapController extends Controller
         $selectedCampusId = null;
         $selectedFloorId = null;
         $selectedFloor = null;
+
+        [$rangeStart, $rangeEnd, $filterFrom, $filterTo] = $this->resolveDateRange($request);
 
         $requestedCampusId = $request->integer('campus_id');
 
@@ -68,9 +71,10 @@ class InteractiveMapController extends Controller
                     'campus',
                     'floor',
                     'spaceType',
-                    'reservations' => function ($query) {
+                    'reservations' => function ($query) use ($rangeStart, $rangeEnd) {
                         $query->whereIn('status', ['pending', 'confirmed', 'in_progress'])
-                            ->where('ends_at', '>=', now())
+                            ->where('starts_at', '<=', $rangeEnd)
+                            ->where('ends_at', '>=', $rangeStart)
                             ->orderBy('starts_at');
                     },
                 ])
@@ -126,7 +130,51 @@ class InteractiveMapController extends Controller
             'selectedCampusId',
             'selectedFloorId',
             'selectedFloor',
-            'hasCommercialScope'
+            'hasCommercialScope',
+            'filterFrom',
+            'filterTo'
         ));
+    }
+
+    /**
+     * Resolves the period the map should check reservations against.
+     * See Admin\InteractiveMapController::resolveDateRange() for the
+     * full rationale — kept duplicated here rather than shared, same
+     * as the rest of the display-status logic in this controller.
+     *
+     * @return array{0: Carbon, 1: Carbon, 2: ?string, 3: ?string}
+     */
+    private function resolveDateRange(Request $request): array
+    {
+        $from = $this->parseDate($request->query('from'));
+        $to = $this->parseDate($request->query('to'));
+
+        if ($from && $to) {
+            $rangeStart = $from->copy()->startOfDay();
+            $rangeEnd = $to->copy()->endOfDay();
+
+            if ($rangeEnd->lt($rangeStart)) {
+                [$rangeStart, $rangeEnd] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
+            }
+
+            return [$rangeStart, $rangeEnd, $from->toDateString(), $to->toDateString()];
+        }
+
+        $now = Carbon::now();
+
+        return [$now, $now, null, null];
+    }
+
+    private function parseDate(?string $value): ?Carbon
+    {
+        if (! $value) {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m-d', $value)?->startOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

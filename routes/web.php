@@ -33,6 +33,7 @@ use App\Http\Controllers\Commercial\InteractiveMapController as CommercialIntera
 use App\Http\Controllers\Commercial\ComplaintController as CommercialComplaintController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SpaceTypeController;
+use App\Http\Controllers\Admin\SpaceStatusController;
 use App\Http\Controllers\Admin\ProspectSourceController;
 use App\Http\Controllers\Admin\ActivitySectorController;
 use App\Http\Controllers\Admin\ContactTypeController;
@@ -155,6 +156,13 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
 
             Route::patch('/space-types/{spaceType}/toggle-active', [SpaceTypeController::class, 'toggleActive'])
                 ->name('space-types.toggleActive');
+
+            Route::resource('space-statuses', SpaceStatusController::class)
+                ->except(['show'])
+                ->names('space-statuses');
+
+            Route::patch('/space-statuses/{spaceStatus}/toggle-active', [SpaceStatusController::class, 'toggleActive'])
+                ->name('space-statuses.toggleActive');
 
             Route::resource('sites', CampusController::class)
                 ->parameters(['sites' => 'campus'])

@@ -76,7 +76,7 @@
         <section class="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <form method="GET"
                 action="{{ route('admin.interactive-map.index') }}#map-zone"
-                class="grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
+                class="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]">
 
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">
@@ -112,13 +112,47 @@
                     </select>
                 </div>
 
-                <div class="flex items-end">
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700">
+                        Disponibilité du
+                    </label>
+                    <input type="date"
+                        name="from"
+                        value="{{ $filterFrom }}"
+                        class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700">
+                        au
+                    </label>
+                    <input type="date"
+                        name="to"
+                        value="{{ $filterTo }}"
+                        class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                </div>
+
+                <div class="flex items-end gap-2">
                     <button type="submit"
                             class="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#284625] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1f351d]">
                         Afficher
                     </button>
+
+                    @if($filterFrom || $filterTo)
+                    <a href="{{ route('admin.interactive-map.index', ['campus_id' => $selectedCampusId, 'floor_id' => $selectedFloorId]) }}#map-zone"
+                       class="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 px-4 text-sm font-bold text-gray-700 transition hover:bg-gray-100">
+                        ✕
+                    </a>
+                    @endif
                 </div>
             </form>
+
+            @if($filterFrom && $filterTo)
+            <p class="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800">
+                📅 Disponibilité affichée pour la période du {{ \Carbon\Carbon::parse($filterFrom)->format('d/m/Y') }}
+                au {{ \Carbon\Carbon::parse($filterTo)->format('d/m/Y') }} — pas l’état en temps réel.
+            </p>
+            @endif
         </section>
 
         {{-- Map + details --}}

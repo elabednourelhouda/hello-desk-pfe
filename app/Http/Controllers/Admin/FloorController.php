@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Campus;
 use App\Models\Floor;
+use App\Models\SpaceStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -41,6 +42,7 @@ class FloorController extends Controller
         return view('admin.settings.sites.floors.show', [
             'site' => $campus,
             'floor' => $floor,
+            'statuses' => SpaceStatus::orderBy('name')->pluck('name', 'code')->toArray(),
         ]);
     }
 

@@ -7,27 +7,15 @@ use App\Models\Accessory;
 use App\Models\Campus;
 use App\Models\Floor;
 use App\Models\Space;
+use App\Models\SpaceStatus;
 use App\Models\SpaceType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SpaceController extends Controller
 {
-    /**
-     * Every possible space status. Kept as the single source of truth so
-     * create/edit/index all render the same labels from one place.
-     *
-     * @var array<string, string>
-     */
-    private array $statuses = [
-        'available' => 'Disponible',
-        'occupied' => 'Occupé',
-        'reserved' => 'Réservé',
-        'unavailable' => 'Indisponible',
-        'maintenance' => 'Maintenance',
-    ];
-
     public function index(Request $request)
     {
         $query = Space::with(['campus', 'floor', 'spaceType'])
@@ -56,6 +44,7 @@ class SpaceController extends Controller
             'campuses' => Campus::where('is_active', true)->orderBy('name')->get(),
             'floors' => Floor::where('is_active', true)->with('campus')->orderBy('level')->get(),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
+            'statuses' => $this->allSpaceStatusLabels(),
         ]);
     }
 
@@ -127,7 +116,7 @@ class SpaceController extends Controller
             'floors' => Floor::where('is_active', true)->with('campus')->orderBy('level')->get(),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
             'accessories' => Accessory::where('is_active', true)->orderBy('name')->get(),
-            'statuses' => $this->statuses,
+            'statuses' => $this->spaceStatusOptions(),
             'prefillCampusId' => $request->integer('campus_id') ?: null,
             'prefillFloorId' => $request->integer('floor_id') ?: null,
         ]);
@@ -169,7 +158,7 @@ class SpaceController extends Controller
 
         return view('admin.spaces.show', [
             'space' => $space,
-            'statuses' => $this->statuses,
+            'statuses' => $this->allSpaceStatusLabels(),
         ]);
     }
 
@@ -184,13 +173,13 @@ class SpaceController extends Controller
             'spaceTypes' => SpaceType::where('is_active', true)->orWhere('id', $space->space_type_id)->orderBy('name')->get(),
             'accessories' => Accessory::where('is_active', true)->orderBy('name')->get(),
             'selectedAccessoryIds' => $space->accessories->pluck('id')->all(),
-            'statuses' => $this->statuses,
+            'statuses' => $this->spaceStatusOptions($space->status),
         ]);
     }
 
     public function update(Request $request, Space $space): RedirectResponse
     {
-        $validated = $this->validateData($request, $space->id);
+        $validated = $this->validateData($request, $space->id, $space->status);
         $accessoryIds = $validated['accessory_ids'] ?? [];
         unset($validated['accessory_ids']);
 
@@ -227,7 +216,7 @@ class SpaceController extends Controller
             ->with('success', 'Espace supprimé avec succès.');
     }
 
-    private function validateData(Request $request, ?int $ignoreId = null): array
+    private function validateData(Request $request, ?int $ignoreId = null, ?string $currentStatusCode = null): array
     {
         $validated = $request->validate([
             'campus_id' => ['required', 'exists:campuses,id'],
@@ -245,7 +234,7 @@ class SpaceController extends Controller
             'price_per_hour' => ['nullable', 'numeric', 'min:0'],
             'price_per_day' => ['nullable', 'numeric', 'min:0'],
             'price_per_month' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['required', 'in:' . implode(',', array_keys($this->statuses))],
+            'status' => ['required', Rule::in($this->assignableStatusCodes($currentStatusCode))],
             'description' => ['nullable', 'string', 'max:2000'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'accessory_ids' => ['nullable', 'array'],
@@ -271,5 +260,50 @@ class SpaceController extends Controller
         $validated['is_active'] = $request->boolean('is_active', true);
 
         return $validated;
+    }
+
+    /**
+     * Active space statuses for the create/edit "Statut" dropdown. If
+     * $currentCode is given (editing), that code stays selectable even
+     * if an admin has since deactivated it in Configuration > Statuts
+     * d'espace — same pattern as Prospect's source/activity-sector
+     * dropdowns.
+     */
+    private function spaceStatusOptions(?string $currentCode = null): array
+    {
+        return SpaceStatus::query()
+            ->where(function ($q) use ($currentCode) {
+                $q->where('is_active', true);
+
+                if ($currentCode) {
+                    $q->orWhere('code', $currentCode);
+                }
+            })
+            ->orderBy('name')
+            ->pluck('name', 'code')
+            ->toArray();
+    }
+
+    /**
+     * Every status label (active or not), for read-only displays like
+     * the spaces list and the "Fiche espace" show page, and for the
+     * index filter — an admin should still be able to filter by a
+     * status even after deactivating it, to find the spaces that were
+     * using it.
+     */
+    private function allSpaceStatusLabels(): array
+    {
+        return SpaceStatus::orderBy('name')->pluck('name', 'code')->toArray();
+    }
+
+    /**
+     * Codes accepted by the 'status' validation rule: every active
+     * status, plus $currentCode if editing (so re-submitting a form
+     * without touching "Statut" doesn't fail validation just because
+     * that status was deactivated in the meantime).
+     */
+    private function assignableStatusCodes(?string $currentCode = null): array
+    {
+        return array_keys($this->spaceStatusOptions($currentCode));
     }
 }

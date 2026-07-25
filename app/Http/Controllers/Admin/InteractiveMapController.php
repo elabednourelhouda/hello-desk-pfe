@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Campus;
 use App\Models\Floor;
 use App\Models\Space;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class InteractiveMapController extends Controller
@@ -20,6 +21,8 @@ class InteractiveMapController extends Controller
         $selectedFloorId = null;
         $selectedFloor = null;
         $spaces = collect();
+
+        [$rangeStart, $rangeEnd, $filterFrom, $filterTo] = $this->resolveDateRange($request);
 
         if ($selectedCampusId) {
             $floors = Floor::where('campus_id', $selectedCampusId)
@@ -39,9 +42,10 @@ class InteractiveMapController extends Controller
                         'campus',
                         'floor',
                         'spaceType',
-                        'reservations' => function ($query) {
+                        'reservations' => function ($query) use ($rangeStart, $rangeEnd) {
                             $query->whereIn('status', ['pending', 'confirmed', 'in_progress'])
-                                ->where('ends_at', '>=', now())
+                                ->where('starts_at', '<=', $rangeEnd)
+                                ->where('ends_at', '>=', $rangeStart)
                                 ->orderBy('starts_at');
                         },
                     ])
@@ -85,7 +89,69 @@ class InteractiveMapController extends Controller
             'spaces',
             'selectedCampusId',
             'selectedFloorId',
-            'selectedFloor'
+            'selectedFloor',
+            'filterFrom',
+            'filterTo'
         ));
+    }
+
+    /**
+     * Resolves the period the map should check reservations against.
+     *
+     * Without ?from=&to=, we check "right now" — i.e. is there a
+     * reservation covering this exact instant? (starts_at <= now <=
+     * ends_at). This intentionally replaces the old behavior of
+     * checking only `ends_at >= now()` with no upper bound, which made
+     * a space with ANY future reservation show "Réservé" indefinitely,
+     * even weeks before that booking actually starts.
+     *
+     * With ?from=&to=, we check for any reservation that *overlaps*
+     * that period at all — the space shows "Réservé" if it's booked
+     * for even part of the requested window — so an admin previewing
+     * "next month" sees which spaces already have something booked in
+     * it, not just spaces booked for the whole month.
+     *
+     * @return array{0: Carbon, 1: Carbon, 2: ?string, 3: ?string}
+     */
+    private function resolveDateRange(Request $request): array
+    {
+        $from = $this->parseDate($request->query('from'));
+        $to = $this->parseDate($request->query('to'));
+
+        if ($from && $to) {
+            $rangeStart = $from->copy()->startOfDay();
+            $rangeEnd = $to->copy()->endOfDay();
+
+            // Defensive: if the admin swapped the two dates, just swap
+            // them back rather than returning an always-empty range.
+            if ($rangeEnd->lt($rangeStart)) {
+                [$rangeStart, $rangeEnd] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
+            }
+
+            return [$rangeStart, $rangeEnd, $from->toDateString(), $to->toDateString()];
+        }
+
+        $now = Carbon::now();
+
+        return [$now, $now, null, null];
+    }
+
+    /**
+     * Parses a "Y-m-d" query string into a Carbon date, returning null
+     * for anything missing or unparseable — a malformed ?from=/?to=
+     * should silently fall back to "right now" rather than crash the
+     * page with a 500.
+     */
+    private function parseDate(?string $value): ?Carbon
+    {
+        if (! $value) {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m-d', $value)?->startOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }
