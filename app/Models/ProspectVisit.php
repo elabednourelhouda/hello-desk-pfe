@@ -15,6 +15,7 @@ class ProspectVisit extends Model
         'visit_date',
         'visit_time',
         'next_followup_at',
+        'contact_type',
         'status',
         'notes',
     ];

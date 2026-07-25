@@ -35,6 +35,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SpaceTypeController;
 use App\Http\Controllers\Admin\ProspectSourceController;
 use App\Http\Controllers\Admin\ActivitySectorController;
+use App\Http\Controllers\Admin\ContactTypeController;
 use App\Http\Controllers\Admin\CampusController;
 
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
@@ -183,6 +184,13 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
 
             Route::patch('/activity-sectors/{activitySector}/toggle-active', [ActivitySectorController::class, 'toggleActive'])
                 ->name('activity-sectors.toggleActive');
+
+            Route::resource('contact-types', ContactTypeController::class)
+                ->except(['show'])
+                ->names('contact-types');
+
+            Route::patch('/contact-types/{contactType}/toggle-active', [ContactTypeController::class, 'toggleActive'])
+                ->name('contact-types.toggleActive');
         });
 
         /*

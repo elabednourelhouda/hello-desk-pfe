@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Commercial;
 
 use App\Http\Controllers\Controller;
+use App\Models\ContactType;
 use App\Models\Prospect;
 use App\Models\ProspectVisit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class ProspectVisitController extends Controller
 {
@@ -17,22 +19,14 @@ class ProspectVisitController extends Controller
         $validated = $request->validate([
             'visit_date' => ['required', 'date'],
             'visit_time' => ['nullable', 'date_format:H:i'],
-            'contact_type' => ['required', 'in:appel_telephonique,whatsapp,email,message_recu,note_interne'],
+            'contact_type' => ['required', Rule::in(ContactType::where('is_active', true)->pluck('code'))],
             'summary' => ['required', 'string', 'max:2000'],
             'next_followup_at' => ['nullable', 'date', 'after_or_equal:visit_date'],
         ], [
+            'contact_type.required' => 'Le type de contact est obligatoire.',
+            'contact_type.in' => 'Ce type de contact n’est plus disponible, veuillez en choisir un autre.',
             'next_followup_at.after_or_equal' => 'La date de prochaine relance doit être après la date de ce suivi.',
         ]);
-
-        $contactTypes = [
-            'appel_telephonique' => 'Appel téléphonique',
-            'whatsapp' => 'Message WhatsApp',
-            'email' => 'Email',
-            'message_recu' => 'Message reçu',
-            'note_interne' => 'Note interne',
-        ];
-
-        $typeLabel = $contactTypes[$validated['contact_type']] ?? 'Suivi';
 
         $prospect->visits()->create([
             'commercial_id' => Auth::id(),
@@ -43,7 +37,8 @@ class ProspectVisitController extends Controller
             'campus_id' => null,
             'space_type_id' => null,
             'status' => 'done',
-            'notes' => "Type de contact : {$typeLabel}\nRésumé : {$validated['summary']}",
+            'contact_type' => $validated['contact_type'],
+            'notes' => $validated['summary'],
         ]);
 
         return back()->with('success', 'Suivi ajouté à l’archive avec succès.');

@@ -9,6 +9,7 @@ use App\Models\Prospect;
 use App\Models\SpaceType;
 use App\Models\User;
 use App\Models\ActivitySector;
+use App\Models\ContactType;
 use App\Models\ProspectSource;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Http\Request;
@@ -41,6 +42,7 @@ class ProspectController extends Controller
             ->with([
                 'preferredCampus',
                 'preferredSpaceType',
+                'assignedCommercial',
                 'convertedClient',
                 'latestVisit',
             ])
@@ -190,10 +192,14 @@ class ProspectController extends Controller
         ]);
 
         $statuses = $this->crmStatuses();
+        $contactTypes = $this->contactTypeOptions();
+        $contactTypeLabels = $this->allContactTypeLabels();
 
         return view('commercial.prospects.crm', compact(
             'prospect',
-            'statuses'
+            'statuses',
+            'contactTypes',
+            'contactTypeLabels'
         ));
     }
 
@@ -564,6 +570,30 @@ class ProspectController extends Controller
     private function allProspectSourceLabels(): array
     {
         return ProspectSource::orderBy('name')->pluck('name', 'code')->toArray();
+    }
+
+    /**
+     * Active contact types for the "Ajouter un suivi" dropdown. Unlike
+     * prospectSourceOptions(), there is no "current code" to preserve
+     * here — each suivi entry is a brand new record, not an edit of an
+     * existing one — so this always reflects only what's active today.
+     */
+    private function contactTypeOptions(): array
+    {
+        return ContactType::where('is_active', true)
+            ->orderBy('name')
+            ->pluck('name', 'code')
+            ->toArray();
+    }
+
+    /**
+     * Every contact type label (active or not), for read-only displays
+     * in the suivi archive, where we just need to resolve whatever code
+     * is already stored on a past visit.
+     */
+    private function allContactTypeLabels(): array
+    {
+        return ContactType::orderBy('name')->pluck('name', 'code')->toArray();
     }
 
     private function lostReasons(): array

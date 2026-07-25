@@ -145,22 +145,15 @@
                                     required
                                     class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                                     <option value="">Choisir le type de contact</option>
-                                    <option value="appel_telephonique" @selected(old('contact_type')==='appel_telephonique' )>
-                                        Appel téléphonique
+                                    @foreach($contactTypes as $code => $label)
+                                    <option value="{{ $code }}" @selected(old('contact_type')===$code)>
+                                        {{ $label }}
                                     </option>
-                                    <option value="whatsapp" @selected(old('contact_type')==='whatsapp' )>
-                                        Message WhatsApp
-                                    </option>
-                                    <option value="email" @selected(old('contact_type')==='email' )>
-                                        Email
-                                    </option>
-                                    <option value="message_recu" @selected(old('contact_type')==='message_recu' )>
-                                        Message reçu
-                                    </option>
-                                    <option value="note_interne" @selected(old('contact_type')==='note_interne' )>
-                                        Note interne
-                                    </option>
+                                    @endforeach
                                 </select>
+                                @error('contact_type')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <div>
@@ -198,6 +191,12 @@
                                                 à {{ substr($visit->visit_time, 0, 5) }}
                                                 @endif
                                             </p>
+
+                                            @if($visit->contact_type)
+                                            <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700">
+                                                {{ $contactTypeLabels[$visit->contact_type] ?? $visit->contact_type }}
+                                            </span>
+                                            @endif
                                         </div>
 
                                         @if($visit->notes)

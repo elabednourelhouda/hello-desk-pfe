@@ -99,6 +99,24 @@
                 </span>
             </a>
 
+            <a href="{{ route('admin.settings.contact-types.index') }}"
+                class="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-[#284625]/40 hover:shadow-md">
+                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-[#284625]/10 text-xl font-bold text-[#284625]">
+                    ☎️
+                </div>
+                <h2 class="mt-4 text-lg font-bold text-gray-900">
+                    Types de contact
+                </h2>
+                <p class="mt-2 text-sm leading-6 text-gray-500">
+                    Appel, WhatsApp, Email... Gérez la liste des types de contact
+                    utilisés dans le formulaire « Ajouter un suivi » du CRM.
+                </p>
+                <span class="mt-4 inline-flex items-center gap-1 text-sm font-bold text-[#284625]">
+                    Gérer
+                    <span class="transition group-hover:translate-x-1">→</span>
+                </span>
+            </a>
+
             {{--
                 FUTURE CONFIGURATION CARDS
 
