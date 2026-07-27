@@ -268,7 +268,12 @@ class ReservationController extends Controller
 
         $normalizedStatus = mb_strtolower($space->status ?? 'available');
 
-        if (in_array($normalizedStatus, $this->notReservableStatuses(), true)) {
+        // Was a hardcoded blacklist of specific status codes — flipped
+        // to a whitelist so a future custom status added in
+        // Configuration -> Statuts d'espace can't slip through and let
+        // a non-available space get booked. Matches the same rule used
+        // everywhere else a space's bookability is checked.
+        if (! in_array($normalizedStatus, ['available', 'disponible'], true)) {
             return back()
                 ->withInput()
                 ->with('error', 'Cet espace ne peut pas être réservé pour le moment.');
@@ -572,22 +577,4 @@ class ReservationController extends Controller
         ];
     }
 
-    private function notReservableStatuses(): array
-    {
-        return [
-            'occupied',
-            'reserved',
-            'unavailable',
-            'maintenance',
-            'in maintenance',
-
-            'occupé',
-            'occupe',
-            'réservé',
-            'reserve',
-            'réservée',
-            'indisponible',
-            'en maintenance',
-        ];
-    }
 }

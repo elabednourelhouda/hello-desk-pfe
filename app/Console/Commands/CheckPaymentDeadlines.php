@@ -21,16 +21,38 @@ class CheckPaymentDeadlines extends Command
         $today = now()->startOfDay();
         $limitDate = now()->addDays((int) $this->option('days'))->endOfDay();
 
-        $latePayments = Payment::query()
+        // Payments crossing their due date for the first time today —
+        // transition due -> late, which also triggers their first
+        // 'late' notification.
+        $newlyLatePayments = Payment::query()
             ->where('status', 'due')
             ->whereDate('due_date', '<', $today->toDateString())
             ->get();
 
-        foreach ($latePayments as $payment) {
+        foreach ($newlyLatePayments as $payment) {
             $payment->forceFill([
                 'status' => 'late',
             ])->save();
 
+            $this->notifyUsers($payment, 'late');
+        }
+
+        // Payments that were ALREADY 'late' on a previous run and are
+        // still unpaid: re-notify every time this command runs, until
+        // someone records a payment against them (status becomes
+        // 'paid') or the payment is cancelled. Previously this command
+        // only ever queried status = 'due' to find late payments, so
+        // once a payment flipped to 'late' it fell out of that query
+        // forever and got exactly one reminder, total — contradicting
+        // the requirement that clients keep getting reminded until
+        // they actually pay. notifyOnceToday() below still guards
+        // against sending more than one notification per user per day
+        // even though this command may run more than once a day.
+        $stillLatePayments = Payment::query()
+            ->where('status', 'late')
+            ->get();
+
+        foreach ($stillLatePayments as $payment) {
             $this->notifyUsers($payment, 'late');
         }
 
@@ -44,7 +66,8 @@ class CheckPaymentDeadlines extends Command
             $this->notifyUsers($payment, 'due_soon');
         }
 
-        $this->info("Paiements en retard détectés : {$latePayments->count()}");
+        $this->info("Paiements passés en retard aujourd’hui : {$newlyLatePayments->count()}");
+        $this->info("Rappels renvoyés pour paiements déjà en retard : {$stillLatePayments->count()}");
         $this->info("Rappels de paiement envoyés : {$dueSoonPayments->count()}");
 
         return self::SUCCESS;

@@ -163,7 +163,7 @@
                         data-price-day="{{ $space->price_per_day ?? '' }}"
                         data-price-month="{{ $space->price_per_month ?? '' }}"
                         data-reserve-url="{{ $canReserve ? route('admin.reservations.create', ['space_id' => $space->id]) : '' }}"
-                        style="{{ $statusStyleAttr }}"
+                        data-style="{{ $statusStyleAttr }}"
                         class="space-tile absolute z-10 flex flex-col justify-between rounded-lg border-2 p-3 text-left text-xs shadow-sm transition text-gray-800 {{ $tile['position'] }}">
                     <div>
                         <p class="truncate font-bold">
@@ -230,7 +230,7 @@
                             data-price-day="{{ $space->price_per_day ?? '' }}"
                             data-price-month="{{ $space->price_per_month ?? '' }}"
                             data-reserve-url="{{ $canReserve ? route('admin.reservations.create', ['space_id' => $space->id]) : '' }}"
-                            style="{{ $statusStyleAttr }}"
+                            data-style="{{ $statusStyleAttr }}"
                             class="space-tile rounded-xl border-2 p-4 text-left text-sm shadow-sm transition text-gray-800">
                         <p class="font-bold">{{ $space->name }}</p>
                         <p class="mt-1 text-xs opacity-75">{{ $space->code }}</p>

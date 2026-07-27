@@ -73,6 +73,14 @@ class PaymentController extends Controller
 
         $contract = Contract::with(['client', 'reservation'])->findOrFail($data['contract_id']);
 
+        if ($data['status'] === 'paid') {
+            if ($blocker = $this->earlierUnpaidPayment($contract->id, $data['due_date'])) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['status' => $this->earlierUnpaidPaymentErrorMessage($blocker)]);
+            }
+        }
+
         $amounts = $this->calculateAmounts($data);
 
         $amountPaid = $data['amount_paid'] ?? 0;
@@ -124,6 +132,10 @@ class PaymentController extends Controller
 
         $payment->load('client.user');
 
+        if ($payment->status === 'paid') {
+            $this->ensureReceiptNumber($payment);
+        }
+
         if ($payment->client && $payment->client->user) {
             $payment->client->user->notify(new PaymentDueCreatedNotification($payment));
         }
@@ -146,6 +158,31 @@ class PaymentController extends Controller
         return view('admin.payments.show', compact('payment'));
     }
 
+    /**
+     * Printable receipt for a settled payment. Mirrors the existing
+     * Admin\ContractController::document() pattern (a print-styled
+     * Blade view rather than a generated binary PDF) — this project
+     * has no PDF-rendering library installed, and adding one is a
+     * bigger decision (new Composer dependency) than this fix
+     * warrants; "Fichier -> Imprimer -> Enregistrer en PDF" from the
+     * browser produces an equivalent result. If a real one-click PDF
+     * download is wanted later, installing barryvdh/laravel-dompdf
+     * and swapping this view's render call is a small, contained
+     * follow-up.
+     */
+    public function receipt(Payment $payment)
+    {
+        if ($payment->status !== 'paid') {
+            return back()->with('error', 'Le reçu n’est disponible qu’une fois l’échéance payée.');
+        }
+
+        $payment->load(['client', 'contract.reservation.space', 'reservation']);
+
+        $this->ensureReceiptNumber($payment);
+
+        return view('admin.payments.receipt', compact('payment'));
+    }
+
     public function edit(Payment $payment)
     {
         $payment->load(['client', 'contract.reservation.space']);
@@ -156,6 +193,14 @@ class PaymentController extends Controller
     public function update(Request $request, Payment $payment)
     {
         $data = $this->validatedPaymentData($request, false);
+
+        if ($data['status'] === 'paid' && $payment->status !== 'paid') {
+            if ($blocker = $this->earlierUnpaidPayment($payment->contract_id, $data['due_date'], $payment->id)) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['status' => $this->earlierUnpaidPaymentErrorMessage($blocker)]);
+            }
+        }
 
         $amounts = $this->calculateAmounts($data);
 
@@ -190,7 +235,7 @@ class PaymentController extends Controller
 
             'tpe_transaction_reference' => $data['tpe_transaction_reference'] ?? null,
 
-            'receipt_number' => $data['receipt_number'] ?? null,
+            'receipt_number' => $data['receipt_number'] ?? $payment->receipt_number,
             'invoice_number' => $data['invoice_number'] ?? null,
 
             'recorded_by' => Auth::id(),
@@ -217,6 +262,10 @@ class PaymentController extends Controller
 
         $payment->update($updateData);
 
+        if ($payment->status === 'paid') {
+            $this->ensureReceiptNumber($payment);
+        }
+
         return redirect()
             ->route('admin.payments.show', $payment)
             ->with('success', 'Paiement mis à jour avec succès.');
@@ -224,6 +273,10 @@ class PaymentController extends Controller
 
     public function markAsPaid(Payment $payment)
     {
+        if ($blocker = $this->earlierUnpaidPayment($payment->contract_id, $payment->due_date, $payment->id)) {
+            return back()->withErrors(['status' => $this->earlierUnpaidPaymentErrorMessage($blocker)]);
+        }
+
         $payment->update([
             'amount_paid' => $payment->amount_ttc_value,
             'status' => 'paid',
@@ -231,7 +284,60 @@ class PaymentController extends Controller
             'recorded_by' => Auth::id(),
         ]);
 
+        $this->ensureReceiptNumber($payment);
+
         return back()->with('success', 'Échéance marquée comme payée avec succès.');
+    }
+
+    /**
+     * The owner's rule: a client pays one installment at a time, in
+     * due-date order — they can't settle month 5 while months 3 and 4
+     * are still outstanding. Returns the earliest still-unpaid payment
+     * (due strictly before $referenceDueDate on the given contract,
+     * optionally excluding one payment id) that must be settled first,
+     * or null if the given date is clear to be marked paid.
+     */
+    private function earlierUnpaidPayment(?int $contractId, string|\Carbon\Carbon $referenceDueDate, ?int $excludePaymentId = null): ?Payment
+    {
+        if (! $contractId) {
+            return null;
+        }
+
+        return Payment::where('contract_id', $contractId)
+            ->whereIn('status', ['due', 'late'])
+            ->when($excludePaymentId, fn ($query) => $query->where('id', '!=', $excludePaymentId))
+            ->whereDate('due_date', '<', $referenceDueDate)
+            ->orderBy('due_date')
+            ->first();
+    }
+
+    private function earlierUnpaidPaymentErrorMessage(Payment $blocker): string
+    {
+        return 'Impossible de marquer cette échéance comme payée : l’échéance du '
+            . $blocker->due_date->format('d/m/Y')
+            . ' (' . ($blocker->duration_label ?: 'échéance précédente') . ') n’est pas encore réglée. '
+            . 'Le propriétaire n’accepte le paiement que d’un mois à la fois, dans l’ordre.';
+    }
+
+    /**
+     * Fills receipt_number with a stable, human-readable reference the
+     * first time a payment is settled — e.g. "REC-2026-000042" — if
+     * staff didn't already type one in manually. Idempotent: does
+     * nothing if a receipt_number is already present.
+     */
+    private function ensureReceiptNumber(Payment $payment): void
+    {
+        if ($payment->receipt_number) {
+            return;
+        }
+
+        $payment->forceFill([
+            'receipt_number' => sprintf(
+                'REC-%s-%06d',
+                ($payment->paid_at ?? now())->format('Y'),
+                $payment->id
+            ),
+        ])->save();
     }
 
     private function validatedPaymentData(Request $request, bool $creating = true): array

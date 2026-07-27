@@ -330,6 +330,9 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
         Route::patch('/payments/{payment}/mark-as-paid', [PaymentController::class, 'markAsPaid'])
             ->name('payments.markAsPaid');
 
+        Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])
+            ->name('payments.receipt');
+
         Route::resource('payments', PaymentController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
@@ -463,6 +466,9 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
         Route::patch('/payments/{payment}/mark-as-paid', [CommercialPaymentController::class, 'markAsPaid'])
             ->name('payments.markAsPaid');
 
+        Route::get('/payments/{payment}/receipt', [CommercialPaymentController::class, 'receipt'])
+            ->name('payments.receipt');
+
         Route::resource('payments', CommercialPaymentController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
@@ -547,6 +553,9 @@ Route::middleware(['auth', 'role:client', 'client.active', 'password.changed'])
 
         Route::get('/payments/{payment}', [ClientPaymentController::class, 'show'])
             ->name('payments.show');
+
+        Route::get('/payments/{payment}/receipt', [ClientPaymentController::class, 'receipt'])
+            ->name('payments.receipt');
 
         /*
         |--------------------------------------------------------------------------

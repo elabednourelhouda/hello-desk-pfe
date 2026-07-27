@@ -162,7 +162,7 @@ return (bool) ($space->can_reserve ?? false);
             data-price-month="{{ $space->price_per_month ?? '' }}"
             data-can-manage="{{ ($space->can_manage ?? false) ? '1' : '0' }}"
             data-reserve-url="{{ $space->reserve_url ?? '' }}"
-            style="{{ $statusStyleAttr }}"
+            data-style="{{ $statusStyleAttr }}"
             class="space-tile absolute z-10 flex flex-col justify-between rounded-lg border-2 p-3 text-left text-xs shadow-sm transition text-gray-800 {{ $tile['position'] }}">
             <div>
                 <p class="truncate font-bold">
@@ -230,7 +230,7 @@ return (bool) ($space->can_reserve ?? false);
                 data-price-month="{{ $space->price_per_month ?? '' }}"
                 data-can-manage="{{ ($space->can_manage ?? false) ? '1' : '0' }}"
                 data-reserve-url="{{ $space->reserve_url ?? '' }}"
-                style="{{ $statusStyleAttr }}"
+                data-style="{{ $statusStyleAttr }}"
                 class="space-tile rounded-xl border-2 p-4 text-left text-sm shadow-sm transition text-gray-800">
                 <p class="font-bold">{{ $space->name }}</p>
                 <p class="mt-1 text-xs opacity-75">{{ $space->code }}</p>

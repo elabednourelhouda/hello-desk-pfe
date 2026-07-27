@@ -211,23 +211,16 @@ class ReservationController extends Controller
 
         $normalizedStatus = mb_strtolower($space->status ?? 'available');
 
-        $notReservableStatuses = [
-            'occupied',
-            'reserved',
-            'unavailable',
-            'maintenance',
-            'in maintenance',
-
-            'occupé',
-            'occupe',
-            'réservé',
-            'reserve',
-            'réservée',
-            'indisponible',
-            'en maintenance',
-        ];
-
-        if (in_array($normalizedStatus, $notReservableStatuses, true)) {
+        // Was previously a hardcoded blacklist of specific status codes
+        // (occupied/unavailable/maintenance + French variants) — any
+        // custom status an admin adds later in Configuration -> Statuts
+        // d'espace (e.g. "cleaning") wasn't in that list and would have
+        // silently allowed booking a space that isn't actually
+        // available. Flipped to a whitelist instead: 'available' is the
+        // only status that can be booked, matching the same rule used
+        // everywhere else a space's bookability is checked (the map,
+        // InteractiveMapController@index's can_reserve computation).
+        if (! in_array($normalizedStatus, ['available', 'disponible'], true)) {
             return back()
                 ->withInput()
                 ->with('error', 'Cet espace ne peut pas être réservé pour le moment.');

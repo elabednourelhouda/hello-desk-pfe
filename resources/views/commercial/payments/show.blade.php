@@ -55,6 +55,14 @@
                     </form>
                 @endif
 
+                @if($payment->status === 'paid')
+                    <a href="{{ route('commercial.payments.receipt', $payment) }}"
+                       target="_blank"
+                       class="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700 shadow-sm hover:bg-emerald-100">
+                        Voir le reçu
+                    </a>
+                @endif
+
                 <a href="{{ route('commercial.payments.edit', $payment) }}"
                    class="rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
                     Modifier le paiement

@@ -188,8 +188,8 @@
                     <div class="flex flex-wrap gap-2 text-xs">
                         @foreach($statusLegend as $legendStatus)
                             <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 font-bold"
-                                  style="border-color: {{ $legendStatus->toRgba(0.4) }}; background-color: {{ $legendStatus->toRgba(0.12) }}; color: {{ $legendStatus->color }};">
-                                <span class="h-2 w-2 rounded-full" style="background-color: {{ $legendStatus->color }};"></span>
+                                  data-style="border-color: {{ $legendStatus->toRgba(0.4) }}; background-color: {{ $legendStatus->toRgba(0.12) }}; color: {{ $legendStatus->color }};">
+                                <span class="h-2 w-2 rounded-full" data-style="background-color: {{ $legendStatus->color }};"></span>
                                 {{ $legendStatus->name }}
                             </span>
                         @endforeach
@@ -223,7 +223,7 @@
                                     data-price-month="{{ $space->price_per_month ?? '' }}"
                                     data-can-manage="{{ $canManage ? '1' : '0' }}"
                                     data-reserve-url="{{ $space->reserve_url ?? '' }}"
-                                    style="{{ $tileStyle }}"
+                                    data-style="{{ $tileStyle }}"
                                     class="space-tile flex min-h-[120px] flex-col justify-between rounded-2xl border p-4 text-left text-sm shadow-sm transition hover:-translate-y-0.5 hover:shadow-md text-gray-800">
                                     <div>
                                         <p class="font-bold">{{ $space->name }}</p>
@@ -345,6 +345,10 @@
 </div>
 
 <script>
+    document.querySelectorAll('[data-style]').forEach(el => {
+        el.style.cssText = el.dataset.style;
+    });
+
     function selectSpace(button) {
         document.querySelectorAll('.space-tile').forEach(tile => {
             tile.classList.remove('ring-4', 'ring-[#284625]', 'ring-offset-2');

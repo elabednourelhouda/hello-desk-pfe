@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Space;
 use App\Notifications\PaymentDueCreatedNotification;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -173,23 +174,7 @@ class ContractController extends Controller
             $alreadyHasPayments = Payment::where('contract_id', $contract->id)->exists();
 
             if (! $alreadyHasPayments) {
-                $payment = Payment::create([
-                    'client_id' => $contract->client_id,
-                    'contract_id' => $contract->id,
-                    'reservation_id' => $contract->reservation_id,
-                    'due_date' => $contract->start_date,
-                    'amount_due' => $contract->reservation->negotiated_price ?? 0,
-                    'amount_paid' => 0,
-                    'status' => 'due',
-                    'recorded_by' => Auth::id(),
-                    'notes' => 'Échéance créée automatiquement lors de l’activation du contrat.',
-                ]);
-
-                $payment->load('client.user');
-
-                if ($payment->client && $payment->client->user) {
-                    $payment->client->user->notify(new PaymentDueCreatedNotification($payment));
-                }
+                $this->generatePaymentSchedule($contract);
             }
         }
 
@@ -363,5 +348,80 @@ class ContractController extends Controller
     private function hasScope(array $scope): bool
     {
         return ! empty($scope['campus_ids']) || ! empty($scope['floor_ids']);
+    }
+
+    /**
+     * Builds the full set of Payment rows for a freshly-activated
+     * contract, based on its reservation's engagement. See
+     * Admin\ContractController::generatePaymentSchedule() for the full
+     * rationale — kept duplicated here rather than shared, same as
+     * the rest of this controller's logic relative to its Admin
+     * counterpart.
+     */
+    private function generatePaymentSchedule(Contract $contract): void
+    {
+        $reservation = $contract->reservation;
+
+        if (! $reservation) {
+            return;
+        }
+
+        $ratePerPeriod = (float) ($reservation->negotiated_price ?? 0);
+        $isMonthlyRecurring = $reservation->engagement_duration_unit === 'month'
+            && (int) $reservation->engagement_duration_value > 1;
+
+        $installmentCount = $isMonthlyRecurring ? (int) $reservation->engagement_duration_value : 1;
+
+        $startDate = Carbon::parse($contract->start_date);
+
+        // 1st of the calendar month right after start_date's month —
+        // the anchor every installment after the first snaps to.
+        $firstRecurringDueDate = $startDate->copy()->startOfMonth()->addMonthNoOverflow();
+
+        $firstPayment = null;
+
+        DB::transaction(function () use (
+            $contract,
+            $reservation,
+            $ratePerPeriod,
+            $installmentCount,
+            $isMonthlyRecurring,
+            $startDate,
+            $firstRecurringDueDate,
+            &$firstPayment
+        ) {
+            for ($installment = 1; $installment <= $installmentCount; $installment++) {
+                $dueDate = $installment === 1
+                    ? $startDate
+                    : $firstRecurringDueDate->copy()->addMonthsNoOverflow($installment - 2);
+
+                $payment = Payment::create([
+                    'client_id' => $contract->client_id,
+                    'contract_id' => $contract->id,
+                    'reservation_id' => $contract->reservation_id,
+                    'due_date' => $dueDate,
+                    'duration_label' => $isMonthlyRecurring ? "Mois {$installment}/{$installmentCount}" : null,
+                    'amount_due' => $ratePerPeriod,
+                    'amount_paid' => 0,
+                    'status' => 'due',
+                    'recorded_by' => Auth::id(),
+                    'notes' => $installment === 1
+                        ? 'Échéance créée automatiquement lors de l’activation du contrat.'
+                        : "Échéance {$installment}/{$installmentCount} générée automatiquement (facturation mensuelle).",
+                ]);
+
+                if ($installment === 1) {
+                    $firstPayment = $payment;
+                }
+            }
+        });
+
+        if ($firstPayment) {
+            $firstPayment->load('client.user');
+
+            if ($firstPayment->client && $firstPayment->client->user) {
+                $firstPayment->client->user->notify(new PaymentDueCreatedNotification($firstPayment));
+            }
+        }
     }
 }

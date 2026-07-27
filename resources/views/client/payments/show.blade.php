@@ -41,9 +41,19 @@ $remaining = max($amountTtc - $amountPaid, 0);
                 </p>
             </div>
 
-            <span class="inline-flex w-fit rounded-full border px-3 py-1 text-xs font-bold {{ $statusClass }}">
-                {{ $realStatus }}
-            </span>
+            <div class="flex flex-col items-start gap-3 sm:items-end">
+                <span class="inline-flex w-fit rounded-full border px-3 py-1 text-xs font-bold {{ $statusClass }}">
+                    {{ $realStatus }}
+                </span>
+
+                @if($payment->status === 'paid')
+                    <a href="{{ route('client.payments.receipt', $payment) }}"
+                       target="_blank"
+                       class="inline-flex items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm hover:bg-emerald-100">
+                        Voir le reçu
+                    </a>
+                @endif
+            </div>
         </div>
     </div>
 
