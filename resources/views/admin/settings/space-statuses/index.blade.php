@@ -50,6 +50,7 @@
                 <table class="min-w-full divide-y divide-gray-100">
                     <thead class="bg-gray-50">
                         <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Couleur</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Nom</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Code</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Espaces liés</th>
@@ -61,6 +62,14 @@
                     <tbody class="divide-y divide-gray-100">
                         @forelse($spaceStatuses as $spaceStatus)
                             <tr>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center gap-2">
+                                        <span class="h-5 w-5 rounded-full border border-gray-200"
+                                              style="background-color: {{ $spaceStatus->color ?? '#6b7280' }};"></span>
+                                        <span class="font-mono text-xs text-gray-500">{{ $spaceStatus->color ?? '#6b7280' }}</span>
+                                    </span>
+                                </td>
+
                                 <td class="px-6 py-4 text-sm font-semibold text-gray-900">
                                     {{ $spaceStatus->name }}
                                 </td>
@@ -119,7 +128,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-14 text-center text-sm text-gray-500">
+                                <td colspan="6" class="px-6 py-14 text-center text-sm text-gray-500">
                                     Aucun statut d’espace enregistré pour le moment.
                                 </td>
                             </tr>

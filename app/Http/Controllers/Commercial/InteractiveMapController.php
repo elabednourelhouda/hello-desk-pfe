@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Campus;
 use App\Models\Floor;
 use App\Models\Space;
+use App\Models\SpaceStatus;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +25,18 @@ class InteractiveMapController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
+
+        // See Admin\InteractiveMapController::index() for the full
+        // rationale — kept duplicated here rather than shared, same as
+        // the rest of the display-status logic in this controller.
+        $statusPalette = SpaceStatus::all()->keyBy(fn ($status) => mb_strtolower($status->code));
+
+        $reservedStatus = new SpaceStatus([
+            'name' => 'Réservé',
+            'code' => 'reserved',
+            'color' => '#0284c7', // sky-600
+            'is_active' => true,
+        ]);
 
         $floors = collect();
         $spaces = collect();
@@ -83,7 +96,7 @@ class InteractiveMapController extends Controller
                     ->where('is_active', true)
                     ->orderBy('name')
                     ->get()
-                    ->map(function ($space) use ($user) {
+                    ->map(function ($space) use ($user, $statusPalette, $reservedStatus) {
                         $space->code = $space->internal_code ?? $space->code ?? null;
                         $space->surface = $space->area_m2 ?? $space->surface ?? null;
 
@@ -91,28 +104,33 @@ class InteractiveMapController extends Controller
                         $space->display_price_per_day = $space->price_per_day ?? 0;
                         $space->display_price_per_month = $space->price_per_month ?? 0;
 
-                        $savedStatus = mb_strtolower($space->status ?? 'disponible');
+                        $savedCode = mb_strtolower($space->status ?? 'available');
 
-                        if (in_array($savedStatus, ['occupé', 'occupe', 'occupied'], true)) {
-                            $space->display_status = 'Occupé';
-                        } elseif (in_array($savedStatus, ['indisponible', 'unavailable'], true)) {
-                            $space->display_status = 'Indisponible';
-                        } elseif (in_array($savedStatus, ['maintenance', 'en maintenance'], true)) {
-                            $space->display_status = 'En maintenance';
-                        } elseif ($space->reservations->count() > 0) {
-                            $space->display_status = 'Réservé';
+                        // "available" is the only stored status that can be
+                        // superseded by the reservation-computed "Réservé" —
+                        // any other manually-assigned status always takes
+                        // priority, driven entirely by the space_statuses
+                        // table instead of a fixed list of known codes.
+                        if (in_array($savedCode, ['available', 'disponible'], true) && $space->reservations->count() > 0) {
+                            $resolvedStatus = $reservedStatus;
                         } else {
-                            $space->display_status = 'Disponible';
+                            $resolvedStatus = $statusPalette->get($savedCode)
+                                ?? $statusPalette->get('available')
+                                ?? $reservedStatus; // last-resort fallback, should never actually hit
                         }
 
-                        $displayStatus = mb_strtolower($space->display_status);
+                        $space->display_status = $resolvedStatus->name;
+                        $space->display_status_color = $resolvedStatus->color;
+                        $space->display_status_style = $resolvedStatus->badgeStyle();
+
+                        $displayCode = mb_strtolower($resolvedStatus->code);
 
                         $space->next_reservation = $space->reservations->first();
 
                         $space->can_manage = $user->canManageSpace($space);
 
                         $space->can_reserve = $space->can_manage
-                            && in_array($displayStatus, ['disponible', 'available'], true);
+                            && in_array($displayCode, ['disponible', 'available'], true);
 
                         $space->reserve_url = $space->can_reserve
                             ? route('commercial.reservations.create', ['space_id' => $space->id])
@@ -123,6 +141,18 @@ class InteractiveMapController extends Controller
             }
         }
 
+        // See Admin\InteractiveMapController::index() for the ordering
+        // rationale.
+        $statusLegend = $statusPalette
+            ->filter(fn ($status) => $status->is_active)
+            ->push($reservedStatus)
+            ->sortBy(fn ($status) => match (true) {
+                in_array($status->code, ['available', 'disponible'], true) => '0',
+                $status->code === 'reserved' => '1',
+                default => '2' . $status->name,
+            })
+            ->values();
+
         return view('commercial.interactive-map.index', compact(
             'campuses',
             'floors',
@@ -132,7 +162,8 @@ class InteractiveMapController extends Controller
             'selectedFloor',
             'hasCommercialScope',
             'filterFrom',
-            'filterTo'
+            'filterTo',
+            'statusLegend'
         ));
     }
 

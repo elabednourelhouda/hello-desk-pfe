@@ -156,11 +156,19 @@ class ContractController extends Controller
                 'approved_by' => Auth::id(),
             ]);
 
-            if ($contract->reservation->space) {
-                $contract->reservation->space->update([
-                    'status' => 'reserved',
-                ]);
-            }
+            // Note: this used to also run
+            // $contract->reservation->space->update(['status' => 'reserved'])
+            // here — but 'reserved'/'Réservé' was deliberately removed
+            // from space_statuses (see the 2026_07_25_171048 migration):
+            // it's a computed, time-bound display status derived from
+            // active reservations, never a value stored on
+            // spaces.status. Confirming the reservation above is
+            // exactly what makes InteractiveMapController@index resolve
+            // this space to "Réservé" on its own — writing 'reserved'
+            // here just left an orphan code that matches no row in
+            // space_statuses. The space's actual status
+            // (available/maintenance/etc.) is intentionally left
+            // untouched.
 
             $alreadyHasPayments = Payment::where('contract_id', $contract->id)->exists();
 

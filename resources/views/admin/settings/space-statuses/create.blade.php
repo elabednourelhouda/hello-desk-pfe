@@ -55,6 +55,35 @@
                     </p>
                 </div>
 
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700">
+                        Couleur <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex items-center gap-3">
+                        <input type="color"
+                               name="color"
+                               id="color-picker"
+                               value="{{ old('color', '#6b7280') }}"
+                               oninput="document.getElementById('color-hex').value = this.value"
+                               class="h-12 w-16 cursor-pointer rounded-xl border border-gray-300 p-1 shadow-sm">
+
+                        <input type="text"
+                               id="color-hex"
+                               value="{{ old('color', '#6b7280') }}"
+                               oninput="document.getElementById('color-picker').value = this.value"
+                               placeholder="#22c55e"
+                               maxlength="7"
+                               class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                    </div>
+
+                    @error('color')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-1 text-xs text-gray-500">
+                        Utilisée pour colorer ce statut sur la Vue Espace et le plan interactif.
+                    </p>
+                </div>
+
                 <label class="flex items-center gap-3">
                     <input type="checkbox"
                            name="is_active"

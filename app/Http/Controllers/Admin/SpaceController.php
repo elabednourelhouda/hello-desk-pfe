@@ -45,6 +45,7 @@ class SpaceController extends Controller
             'floors' => Floor::where('is_active', true)->with('campus')->orderBy('level')->get(),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->allSpaceStatusLabels(),
+            'statusColors' => $this->allSpaceStatusColors(),
         ]);
     }
 
@@ -159,6 +160,7 @@ class SpaceController extends Controller
         return view('admin.spaces.show', [
             'space' => $space,
             'statuses' => $this->allSpaceStatusLabels(),
+            'statusColors' => $this->allSpaceStatusColors(),
         ]);
     }
 
@@ -232,6 +234,7 @@ class SpaceController extends Controller
             'capacity' => ['nullable', 'integer', 'min:1'],
             'surface' => ['nullable', 'numeric', 'min:0'],
             'price_per_hour' => ['nullable', 'numeric', 'min:0'],
+            'price_per_half_day' => ['nullable', 'numeric', 'min:0'],
             'price_per_day' => ['nullable', 'numeric', 'min:0'],
             'price_per_month' => ['nullable', 'numeric', 'min:0'],
             'status' => ['required', Rule::in($this->assignableStatusCodes($currentStatusCode))],
@@ -255,6 +258,16 @@ class SpaceController extends Controller
 
         if (! $floorBelongsToCampus) {
             abort(422, 'L’étage sélectionné n’appartient pas au site sélectionné.');
+        }
+
+        // The half-day rate defaults to exactly 50% of the daily rate
+        // whenever the admin leaves it blank, so existing spaces (and
+        // anyone who doesn't care about a custom afternoon rate) get a
+        // sensible price for free. Leaving it blank on an edit re-syncs
+        // it to 50% of whatever the daily rate is at save time; an admin
+        // who wants a genuinely different half-day rate just types one.
+        if (! $request->filled('price_per_half_day') && $validated['price_per_day']) {
+            $validated['price_per_half_day'] = round($validated['price_per_day'] / 2, 2);
         }
 
         $validated['is_active'] = $request->boolean('is_active', true);
@@ -294,6 +307,18 @@ class SpaceController extends Controller
     private function allSpaceStatusLabels(): array
     {
         return SpaceStatus::orderBy('name')->pluck('name', 'code')->toArray();
+    }
+
+    /**
+     * Every status's color (active or not — same reasoning as
+     * allSpaceStatusLabels() above), for the same read-only displays.
+     * Colors are admin-configurable hex values, so — like the
+     * interactive map — these are rendered via inline `style`, never
+     * as Tailwind utility classes.
+     */
+    private function allSpaceStatusColors(): array
+    {
+        return SpaceStatus::pluck('color', 'code')->toArray();
     }
 
     /**

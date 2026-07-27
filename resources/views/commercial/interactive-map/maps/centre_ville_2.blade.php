@@ -87,25 +87,20 @@ $unplacedSpaces = $spaces->filter(function ($space) use ($plannedCodes) {
 return ! in_array($space->code, $plannedCodes);
 });
 
-$statusClasses = function ($space) {
-$displayStatus = $space->display_status ?? $space->status ?? 'Disponible';
-$status = mb_strtolower($displayStatus);
+// Colors are now admin-configurable (Configuration -> Statuts
+// d'espace), so they can no longer be a fixed Tailwind class match() —
+// Tailwind's build-time scanner can't know an arbitrary hex value
+// ahead of time. The color itself is resolved once per space in
+// Commercial\InteractiveMapController@index (display_status_color);
+// here we only turn it into an inline style string.
+$statusStyle = function ($space) {
+$color = $space->display_status_color ?? '#e5e7eb';
 
-return match($status) {
-'disponible', 'available' => 'border-green-300 bg-green-50 text-green-800 hover:bg-green-100',
-'réservé', 'reserve', 'reserved' => 'border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100',
-'occupé', 'occupe', 'occupied' => 'border-gray-300 bg-gray-100 text-gray-800 hover:bg-gray-200',
-'indisponible', 'unavailable' => 'border-red-300 bg-red-50 text-red-800 hover:bg-red-100',
-'maintenance', 'en maintenance' => 'border-yellow-300 bg-yellow-50 text-yellow-800 hover:bg-yellow-100',
-default => 'border-gray-300 bg-white text-gray-800 hover:bg-gray-50',
-};
+return 'background-color: ' . $color . '1a; border-color: ' . $color . ';';
 };
 
 $canReserveSpace = function ($space) {
-$displayStatus = $space->display_status ?? $space->status ?? 'Disponible';
-$status = mb_strtolower($displayStatus);
-
-return in_array($status, ['disponible', 'available']);
+return (bool) ($space->can_reserve ?? false);
 };
 @endphp
 
@@ -150,8 +145,8 @@ return in_array($status, ['disponible', 'available']);
 
         @if($space)
         @php
-        $displayStatus = $space->display_status ?? $space->status ?? 'Disponible';
-        $statusClass = $statusClasses($space);
+        $displayStatus = $space->display_status ?? 'Disponible';
+        $statusStyleAttr = $statusStyle($space);
         $canReserve = $canReserveSpace($space);
         @endphp
 
@@ -167,7 +162,8 @@ return in_array($status, ['disponible', 'available']);
             data-price-month="{{ $space->price_per_month ?? '' }}"
             data-can-manage="{{ ($space->can_manage ?? false) ? '1' : '0' }}"
             data-reserve-url="{{ $space->reserve_url ?? '' }}"
-            class="space-tile absolute z-10 flex flex-col justify-between rounded-lg border-2 p-3 text-left text-xs shadow-sm transition {{ $tile['position'] }} {{ $statusClass }}">
+            style="{{ $statusStyleAttr }}"
+            class="space-tile absolute z-10 flex flex-col justify-between rounded-lg border-2 p-3 text-left text-xs shadow-sm transition text-gray-800 {{ $tile['position'] }}">
             <div>
                 <p class="truncate font-bold">
                     {{ $space->name }}
@@ -217,8 +213,8 @@ return in_array($status, ['disponible', 'available']);
         <div class="mt-4 grid gap-3 md:grid-cols-3">
             @foreach($unplacedSpaces as $space)
             @php
-            $displayStatus = $space->display_status ?? $space->status ?? 'Disponible';
-            $statusClass = $statusClasses($space);
+            $displayStatus = $space->display_status ?? 'Disponible';
+            $statusStyleAttr = $statusStyle($space);
             $canReserve = $canReserveSpace($space);
             @endphp
 
@@ -234,7 +230,8 @@ return in_array($status, ['disponible', 'available']);
                 data-price-month="{{ $space->price_per_month ?? '' }}"
                 data-can-manage="{{ ($space->can_manage ?? false) ? '1' : '0' }}"
                 data-reserve-url="{{ $space->reserve_url ?? '' }}"
-                class="space-tile rounded-xl border-2 p-4 text-left text-sm shadow-sm transition {{ $statusClass }}">
+                style="{{ $statusStyleAttr }}"
+                class="space-tile rounded-xl border-2 p-4 text-left text-sm shadow-sm transition text-gray-800">
                 <p class="font-bold">{{ $space->name }}</p>
                 <p class="mt-1 text-xs opacity-75">{{ $space->code }}</p>
 

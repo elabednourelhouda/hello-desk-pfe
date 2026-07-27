@@ -172,30 +172,13 @@
                     </div>
 
                     <div class="flex flex-wrap gap-2 text-xs">
-                        <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-bold text-emerald-700">
-                            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                            Disponible
-                        </span>
-
-                        <span class="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 font-bold text-sky-700">
-                            <span class="h-2 w-2 rounded-full bg-sky-500"></span>
-                            Réservé
-                        </span>
-
-                        <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 font-bold text-slate-700">
-                            <span class="h-2 w-2 rounded-full bg-slate-500"></span>
-                            Occupé
-                        </span>
-
-                        <span class="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 font-bold text-rose-700">
-                            <span class="h-2 w-2 rounded-full bg-rose-500"></span>
-                            Indisponible
-                        </span>
-
-                        <span class="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 font-bold text-orange-700">
-                            <span class="h-2 w-2 rounded-full bg-orange-500"></span>
-                            Maintenance
-                        </span>
+                        @foreach($statusLegend as $legendStatus)
+                            <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 font-bold"
+                                  style="border-color: {{ $legendStatus->toRgba(0.4) }}; background-color: {{ $legendStatus->toRgba(0.12) }}; color: {{ $legendStatus->color }};">
+                                <span class="h-2 w-2 rounded-full" style="background-color: {{ $legendStatus->color }};"></span>
+                                {{ $legendStatus->name }}
+                            </span>
+                        @endforeach
                     </div>
                 </div>
 
@@ -206,19 +189,11 @@
                         <div class="grid min-h-[460px] grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                             @foreach($spaces as $space)
                                 @php
-                                    $displayStatus = $space->display_status ?? $space->status ?? 'Disponible';
-                                    $status = mb_strtolower($displayStatus);
+                                    $displayStatus = $space->display_status ?? 'Disponible';
+                                    $tileStyle = 'background-color: ' . ($space->display_status_color ? $space->display_status_color . '1a' : '#f9fafb')
+                                        . '; border-color: ' . ($space->display_status_color ?? '#e5e7eb') . ';';
 
-                                    $statusClass = match($status) {
-                                        'disponible', 'available' => 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100',
-                                        'réservé', 'reserve', 'reserved' => 'border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100',
-                                        'occupé', 'occupe', 'occupied' => 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200',
-                                        'indisponible', 'unavailable' => 'border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100',
-                                        'maintenance', 'en maintenance' => 'border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100',
-                                        default => 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50',
-                                    };
-
-                                    $canReserve = in_array($status, ['disponible', 'available']);
+                                    $canReserve = in_array(mb_strtolower($displayStatus), ['disponible', 'available'], true);
                                 @endphp
 
                                 <button type="button"
@@ -232,7 +207,8 @@
                                         data-price-day="{{ $space->price_per_day ?? '' }}"
                                         data-price-month="{{ $space->price_per_month ?? '' }}"
                                         data-reserve-url="{{ $canReserve ? route('admin.reservations.create', ['space_id' => $space->id]) : '' }}"
-                                        class="space-tile flex min-h-[120px] flex-col justify-between rounded-2xl border p-4 text-left text-sm shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {{ $statusClass }}">
+                                        style="{{ $tileStyle }}"
+                                        class="space-tile flex min-h-[120px] flex-col justify-between rounded-2xl border p-4 text-left text-sm shadow-sm transition hover:-translate-y-0.5 hover:shadow-md text-gray-800">
                                     <div>
                                         <p class="font-bold">{{ $space->name }}</p>
 

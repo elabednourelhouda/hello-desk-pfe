@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ReservationController extends Controller
 {
@@ -105,31 +106,63 @@ class ReservationController extends Controller
                 ->findOrFail($request->space_id);
 
             $selectedSpace->display_price_per_hour = $selectedSpace->price_per_hour ?? 0;
+            $selectedSpace->display_price_per_half_day = $selectedSpace->priceForUnit('half_day') ?? 0;
             $selectedSpace->display_price_per_day = $selectedSpace->price_per_day ?? 0;
             $selectedSpace->display_price_per_month = $selectedSpace->price_per_month ?? 0;
         }
+
+        // Per-space booking rules, keyed by space id, so the form's JS
+        // can filter the "Type de durée" / "Unité" selects and prefill
+        // the negotiated price the moment a space is chosen — without a
+        // round trip to the server.
+        $spaceBookingRules = $spaces->mapWithKeys(fn (Space $space) => [
+            $space->id => [
+                'durationTypes' => $space->bookableDurationTypes(),
+                'engagementUnits' => $space->bookableEngagementUnits(),
+                'prices' => [
+                    'hour' => $space->price_per_hour,
+                    'half_day' => $space->priceForUnit('half_day'),
+                    'day' => $space->price_per_day,
+                    'month' => $space->price_per_month,
+                ],
+            ],
+        ]);
 
         return view('admin.reservations.create', compact(
             'clients',
             'spaces',
             'selectedSpace',
-            'durationTypes'
+            'durationTypes',
+            'spaceBookingRules'
         ));
     }
 
     public function store(Request $request)
     {
+        // The space determines which duration_type / engagement_duration_unit
+        // values are actually bookable (e.g. a Bureau can't be booked
+        // hourly, a Salle de formation can't be booked monthly). We load
+        // it before validating so those two fields can be restricted
+        // with the right Rule::in() for this specific space.
+        $requestedSpace = Space::with('spaceType')->find($request->input('space_id'));
+
+        $allowedDurationTypes = $requestedSpace?->bookableDurationTypes() ?? ['hourly', 'daily', 'monthly', 'custom'];
+        $allowedEngagementUnits = $requestedSpace?->bookableEngagementUnits() ?? ['hour', 'half_day', 'day', 'month'];
+
         $data = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
             'space_id' => ['required', 'exists:spaces,id'],
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
-            'duration_type' => ['required', 'in:hourly,daily,monthly,custom'],
+            'duration_type' => ['required', Rule::in($allowedDurationTypes)],
             'engagement_duration_value' => ['required', 'integer', 'min:1', 'max:999'],
-            'engagement_duration_unit' => ['required', 'in:hour,half_day,day,month'],
+            'engagement_duration_unit' => ['required', Rule::in($allowedEngagementUnits)],
             'negotiated_price' => ['required', 'numeric', 'min:0'],
             'contract_title' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+        ], [
+            'duration_type.in' => 'Ce type de durée n’est pas disponible pour ce type d’espace.',
+            'engagement_duration_unit.in' => 'Cette unité de durée n’est pas disponible pour ce type d’espace.',
         ]);
 
         $client = Client::findOrFail($data['client_id']);

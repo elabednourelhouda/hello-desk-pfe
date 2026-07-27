@@ -175,7 +175,7 @@
 
             <h2 class="mt-8 text-sm font-bold uppercase tracking-wide text-gray-500">Tarification</h2>
 
-            <div class="mt-4 grid gap-5 md:grid-cols-3">
+            <div class="mt-4 grid gap-5 md:grid-cols-4">
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">
                         Prix / heure (DH)
@@ -183,10 +183,36 @@
                     <input type="number"
                            step="0.01"
                            min="0"
+                           id="price_per_hour"
                            name="price_per_hour"
                            value="{{ old('price_per_hour', $space->price_per_hour) }}"
                            class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                     @error('price_per_hour')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="mb-2 flex items-center justify-between text-sm font-semibold text-gray-700">
+                        <span>Prix / demi-journée (DH)</span>
+                        <button type="button"
+                                id="half-day-auto-btn"
+                                class="text-xs font-semibold text-[#284625] hover:underline">
+                            = 50% du jour
+                        </button>
+                    </label>
+                    <input type="number"
+                           step="0.01"
+                           min="0"
+                           id="price_per_half_day"
+                           name="price_per_half_day"
+                           value="{{ old('price_per_half_day', $space->price_per_half_day) }}"
+                           placeholder="Auto : 50% du prix / jour"
+                           class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                    <p class="mt-1 text-xs text-gray-500">
+                        Laissez vide pour réappliquer automatiquement 50% du prix / jour.
+                    </p>
+                    @error('price_per_half_day')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -198,6 +224,7 @@
                     <input type="number"
                            step="0.01"
                            min="0"
+                           id="price_per_day"
                            name="price_per_day"
                            value="{{ old('price_per_day', $space->price_per_day) }}"
                            class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
@@ -221,6 +248,18 @@
                     @enderror
                 </div>
             </div>
+
+            <script>
+                document.getElementById('half-day-auto-btn')?.addEventListener('click', function () {
+                    const dayInput = document.getElementById('price_per_day');
+                    const halfDayInput = document.getElementById('price_per_half_day');
+                    const dayValue = parseFloat(dayInput.value);
+
+                    if (!isNaN(dayValue)) {
+                        halfDayInput.value = (dayValue / 2).toFixed(2);
+                    }
+                });
+            </script>
 
             <h2 class="mt-8 text-sm font-bold uppercase tracking-wide text-gray-500">Équipements</h2>
 

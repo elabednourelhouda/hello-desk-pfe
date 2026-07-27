@@ -54,12 +54,7 @@
         @endif
 
         @php
-            $statusClasses = [
-                'available' => 'bg-green-50 text-green-700 ring-green-600/20',
-                'occupied' => 'bg-blue-50 text-blue-700 ring-blue-600/20',
-                'unavailable' => 'bg-gray-100 text-gray-700 ring-gray-500/20',
-                'maintenance' => 'bg-red-50 text-red-700 ring-red-600/20',
-            ];
+            $badgeColor = $statusColors[$space->status] ?? '#6b7280';
         @endphp
 
         <div class="grid gap-6 lg:grid-cols-3">
@@ -69,7 +64,8 @@
                     <div class="flex items-center justify-between">
                         <h2 class="text-sm font-bold uppercase tracking-wide text-gray-500">Informations générales</h2>
 
-                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset {{ $statusClasses[$space->status] ?? 'bg-gray-100 text-gray-700 ring-gray-500/20' }}">
+                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset"
+                              style="background-color: {{ $badgeColor }}1a; color: {{ $badgeColor }}; --tw-ring-color: {{ $badgeColor }}33;">
                             {{ $statuses[$space->status] ?? $space->status }}
                         </span>
                     </div>
@@ -197,6 +193,12 @@
                             <span>Heure</span>
                             <span class="font-semibold text-gray-900">
                                 {{ $space->price_per_hour ? number_format($space->price_per_hour, 2) . ' DH' : '—' }}
+                            </span>
+                        </p>
+                        <p class="flex justify-between">
+                            <span>Demi-journée</span>
+                            <span class="font-semibold text-gray-900">
+                                {{ $space->price_per_half_day ? number_format($space->price_per_half_day, 2) . ' DH' : '—' }}
                             </span>
                         </p>
                         <p class="flex justify-between">

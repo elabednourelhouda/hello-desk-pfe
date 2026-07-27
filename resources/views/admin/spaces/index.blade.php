@@ -103,12 +103,7 @@
                     <tbody class="divide-y divide-gray-100 bg-white">
                         @forelse($spaces as $space)
                         @php
-                        $statusClasses = [
-                        'available' => 'bg-green-50 text-green-700 ring-green-600/20',
-                        'occupied' => 'bg-blue-50 text-blue-700 ring-blue-600/20',
-                        'unavailable' => 'bg-gray-100 text-gray-700 ring-gray-500/20',
-                        'maintenance' => 'bg-red-50 text-red-700 ring-red-600/20',
-                        ];
+                        $badgeColor = $statusColors[$space->status] ?? '#6b7280';
                         @endphp
 
                         <tr class="hover:bg-gray-50">
@@ -152,7 +147,8 @@
                             </td>
 
                             <td class="px-5 py-4">
-                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset {{ $statusClasses[$space->status] ?? 'bg-gray-100 text-gray-700 ring-gray-500/20' }}">
+                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset"
+                                      style="background-color: {{ $badgeColor }}1a; color: {{ $badgeColor }}; --tw-ring-color: {{ $badgeColor }}33;">
                                     {{ $statuses[$space->status] ?? $space->status }}
                                 </span>
                             </td>

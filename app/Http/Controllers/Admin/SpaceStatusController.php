@@ -112,12 +112,19 @@ class SpaceStatusController extends Controller
                 'alpha_dash',
                 'unique:space_statuses,code' . ($ignoreId ? ',' . $ignoreId : ''),
             ],
+            'color' => [
+                'required',
+                'string',
+                'regex:/^#[0-9a-fA-F]{6}$/',
+            ],
         ], [
             'name.required' => 'Le nom du statut est obligatoire.',
             'name.unique' => 'Ce statut existe déjà.',
             'code.required' => 'Le code est obligatoire (utilisé en interne, ex: cleaning).',
             'code.alpha_dash' => 'Le code ne peut contenir que des lettres, chiffres, tirets et underscores.',
             'code.unique' => 'Ce code est déjà utilisé par un autre statut.',
+            'color.required' => 'La couleur est obligatoire (utilisée sur la Vue Espace et le plan interactif).',
+            'color.regex' => 'La couleur doit être un code hexadécimal valide, ex: #22c55e.',
         ]);
 
         $validated['is_active'] = $request->boolean('is_active', true);

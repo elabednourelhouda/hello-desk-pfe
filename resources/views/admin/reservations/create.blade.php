@@ -71,11 +71,18 @@
                         </span>
                     </div>
 
-                    <div class="mt-4 grid gap-3 text-sm text-gray-700 sm:grid-cols-3">
+                    <div class="mt-4 grid gap-3 text-sm text-gray-700 sm:grid-cols-4">
                         <div class="rounded-xl bg-white px-4 py-3">
                             <p class="text-xs font-semibold uppercase text-gray-400">Prix horaire</p>
                             <p class="mt-1 font-bold">
                                 {{ number_format($selectedSpace->display_price_per_hour, 2) }} MAD
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl bg-white px-4 py-3">
+                            <p class="text-xs font-semibold uppercase text-gray-400">Prix demi-journée</p>
+                            <p class="mt-1 font-bold">
+                                {{ number_format($selectedSpace->display_price_per_half_day, 2) }} MAD
                             </p>
                         </div>
 
@@ -151,6 +158,7 @@
 
                 @if($selectedSpace)
                     <input type="hidden"
+                           id="space_id"
                            name="space_id"
                            value="{{ old('space_id', $selectedSpace->id) }}">
 
@@ -159,6 +167,7 @@
                     </div>
                 @else
                     <select name="space_id"
+                            id="space_id"
                             required
                             class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                         <option value="">Sélectionner un espace</option>
@@ -231,6 +240,7 @@
                 </label>
 
                 <select name="duration_type"
+                        id="duration_type"
                         required
                         class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                     @foreach($durationTypes ?? [
@@ -244,6 +254,7 @@
                         </option>
                     @endforeach
                 </select>
+                <p class="mt-2 text-xs text-gray-500" id="duration_type_hint"></p>
             </div>
 
             <div class="md:col-span-2 grid gap-4 md:grid-cols-2">
@@ -267,6 +278,7 @@
                     </label>
 
                     <select name="engagement_duration_unit"
+                            id="engagement_duration_unit"
                             required
                             class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                         <option value="hour" @selected(old('engagement_duration_unit') === 'hour')>Heure</option>
@@ -284,6 +296,7 @@
                 <input type="number"
                         step="0.01"
                         min="0"
+                        id="negotiated_price"
                         name="negotiated_price"
                         required
                         value="{{ old('negotiated_price', $selectedSpace?->display_price_per_day ?? $selectedSpace?->display_price_per_hour ?? $selectedSpace?->display_price_per_month ?? 0) }}"
@@ -345,4 +358,109 @@
         </div>
     </form>
 </div>
+
+<script type="application/json" id="space-booking-rules-data">@json($spaceBookingRules ?? [])</script>
+
+<script>
+    // Booking rules per space (allowed duration types / engagement units +
+    // the price to prefill for each unit), injected from the controller so
+    // this stays in sync with Space::bookableDurationTypes() /
+    // bookableEngagementUnits() without duplicating the business rule here.
+    // Read from a separate application/json <script> tag (rather than
+    // inlined directly as `@@json(...)` in this JS block) so editors/linters
+    // parsing this file as plain JavaScript don't choke on the Blade `@`
+    // directive syntax.
+    const spaceBookingRules = JSON.parse(
+        document.getElementById('space-booking-rules-data')?.textContent || '{}'
+    );
+
+    const durationTypeLabels = {
+        hourly: 'À l’heure',
+        daily: 'À la journée',
+        monthly: 'Au mois',
+        custom: 'Personnalisée',
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const spaceIdField = document.getElementById('space_id');
+        const durationTypeSelect = document.getElementById('duration_type');
+        const engagementUnitSelect = document.getElementById('engagement_duration_unit');
+        const negotiatedPriceInput = document.getElementById('negotiated_price');
+        const durationTypeHint = document.getElementById('duration_type_hint');
+
+        if (!spaceIdField || !durationTypeSelect || !engagementUnitSelect) {
+            return;
+        }
+
+        function currentRules() {
+            const spaceId = spaceIdField.value;
+            return spaceBookingRules[spaceId] ?? null;
+        }
+
+        // Enables options in `select` matching `allowedValues`, disables
+        // the rest, and — if the currently selected option just became
+        // disabled — falls back to the first still-enabled option.
+        function applyAllowedOptions(select, allowedValues) {
+            let selectedIsStillAllowed = false;
+            let firstEnabledValue = null;
+
+            Array.from(select.options).forEach(function (option) {
+                const isAllowed = !allowedValues || allowedValues.includes(option.value);
+                option.disabled = !isAllowed;
+                option.hidden = !isAllowed;
+
+                if (isAllowed && firstEnabledValue === null) {
+                    firstEnabledValue = option.value;
+                }
+
+                if (isAllowed && option.value === select.value) {
+                    selectedIsStillAllowed = true;
+                }
+            });
+
+            if (!selectedIsStillAllowed && firstEnabledValue !== null) {
+                select.value = firstEnabledValue;
+            }
+        }
+
+        function prefillPriceForCurrentUnit() {
+            const rules = currentRules();
+
+            if (!rules || !negotiatedPriceInput) {
+                return;
+            }
+
+            const price = rules.prices[engagementUnitSelect.value];
+
+            if (price !== null && price !== undefined) {
+                negotiatedPriceInput.value = parseFloat(price).toFixed(2);
+            }
+        }
+
+        function refreshBookingConstraints() {
+            const rules = currentRules();
+
+            // No known rules for this space (e.g. brand-new space type not
+            // yet mapped) → leave every option available rather than
+            // blocking a legitimate booking.
+            applyAllowedOptions(durationTypeSelect, rules ? rules.durationTypes : null);
+            applyAllowedOptions(engagementUnitSelect, rules ? rules.engagementUnits : null);
+
+            if (durationTypeHint) {
+                durationTypeHint.textContent = rules
+                    ? 'Options disponibles pour cet espace : ' + rules.durationTypes.map(v => durationTypeLabels[v] || v).join(', ')
+                    : '';
+            }
+
+            prefillPriceForCurrentUnit();
+        }
+
+        spaceIdField.addEventListener('change', refreshBookingConstraints);
+        engagementUnitSelect.addEventListener('change', prefillPriceForCurrentUnit);
+
+        // Run once on load so a space pre-selected from the interactive
+        // map (hidden input, no 'change' event fired) is constrained too.
+        refreshBookingConstraints();
+    });
+</script>
 @endsection
