@@ -21,49 +21,58 @@ class PaymentController extends Controller
         $scope = $this->commercialScope();
         $hasCommercialScope = $this->hasScope($scope);
 
-        $query = Payment::query()
-            ->with(['client', 'contract.reservation.space']);
+        $contractsQuery = Contract::with(['client', 'reservation.space', 'payments'])
+            ->whereHas('payments');
 
-        $this->applyScopeToPaymentQuery($query, $scope);
-
-        if ($request->filled('status') && $request->status !== 'all') {
-            if ($request->status === 'late') {
-                $query->where(function (Builder $lateQuery) {
-                    $lateQuery->where('status', 'late')
-                        ->orWhere(function (Builder $subQuery) {
-                            $subQuery->where('status', 'due')
-                                ->whereDate('due_date', '<', today());
-                        });
-                });
-            } else {
-                $query->where('status', $request->status);
-            }
-        }
+        $this->applyScopeToContractQuery($contractsQuery, $scope);
 
         if ($request->filled('search')) {
             $search = $request->search;
 
-            $query->where(function (Builder $subQuery) use ($search) {
+            $contractsQuery->where(function (Builder $subQuery) use ($search) {
                 $subQuery->whereHas('client', function (Builder $clientQuery) use ($search) {
                     $clientQuery->where('full_name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
                 })
-                ->orWhereHas('contract', function (Builder $contractQuery) use ($search) {
-                    $contractQuery->where('title', 'like', "%{$search}%");
-                })
-                ->orWhere('receipt_number', 'like', "%{$search}%")
-                ->orWhere('invoice_number', 'like', "%{$search}%")
-                ->orWhere('reference', 'like', "%{$search}%");
+                ->orWhere('title', 'like', "%{$search}%")
+                ->orWhereHas('payments', function (Builder $paymentQuery) use ($search) {
+                    $paymentQuery->where('receipt_number', 'like', "%{$search}%")
+                        ->orWhere('invoice_number', 'like', "%{$search}%")
+                        ->orWhere('reference', 'like', "%{$search}%");
+                });
             });
         }
 
-        $payments = $query
-            ->orderBy('due_date')
-            ->paginate(10)
-            ->withQueryString();
+        // Aggregate first (one entry per contract), then filter on the
+        // computed overall status — "late"/"paid"/"due" only exist once
+        // the installments are summarized, so they can't be pushed into
+        // the SQL ->where() above.
+        $rows = $contractsQuery->latest('id')->get()->map(function (Contract $contract) {
+            return array_merge(['contract' => $contract], $contract->paymentSummary());
+        });
+
+        if ($request->filled('status') && $request->status !== 'all') {
+            $rows = $rows->filter(fn ($row) => $row['overall_status'] === $request->status);
+        }
+
+        $rows = $rows->values();
+
+        $perPage = 10;
+        $page = $request->integer('page', 1);
+
+        $contracts = new \Illuminate\Pagination\LengthAwarePaginator(
+            $rows->forPage($page, $perPage)->values(),
+            $rows->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         return view('commercial.payments.index', compact(
-            'payments',
+            'contracts',
             'hasCommercialScope'
         ));
     }
@@ -202,6 +211,28 @@ class PaymentController extends Controller
         }
 
         return view('commercial.payments.show', compact('payment'));
+    }
+
+    /**
+     * The full month-by-month échéancier for a single contract, scoped
+     * to the commercial's assignment just like every other payment
+     * action here. Mirrors Admin\PaymentController::schedule().
+     */
+    public function schedule(Contract $contract)
+    {
+        $contract->load([
+            'client',
+            'reservation.space',
+            'payments' => fn ($query) => $query->orderBy('due_date'),
+        ]);
+
+        if (! $this->canManageContract($contract)) {
+            abort(403, 'Ce contrat ne fait pas partie de votre périmètre commercial.');
+        }
+
+        $summary = $contract->paymentSummary();
+
+        return view('commercial.payments.schedule', compact('contract', 'summary'));
     }
 
     /**
@@ -532,6 +563,21 @@ class PaymentController extends Controller
 
         if ($payment->reservation) {
             return $this->canManageReservation($payment->reservation, $scope);
+        }
+
+        return false;
+    }
+
+    private function canManageContract(Contract $contract): bool
+    {
+        $scope = $this->commercialScope();
+
+        if (! $this->hasScope($scope)) {
+            return false;
+        }
+
+        if ($contract->reservation) {
+            return $this->canManageReservation($contract->reservation, $scope);
         }
 
         return false;

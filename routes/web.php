@@ -333,6 +333,9 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
         Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])
             ->name('payments.receipt');
 
+        Route::get('/payments/contracts/{contract}/schedule', [PaymentController::class, 'schedule'])
+            ->name('payments.schedule');
+
         Route::resource('payments', PaymentController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
@@ -469,6 +472,9 @@ Route::middleware(['auth', 'password.changed', 'role:commercial'])
         Route::get('/payments/{payment}/receipt', [CommercialPaymentController::class, 'receipt'])
             ->name('payments.receipt');
 
+        Route::get('/payments/contracts/{contract}/schedule', [CommercialPaymentController::class, 'schedule'])
+            ->name('payments.schedule');
+
         Route::resource('payments', CommercialPaymentController::class)
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
@@ -550,6 +556,9 @@ Route::middleware(['auth', 'role:client', 'client.active', 'password.changed'])
 
         Route::get('/payments', [ClientPaymentController::class, 'index'])
             ->name('payments.index');
+
+        Route::get('/payments/contracts/{contract}/schedule', [ClientPaymentController::class, 'schedule'])
+            ->name('payments.schedule');
 
         Route::get('/payments/{payment}', [ClientPaymentController::class, 'show'])
             ->name('payments.show');

@@ -7,18 +7,18 @@
     $clientProfile = $clientProfile ?? null;
     $reservations = $reservations ?? collect();
     $contracts = $contracts ?? collect();
-    $payments = $payments ?? collect();
+    $paymentContracts = $paymentContracts ?? collect();
     $notifications = $notifications ?? collect();
 
     $reservationsCount = $reservationsCount ?? $reservations->count();
     $contractsCount = $contractsCount ?? $contracts->count();
     $duePaymentsCount = $duePaymentsCount ?? 0;
+    $totalPaymentsCount = max($totalPaymentsCount ?? 0, 1);
+    $paidPaymentsCount = $paidPaymentsCount ?? 0;
     $unreadCount = $unreadCount ?? 0;
 
-    $paidPaymentsCount = $payments->where('status', 'paid')->count();
-    $totalPaymentsCount = max($payments->count(), 1);
     $paidRate = round(($paidPaymentsCount / $totalPaymentsCount) * 100);
-    $dueRate = min(100, round(($duePaymentsCount / max($payments->count(), 1)) * 100));
+    $dueRate = min(100, round(($duePaymentsCount / $totalPaymentsCount) * 100));
 
     $progressWidthClass = function ($value) {
         if ($value <= 0) {
@@ -281,14 +281,21 @@
 
         {{-- Paiements --}}
         <section id="paiements" class="mt-6 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
-            <div class="border-b border-gray-100 px-6 py-5">
-                <h2 class="text-lg font-bold text-gray-900">
-                    Mes échéances de paiement
-                </h2>
+            <div class="flex flex-col gap-2 border-b border-gray-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900">
+                        Mes échéances de paiement
+                    </h2>
 
-                <p class="mt-1 text-sm text-gray-500">
-                    Suivi des montants à payer, réglés ou en retard.
-                </p>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Un contrat par ligne : ce qui est réglé, et ce qu'il reste à payer.
+                    </p>
+                </div>
+
+                <a href="{{ route('client.payments.index') }}"
+                   class="text-sm font-bold text-[#284625] hover:underline">
+                    Voir toutes mes échéances →
+                </a>
             </div>
 
             <div class="overflow-x-auto">
@@ -296,43 +303,63 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Contrat</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Échéance</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Échéances</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Montant</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Payé</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Statut</th>
+                            <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-gray-500">Action</th>
                         </tr>
                     </thead>
 
                     <tbody class="divide-y divide-gray-100 bg-white">
-                        @forelse($payments as $payment)
+                        @forelse($paymentContracts as $row)
                             @php
-                                $realStatus = $payment->real_status;
+                                $contract = $row['contract'];
+                                $current = $row['current_payment'];
+
+                                if (!$current) {
+                                    $realStatus = 'Payé';
+                                    $amountLabel = number_format($row['total_ttc'], 2, ',', ' ') . ' DH';
+                                    $dueLabel = 'Toutes échéances réglées';
+                                } else {
+                                    $realStatus = $current->real_status;
+                                    $amountLabel = number_format((float) ($current->amount_ttc ?? $current->amount_due ?? 0), 2, ',', ' ') . ' DH';
+                                    $dueLabel = 'Échéance : ' . ($current->due_date?->format('d/m/Y') ?? '-');
+                                }
+
                                 $paymentClass = $paymentStatusClasses[$realStatus] ?? 'bg-gray-100 text-gray-700 ring-gray-200';
                             @endphp
 
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4">
                                     <p class="font-bold text-gray-900">
-                                        {{ $payment->contract?->title ?? 'Contrat supprimé' }}
+                                        {{ $contract->title ?? 'Contrat #' . $contract->id }}
                                     </p>
                                 </td>
 
                                 <td class="px-6 py-4 text-sm text-gray-600">
-                                    {{ $payment->due_date?->format('d/m/Y') }}
+                                    <p class="font-semibold text-gray-800">
+                                        {{ $row['paid_installments_count'] }} / {{ $row['installments_count'] }} réglées
+                                    </p>
+                                    <p class="mt-0.5 text-xs text-gray-500">
+                                        {{ $dueLabel }}
+                                    </p>
                                 </td>
 
                                 <td class="px-6 py-4 text-sm font-semibold text-gray-900">
-                                    {{ number_format($payment->amount_due, 2, ',', ' ') }} DH
-                                </td>
-
-                                <td class="px-6 py-4 text-sm text-gray-600">
-                                    {{ number_format($payment->amount_paid, 2, ',', ' ') }} DH
+                                    {{ $amountLabel }}
                                 </td>
 
                                 <td class="px-6 py-4">
                                     <span class="rounded-full px-3 py-1 text-xs font-bold ring-1 {{ $paymentClass }}">
                                         {{ $realStatus }}
                                     </span>
+                                </td>
+
+                                <td class="px-6 py-4 text-right">
+                                    <a href="{{ route('client.payments.schedule', $contract) }}"
+                                       class="inline-flex h-9 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-xs font-bold text-gray-700 shadow-sm transition hover:bg-gray-50">
+                                        Voir l'historique
+                                    </a>
                                 </td>
                             </tr>
                         @empty

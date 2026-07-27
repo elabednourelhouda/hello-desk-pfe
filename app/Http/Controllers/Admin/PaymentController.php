@@ -14,20 +14,8 @@ class PaymentController extends Controller
 {
     public function index(Request $request)
     {
-        $payments = Payment::with(['client', 'contract.reservation.space'])
-            ->when($request->filled('status') && $request->status !== 'all', function ($query) use ($request) {
-                if ($request->status === 'late') {
-                    $query->where(function ($lateQuery) {
-                        $lateQuery->where('status', 'late')
-                            ->orWhere(function ($subQuery) {
-                                $subQuery->where('status', 'due')
-                                    ->whereDate('due_date', '<', today());
-                            });
-                    });
-                } else {
-                    $query->where('status', $request->status);
-                }
-            })
+        $contractsQuery = Contract::with(['client', 'reservation.space', 'payments'])
+            ->whereHas('payments')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->search;
 
@@ -36,19 +24,45 @@ class PaymentController extends Controller
                         $clientQuery->where('full_name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%");
                     })
-                    ->orWhereHas('contract', function ($contractQuery) use ($search) {
-                        $contractQuery->where('title', 'like', "%{$search}%");
-                    })
-                    ->orWhere('receipt_number', 'like', "%{$search}%")
-                    ->orWhere('invoice_number', 'like', "%{$search}%")
-                    ->orWhere('reference', 'like', "%{$search}%");
+                    ->orWhere('title', 'like', "%{$search}%")
+                    ->orWhereHas('payments', function ($paymentQuery) use ($search) {
+                        $paymentQuery->where('receipt_number', 'like', "%{$search}%")
+                            ->orWhere('invoice_number', 'like', "%{$search}%")
+                            ->orWhere('reference', 'like', "%{$search}%");
+                    });
                 });
             })
-            ->orderBy('due_date')
-            ->paginate(10)
-            ->withQueryString();
+            ->latest('id');
 
-        return view('admin.payments.index', compact('payments'));
+        // Aggregate first (one entry per contract), then filter on the
+        // computed overall status, since "late"/"paid"/"due" only exist
+        // once the installments have been summarized — they're not raw
+        // columns we can filter with a plain ->where().
+        $rows = $contractsQuery->get()->map(function (Contract $contract) {
+            return array_merge(['contract' => $contract], $contract->paymentSummary());
+        });
+
+        if ($request->filled('status') && $request->status !== 'all') {
+            $rows = $rows->filter(fn ($row) => $row['overall_status'] === $request->status);
+        }
+
+        $rows = $rows->values();
+
+        $perPage = 10;
+        $page = $request->integer('page', 1);
+
+        $contracts = new \Illuminate\Pagination\LengthAwarePaginator(
+            $rows->forPage($page, $perPage)->values(),
+            $rows->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
+
+        return view('admin.payments.index', compact('contracts'));
     }
 
     public function create(Request $request)
@@ -156,6 +170,25 @@ class PaymentController extends Controller
         $payment->load(['client', 'contract.reservation.space', 'reservation', 'recorder']);
 
         return view('admin.payments.show', compact('payment'));
+    }
+
+    /**
+     * The full month-by-month échéancier for a single contract. This is
+     * what the grouped index() links into so staff don't have to scroll
+     * through every other contract's installments to find one client's
+     * 12 monthly rows.
+     */
+    public function schedule(Contract $contract)
+    {
+        $contract->load([
+            'client',
+            'reservation.space',
+            'payments' => fn ($query) => $query->orderBy('due_date'),
+        ]);
+
+        $summary = $contract->paymentSummary();
+
+        return view('admin.payments.schedule', compact('contract', 'summary'));
     }
 
     /**

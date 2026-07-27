@@ -25,11 +25,13 @@ class DashboardController extends Controller
 
         $reservations = collect();
         $contracts = collect();
-        $payments = collect();
+        $paymentContracts = collect();
 
         $reservationsCount = 0;
         $contractsCount = 0;
         $duePaymentsCount = 0;
+        $totalPaymentsCount = 0;
+        $paidPaymentsCount = 0;
 
         if ($clientProfile) {
             $reservations = Reservation::with(['space', 'campus', 'floor', 'contract'])
@@ -44,15 +46,29 @@ class DashboardController extends Controller
                 ->take(5)
                 ->get();
 
-            $payments = Payment::with(['contract'])
+            // One row per contract, not one row per monthly installment —
+            // otherwise a contract with several months already paid keeps
+            // cluttering the dashboard widget instead of collapsing into
+            // "8/12 réglées". See Contract::paymentSummary().
+            $paymentContracts = Contract::with(['reservation.space', 'payments'])
                 ->where('client_id', $clientProfile->id)
-                ->orderBy('due_date')
-                ->take(8)
-                ->get();
+                ->whereHas('payments')
+                ->latest('id')
+                ->take(5)
+                ->get()
+                ->map(function (Contract $contract) {
+                    return array_merge(['contract' => $contract], $contract->paymentSummary());
+                });
 
             $reservationsCount = Reservation::where('client_id', $clientProfile->id)->count();
 
             $contractsCount = Contract::where('client_id', $clientProfile->id)->count();
+
+            $totalPaymentsCount = Payment::where('client_id', $clientProfile->id)->count();
+
+            $paidPaymentsCount = Payment::where('client_id', $clientProfile->id)
+                ->where('status', 'paid')
+                ->count();
 
             $duePaymentsCount = Payment::where('client_id', $clientProfile->id)
                 ->where(function ($query) {
@@ -76,10 +92,12 @@ class DashboardController extends Controller
             'clientProfile',
             'reservations',
             'contracts',
-            'payments',
+            'paymentContracts',
             'reservationsCount',
             'contractsCount',
             'duePaymentsCount',
+            'totalPaymentsCount',
+            'paidPaymentsCount',
             'notifications',
             'unreadCount'
         ));

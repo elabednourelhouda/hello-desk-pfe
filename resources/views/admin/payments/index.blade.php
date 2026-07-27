@@ -4,31 +4,21 @@
 
 @section('content')
 @php
-    $pagePayments = method_exists($payments, 'getCollection')
-        ? $payments->getCollection()
-        : collect($payments);
+    $pageRows = method_exists($contracts, 'getCollection')
+        ? $contracts->getCollection()
+        : collect($contracts);
 
-    $totalPayments = method_exists($payments, 'total')
-        ? $payments->total()
-        : $pagePayments->count();
+    $totalContracts = method_exists($contracts, 'total')
+        ? $contracts->total()
+        : $pageRows->count();
 
-    $visibleCount = $pagePayments->count();
+    $visibleCount = $pageRows->count();
 
-    $totalDueVisible = $pagePayments->sum(fn ($payment) => (float) ($payment->amount_due ?? 0));
-    $totalPaidVisible = $pagePayments->sum(fn ($payment) => (float) ($payment->amount_paid ?? 0));
+    $totalDueVisible = $pageRows->sum(fn ($row) => (float) $row['total_ttc']);
+    $totalPaidVisible = $pageRows->sum(fn ($row) => (float) $row['total_paid']);
     $remainingVisible = max($totalDueVisible - $totalPaidVisible, 0);
 
-    $dueVisible = $pagePayments->where('status', 'due')->count();
-    $paidVisible = $pagePayments->where('status', 'paid')->count();
-    $lateVisible = $pagePayments->filter(function ($payment) {
-        return $payment->status === 'late'
-            || (
-                $payment->status === 'due'
-                && $payment->due_date
-                && $payment->due_date->lt(today())
-            );
-    })->count();
-    $cancelledVisible = $pagePayments->where('status', 'cancelled')->count();
+    $lateVisible = $pageRows->where('overall_status', 'late')->count();
 
     $paidAmountRate = $totalDueVisible > 0
         ? min(100, round(($totalPaidVisible / $totalDueVisible) * 100))
@@ -43,24 +33,24 @@
         : 0;
 
     $statusLabels = [
-        'due' => 'À payer',
-        'paid' => 'Payé',
+        'due' => 'En cours',
+        'paid' => 'Soldé',
         'late' => 'En retard',
-        'cancelled' => 'Annulé',
+        'none' => 'Sans échéance',
     ];
 
     $statusClasses = [
         'due' => 'bg-amber-50 text-amber-700 ring-amber-600/20',
         'paid' => 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
         'late' => 'bg-rose-50 text-rose-700 ring-rose-600/20',
-        'cancelled' => 'bg-slate-100 text-slate-700 ring-slate-500/20',
+        'none' => 'bg-slate-100 text-slate-700 ring-slate-500/20',
     ];
 
     $statusDots = [
         'due' => 'bg-amber-500',
         'paid' => 'bg-emerald-500',
         'late' => 'bg-rose-500',
-        'cancelled' => 'bg-slate-500',
+        'none' => 'bg-slate-500',
     ];
 @endphp
 
@@ -80,8 +70,8 @@
                     </h1>
 
                     <p class="mt-3 max-w-2xl text-sm leading-6 text-white/80">
-                        Suivez les montants dus, les paiements reçus, les retards et les échéances
-                        liées aux contrats Hello Desk.
+                        Un contrat par ligne : ouvrez l'échéancier d'un contrat pour voir le détail
+                        mois par mois, sans faire défiler tous les autres contrats.
                     </p>
 
                     <div class="mt-6 flex flex-wrap gap-3">
@@ -92,7 +82,7 @@
 
                         <a href="#payments-list"
                            class="inline-flex h-11 items-center justify-center rounded-xl border border-white/25 bg-white/10 px-5 text-sm font-bold text-white transition hover:bg-white/15">
-                            Voir les paiements
+                            Voir les contrats
                         </a>
                     </div>
                 </div>
@@ -104,7 +94,7 @@
                     </h2>
 
                     <p class="mt-1 text-sm text-gray-500">
-                        État des montants sur les échéances affichées.
+                        État des montants sur les contrats affichés.
                     </p>
 
                     <div class="mt-6 space-y-5">
@@ -130,7 +120,7 @@
 
                         <div>
                             <div class="mb-2 flex justify-between text-sm">
-                                <span class="font-semibold text-gray-600">Échéances en retard</span>
+                                <span class="font-semibold text-gray-600">Contrats en retard</span>
                                 <span class="font-bold text-rose-600">{{ $lateRate }}%</span>
                             </div>
                             <div class="h-2.5 overflow-hidden rounded-full bg-gray-100">
@@ -154,8 +144,8 @@
             <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-sm font-semibold text-gray-500">Total échéances</p>
-                        <p class="mt-3 text-3xl font-bold text-gray-900">{{ $totalPayments }}</p>
+                        <p class="text-sm font-semibold text-gray-500">Contrats avec échéances</p>
+                        <p class="mt-3 text-3xl font-bold text-gray-900">{{ $totalContracts }}</p>
                     </div>
 
                     <span class="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700">
@@ -233,7 +223,7 @@
                     </h2>
 
                     <p class="mt-1 text-sm text-gray-500">
-                        Filtrez les échéances par client, email, contrat ou statut.
+                        Filtrez les contrats par client, email, contrat ou statut global.
                     </p>
                 </div>
 
@@ -268,10 +258,9 @@
                     <select name="status"
                             class="filter-auto h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                         <option value="all" @selected(request('status', 'all') === 'all')>Tous les statuts</option>
-                        <option value="due" @selected(request('status') === 'due')>À payer</option>
-                        <option value="paid" @selected(request('status') === 'paid')>Payé</option>
+                        <option value="due" @selected(request('status') === 'due')>En cours</option>
+                        <option value="paid" @selected(request('status') === 'paid')>Soldé</option>
                         <option value="late" @selected(request('status') === 'late')>En retard</option>
-                        <option value="cancelled" @selected(request('status') === 'cancelled')>Annulé</option>
                     </select>
                 </div>
 
@@ -290,16 +279,16 @@
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h2 class="text-lg font-bold text-gray-900">
-                            Liste des échéances
+                            Contrats avec échéances
                         </h2>
 
                         <p class="mt-1 text-sm text-gray-500">
-                            Suivez les montants dus, les paiements reçus et les retards.
+                            Un contrat par ligne. Ouvrez l'échéancier pour le détail mois par mois.
                         </p>
                     </div>
 
                     <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                        {{ $totalPayments }} résultat(s)
+                        {{ $totalContracts }} contrat(s)
                     </span>
                 </div>
             </div>
@@ -310,7 +299,7 @@
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Client</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Contrat</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Échéance</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Échéances</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Montants</th>
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Statut</th>
                             <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wide text-gray-500">Action</th>
@@ -318,45 +307,36 @@
                     </thead>
 
                     <tbody class="divide-y divide-gray-100 bg-white">
-                        @forelse($payments as $payment)
+                        @forelse($contracts as $row)
                             @php
-                                $status = $payment->status;
-
-                                if (
-                                    $status === 'due'
-                                    && $payment->due_date
-                                    && $payment->due_date->lt(today())
-                                ) {
-                                    $status = 'late';
-                                }
+                                $contract = $row['contract'];
+                                $status = $row['overall_status'];
 
                                 $statusClass = $statusClasses[$status] ?? 'bg-slate-100 text-slate-700 ring-slate-500/20';
                                 $statusDot = $statusDots[$status] ?? 'bg-slate-500';
                                 $statusLabel = $statusLabels[$status] ?? ucfirst($status);
 
-                                $amountHt = (float) ($payment->amount_ht ?? 0);
-                                $taxAmount = (float) ($payment->tax_amount ?? 0);
-                                $amountTtc = (float) ($payment->amount_ttc ?? $payment->amount_due ?? 0);
+                                $rowPaidRate = $row['total_ttc'] > 0
+                                    ? min(100, round(($row['total_paid'] / $row['total_ttc']) * 100))
+                                    : 0;
 
-                                $amountPaid = (float) ($payment->amount_paid ?? 0);
-                                $remaining = max($amountTtc - $amountPaid, 0);
-                                $rowPaidRate = $amountTtc > 0 ? min(100, round(($amountPaid / $amountTtc) * 100)) : 0;
+                                $currentPayment = $row['current_payment'];
                             @endphp
 
                             <tr class="transition hover:bg-gray-50">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
                                         <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sm font-bold text-sky-700 ring-1 ring-sky-100">
-                                            {{ strtoupper(substr($payment->client?->full_name ?? 'C', 0, 1)) }}
+                                            {{ strtoupper(substr($contract->client?->full_name ?? 'C', 0, 1)) }}
                                         </div>
 
                                         <div>
                                             <p class="font-bold text-gray-900">
-                                                {{ $payment->client?->full_name ?? 'Client supprimé' }}
+                                                {{ $contract->client?->full_name ?? 'Client supprimé' }}
                                             </p>
 
                                             <p class="mt-0.5 text-xs text-gray-500">
-                                                {{ $payment->client?->email ?? 'Email non disponible' }}
+                                                {{ $contract->client?->email ?? 'Email non disponible' }}
                                             </p>
                                         </div>
                                     </div>
@@ -364,21 +344,25 @@
 
                                 <td class="px-6 py-4">
                                     <p class="font-semibold text-gray-800">
-                                        {{ $payment->contract?->title ?? 'Contrat supprimé' }}
+                                        {{ $contract->title ?? 'Contrat #' . $contract->id }}
                                     </p>
 
                                     <p class="mt-0.5 text-xs text-gray-500">
-                                        Contrat #{{ $payment->contract?->id ?? '-' }}
+                                        {{ $contract->reservation?->space?->name ?? 'Espace non précisé' }}
                                     </p>
                                 </td>
 
                                 <td class="px-6 py-4 text-sm text-gray-700">
                                     <p class="font-medium">
-                                        {{ $payment->due_date?->format('d/m/Y') ?? '-' }}
+                                        {{ $row['paid_installments_count'] }} / {{ $row['installments_count'] }} réglées
                                     </p>
 
                                     <p class="mt-0.5 text-xs text-gray-500">
-                                        Date limite de paiement
+                                        @if($currentPayment)
+                                            Prochaine échéance : {{ $currentPayment->due_date?->format('d/m/Y') ?? '-' }}
+                                        @else
+                                            Toutes les échéances sont réglées
+                                        @endif
                                     </p>
                                 </td>
 
@@ -387,7 +371,7 @@
                                         <div class="flex justify-between text-sm">
                                             <span class="text-gray-500">Payé</span>
                                             <span class="font-bold text-gray-900">
-                                                {{ number_format($amountPaid, 2, ',', ' ') }} DH
+                                                {{ number_format($row['total_paid'], 2, ',', ' ') }} DH
                                             </span>
                                         </div>
 
@@ -397,21 +381,11 @@
 
                                         <div class="mt-2 flex justify-between text-xs">
                                             <span class="text-gray-500">
-                                                HT : {{ number_format($amountHt, 2, ',', ' ') }} DH
-                                            </span>
-
-                                            <span class="font-semibold text-[#284625]">
-                                                TTC : {{ number_format($amountTtc, 2, ',', ' ') }} DH
-                                            </span>
-                                        </div>
-
-                                        <div class="mt-1 flex justify-between text-xs">
-                                            <span class="text-gray-500">
-                                                TVA : {{ number_format($taxAmount, 2, ',', ' ') }} DH
+                                                TTC : {{ number_format($row['total_ttc'], 2, ',', ' ') }} DH
                                             </span>
 
                                             <span class="font-semibold text-amber-700">
-                                                Reste : {{ number_format($remaining, 2, ',', ' ') }} DH
+                                                Reste : {{ number_format($row['remaining'], 2, ',', ' ') }} DH
                                             </span>
                                         </div>
                                     </div>
@@ -426,9 +400,9 @@
 
                                 <td class="px-6 py-4">
                                     <div class="flex justify-end">
-                                        <a href="{{ route('admin.payments.show', $payment) }}"
+                                        <a href="{{ route('admin.payments.schedule', $contract) }}"
                                            class="inline-flex h-9 items-center justify-center rounded-xl bg-sky-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700">
-                                            Voir dossier
+                                            Voir l'échéancier
                                         </a>
                                     </div>
                                 </td>
@@ -442,7 +416,7 @@
                                         </div>
 
                                         <p class="mt-4 font-bold text-gray-800">
-                                            Aucune échéance trouvée
+                                            Aucun contrat avec échéances trouvé
                                         </p>
 
                                         <p class="mt-1 text-sm text-gray-500">
@@ -461,9 +435,9 @@
                 </table>
             </div>
 
-            @if($payments->hasPages())
+            @if($contracts->hasPages())
                 <div class="border-t border-gray-100 px-6 py-4">
-                    {{ $payments->links() }}
+                    {{ $contracts->links() }}
                 </div>
             @endif
         </section>
