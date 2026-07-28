@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Campus;
 use App\Models\Floor;
+use App\Models\Prospect;
 use App\Models\StaffAssignment;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -122,6 +123,49 @@ class CommercialController extends Controller
         ]);
     }
 
+    public function toggleActive(User $commercial)
+    {
+        $this->ensureCommercial($commercial);
+
+        $willBeActive = ! $commercial->is_active;
+
+        if ($willBeActive) {
+            // Reactivating never needs to touch assignments — nothing was
+            // changed when the account was deactivated except its own flag
+            // and the rows below, so simply flipping it back on is enough.
+            $commercial->update(['is_active' => true]);
+
+            return redirect()
+                ->route('admin.commercials.show', $commercial)
+                ->with('success', 'Commercial réactivé avec succès.');
+        }
+
+        $unassignedProspectsCount = DB::transaction(function () use ($commercial) {
+            $commercial->update(['is_active' => false]);
+
+            // Per admin decision: deactivating a commercial immediately
+            // frees every campus/floor they were responsible for (so
+            // another commercial can be assigned right away instead of
+            // silently keeping a departed employee's exclusive coverage)
+            // and unassigns every prospect they were the CRM owner of
+            // (so those prospects don't sit invisible in a former
+            // employee's now-inaccessible-looking portfolio).
+            $commercial->staffAssignments()->delete();
+
+            return Prospect::where('assigned_to', $commercial->id)
+                ->update(['assigned_to' => null]);
+        });
+
+        $message = 'Commercial désactivé. Ses affectations ont été retirées';
+        $message .= $unassignedProspectsCount > 0
+            ? " et {$unassignedProspectsCount} prospect(s) ont été désassignés."
+            : '.';
+
+        return redirect()
+            ->route('admin.commercials.show', $commercial)
+            ->with('success', $message);
+    }
+
     public function resetPassword(User $commercial)
     {
         $this->ensureCommercial($commercial);
@@ -142,6 +186,12 @@ class CommercialController extends Controller
     public function storeAssignment(Request $request, User $commercial)
     {
         $this->ensureCommercial($commercial);
+
+        if (! $commercial->is_active) {
+            return redirect()
+                ->route('admin.commercials.show', $commercial)
+                ->with('error', 'Ce compte est désactivé. Réactivez-le avant de lui affecter un site ou un étage.');
+        }
 
         $validatedAssignment = $this->validateAssignmentData($request);
 

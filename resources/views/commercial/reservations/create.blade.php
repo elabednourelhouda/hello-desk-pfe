@@ -254,12 +254,7 @@
                         id="duration_type"
                         required
                         class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
-                    @foreach($durationTypes ?? [
-                        'hourly' => 'À l’heure',
-                        'daily' => 'À la journée',
-                        'monthly' => 'Au mois',
-                        'custom' => 'Personnalisée',
-                    ] as $value => $label)
+                    @foreach($durationTypes as $value => $label)
                         <option value="{{ $value }}" @selected(old('duration_type', 'custom') === $value)>
                             {{ $label }}
                         </option>
@@ -369,6 +364,7 @@
 </div>
 
 <script type="application/json" id="space-booking-rules-data">@json($spaceBookingRules ?? [])</script>
+<script type="application/json" id="duration-type-labels-data">@json($durationTypes ?? [])</script>
 
 <script>
     // Booking rules per space (allowed duration types / engagement units +
@@ -376,19 +372,22 @@
     // this stays in sync with Space::bookableDurationTypes() /
     // bookableEngagementUnits() without duplicating the business rule here.
     // Read from a separate application/json <script> tag (rather than
-    // inlined directly as `@json(...)` in this JS block) so editors/linters
+    // inlined directly as `@@json(...)` in this JS block) so editors/linters
     // parsing this file as plain JavaScript don't choke on the Blade `@`
     // directive syntax.
     const spaceBookingRules = JSON.parse(
         document.getElementById('space-booking-rules-data')?.textContent || '{}'
     );
 
-    const durationTypeLabels = {
-        hourly: 'À l’heure',
-        daily: 'À la journée',
-        monthly: 'Au mois',
-        custom: 'Personnalisée',
-    };
+    // Was a hardcoded object — now read from a separate
+    // application/json <script> tag (same reasoning as
+    // space-booking-rules-data above: keeps Blade's @@json(...) out of
+    // this plain-JS block) so a renamed/added duration type
+    // (Configuration -> Types de durée de réservation) shows its real
+    // label in this hint too, instead of falling back to the raw code.
+    const durationTypeLabels = JSON.parse(
+        document.getElementById('duration-type-labels-data')?.textContent || '{}'
+    );
 
     document.addEventListener('DOMContentLoaded', function () {
         const spaceIdField = document.getElementById('space_id');

@@ -146,7 +146,7 @@ class ReservationController extends Controller
         // with the right Rule::in() for this specific space.
         $requestedSpace = Space::with('spaceType')->find($request->input('space_id'));
 
-        $allowedDurationTypes = $requestedSpace?->bookableDurationTypes() ?? ['hourly', 'daily', 'monthly', 'custom'];
+        $allowedDurationTypes = $requestedSpace?->bookableDurationTypes() ?? \App\Models\ReservationDurationType::where('is_active', true)->orderBy('sort_order')->pluck('code')->all();
         $allowedEngagementUnits = $requestedSpace?->bookableEngagementUnits() ?? ['hour', 'half_day', 'day', 'month'];
 
         $data = $request->validate([
@@ -311,11 +311,12 @@ class ReservationController extends Controller
 
     private function durationTypes(): array
     {
-        return [
-            'hourly' => 'À l’heure',
-            'daily' => 'À la journée',
-            'monthly' => 'Au mois',
-            'custom' => 'Personnalisée',
-        ];
+        // Was a hardcoded array — now driven by Configuration -> Types
+        // de durée de réservation, so a renamed or newly added duration
+        // type (e.g. "Au trimestre") shows up here automatically.
+        return \App\Models\ReservationDurationType::where('is_active', true)
+            ->orderBy('sort_order')
+            ->pluck('name', 'code')
+            ->all();
     }
 }

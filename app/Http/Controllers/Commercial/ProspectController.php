@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\ActivitySector;
 use App\Models\ContactType;
 use App\Models\ProspectSource;
+use App\Models\ReservationDurationType;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -125,7 +126,7 @@ class ProspectController extends Controller
             'preferred_space_type_id' => ['nullable', 'exists:space_types,id'],
             'people_count' => ['nullable', 'integer', 'min:1'],
             'desired_start_date' => ['nullable', 'date'],
-            'desired_rental_period' => ['nullable', Rule::in(['hourly', 'daily', 'monthly', 'custom'])],
+            'desired_rental_period' => ['nullable', Rule::in(ReservationDurationType::where('is_active', true)->pluck('code'))],
             'budget' => ['nullable', 'numeric', 'min:0'],
             'source' => ['nullable', 'exists:prospect_sources,code'],
             'origin' => ['nullable', 'in:local,etranger'],
@@ -519,7 +520,7 @@ class ProspectController extends Controller
             'people_count' => ['nullable', 'integer', 'min:1'],
             'budget' => ['nullable', 'numeric', 'min:0'],
             'desired_start_date' => ['nullable', 'date'],
-            'desired_rental_period' => ['nullable', Rule::in(['hourly', 'daily', 'monthly', 'custom'])],
+            'desired_rental_period' => ['nullable', Rule::in(ReservationDurationType::where('is_active', true)->pluck('code'))],
 
             'source' => ['nullable', 'exists:prospect_sources,code'],
             'origin' => ['nullable', 'in:local,etranger'],

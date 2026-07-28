@@ -17,4 +17,9 @@ class SpaceType extends Model
     {
         return $this->hasMany(Space::class);
     }
+
+    public function durationTypes()
+    {
+        return $this->belongsToMany(ReservationDurationType::class, 'space_type_duration_type');
+    }
 }

@@ -24,12 +24,13 @@
         'expired' => 'bg-pink-50 text-pink-700 ring-pink-200',
     ];
 
-    $durationLabels = [
-        'hour' => 'À l’heure',
-        'day' => 'À la journée',
-        'month' => 'Au mois',
-        'custom' => 'Personnalisée',
-    ];
+    // Was a hardcoded array keyed by 'hour'/'day'/'month' — those never
+    // actually matched $reservation->duration_type (always
+    // 'hourly'/'daily'/'monthly'/'custom'), so this lookup silently
+    // fell through to the ucfirst() fallback below every time. Fixed by
+    // keying on the real codes and driving it from Configuration ->
+    // Types de durée de réservation.
+    $durationLabels = \App\Models\ReservationDurationType::pluck('name', 'code')->all();
 
     $formatMoney = function ($value) {
         if ($value === null || $value === '') {

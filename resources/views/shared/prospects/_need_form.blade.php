@@ -105,21 +105,34 @@ $prospectForNeed = $prospect ?? null;
             <label class="mb-2 block text-sm font-semibold text-gray-700">
                 Durée souhaitée
             </label>
+            @php
+                $rentalPeriodOptions = \App\Models\ReservationDurationType::where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->get(['name', 'code']);
+
+                $currentRentalPeriod = old('desired_rental_period', optional($prospectForNeed)->desired_rental_period);
+
+                if ($currentRentalPeriod && ! $rentalPeriodOptions->contains('code', $currentRentalPeriod)) {
+                    // The prospect's existing value was deactivated since
+                    // it was picked — still show it (labeled) so editing
+                    // the form doesn't silently discard it.
+                    $inactiveType = \App\Models\ReservationDurationType::where('code', $currentRentalPeriod)->first();
+
+                    if ($inactiveType) {
+                        $rentalPeriodOptions->push($inactiveType);
+                    }
+                }
+            @endphp
+
             <select name="desired_rental_period"
                 class="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                 <option value="">Non précisée</option>
-                <option value="hourly" @selected(old('desired_rental_period', optional($prospectForNeed)->desired_rental_period) === 'hourly')>
-                    À l’heure
-                </option>
-                <option value="daily" @selected(old('desired_rental_period', optional($prospectForNeed)->desired_rental_period) === 'daily')>
-                    À la journée
-                </option>
-                <option value="monthly" @selected(old('desired_rental_period', optional($prospectForNeed)->desired_rental_period) === 'monthly')>
-                    Au mois
-                </option>
-                <option value="custom" @selected(old('desired_rental_period', optional($prospectForNeed)->desired_rental_period) === 'custom')>
-                    Personnalisée
-                </option>
+                @foreach($rentalPeriodOptions as $durationType)
+                    <option value="{{ $durationType->code }}"
+                        @selected($currentRentalPeriod === $durationType->code)>
+                        {{ $durationType->name }}
+                    </option>
+                @endforeach
             </select>
 
             @error('desired_rental_period')

@@ -34,6 +34,7 @@ use App\Http\Controllers\Commercial\ComplaintController as CommercialComplaintCo
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SpaceTypeController;
 use App\Http\Controllers\Admin\SpaceStatusController;
+use App\Http\Controllers\Admin\ReservationDurationTypeController;
 use App\Http\Controllers\Admin\ProspectSourceController;
 use App\Http\Controllers\Admin\ActivitySectorController;
 use App\Http\Controllers\Admin\ContactTypeController;
@@ -164,6 +165,19 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
             Route::patch('/space-statuses/{spaceStatus}/toggle-active', [SpaceStatusController::class, 'toggleActive'])
                 ->name('space-statuses.toggleActive');
 
+            Route::resource('reservation-duration-types', ReservationDurationTypeController::class)
+                ->except(['show'])
+                ->names('reservation-duration-types');
+
+            Route::patch('/reservation-duration-types/{reservationDurationType}/toggle-active', [ReservationDurationTypeController::class, 'toggleActive'])
+                ->name('reservation-duration-types.toggleActive');
+
+            Route::patch('/reservation-duration-types/{reservationDurationType}/move-up', [ReservationDurationTypeController::class, 'moveUp'])
+                ->name('reservation-duration-types.moveUp');
+
+            Route::patch('/reservation-duration-types/{reservationDurationType}/move-down', [ReservationDurationTypeController::class, 'moveDown'])
+                ->name('reservation-duration-types.moveDown');
+
             Route::resource('sites', CampusController::class)
                 ->parameters(['sites' => 'campus'])
                 ->names('sites');
@@ -212,6 +226,9 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
 
         Route::patch('/commercials/{commercial}/reset-password', [AdminCommercialController::class, 'resetPassword'])
             ->name('commercials.resetPassword');
+
+        Route::patch('/commercials/{commercial}/toggle-active', [AdminCommercialController::class, 'toggleActive'])
+            ->name('commercials.toggleActive');
 
         Route::post('/commercials/{commercial}/assignments', [AdminCommercialController::class, 'storeAssignment'])
             ->name('commercials.assignments.store');

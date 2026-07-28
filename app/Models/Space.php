@@ -35,38 +35,37 @@ class Space extends Model
 
     /**
      * Which `reservations.duration_type` values are bookable for this
-     * space, based on its space type's `code`.
+     * space, based on which ReservationDurationType rows are linked to
+     * its space type via the `space_type_duration_type` pivot —
+     * configurable from Configuration -> Types de durée de réservation
+     * instead of hardcoded here.
      *
-     * IMPORTANT: match against `code`, not `name`. The "Salle de
-     * formation" space type's *display name* was kept as-is, but its
-     * underlying `code` column is `salle-reunion` (it was merged into a
-     * pre-existing "Salle de réunion" row during the 2026-07-24 space
-     * types cleanup migration, which kept that row's code). Always
-     * verify via `php artisan tinker` -> SpaceType::all(['name','code'])
-     * before trusting a code literal in a match arm here — a rename at
-     * the DB layer does not update this file automatically, and a
-     * mismatch fails silently (see default arm below), not with an
-     * error.
-     *
-     * Business rule:
-     *   - Salle de formation (meeting/training room, code
-     *     `salle-reunion`): hourly, daily, or custom. Monthly does not
-     *     make sense for a training room.
-     *   - Bureau / Co-working: daily or monthly (long-term occupancy).
-     *     Hourly does not apply to a private office or a desk.
-     *
-     * Unknown/future space types (added later by an admin from
-     * Configuration without a matching code here) fall back to allowing
-     * every duration type, so a newly created dropdown value never
-     * silently blocks bookings — it just isn't restricted yet.
+     * A space type with NO rows in that pivot (an admin added a new
+     * space type from Configuration -> Types d'espaces and hasn't
+     * restricted its durations yet, or hasn't been seeded at all) falls
+     * back to every active duration type — this mirrors the original
+     * hardcoded `default => [...]` arm: a newly created dropdown value
+     * should never silently block bookings, it just isn't restricted
+     * yet.
      */
     public function bookableDurationTypes(): array
     {
-        return match ($this->spaceType?->code) {
-            'salle-reunion' => ['hourly', 'daily', 'custom'],
-            'bureau', 'co-working' => ['daily', 'monthly', 'custom'],
-            default => ['hourly', 'daily', 'monthly', 'custom'],
-        };
+        if ($this->spaceType) {
+            $linked = $this->spaceType->durationTypes()
+                ->where('reservation_duration_types.is_active', true)
+                ->orderBy('sort_order')
+                ->pluck('code')
+                ->all();
+
+            if (! empty($linked)) {
+                return $linked;
+            }
+        }
+
+        return ReservationDurationType::where('is_active', true)
+            ->orderBy('sort_order')
+            ->pluck('code')
+            ->all();
     }
 
     /**

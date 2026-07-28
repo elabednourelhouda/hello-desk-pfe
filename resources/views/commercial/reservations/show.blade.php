@@ -4,12 +4,10 @@
 
 @section('content')
 @php
-    $durationLabels = [
-        'hourly' => 'À l’heure',
-        'daily' => 'À la journée',
-        'monthly' => 'Au mois',
-        'custom' => 'Personnalisée',
-    ];
+    // Was a hardcoded array — now driven by Configuration -> Types de
+    // durée de réservation, so a renamed/added duration type displays
+    // correctly here too, instead of falling back to the raw code.
+    $durationLabels = \App\Models\ReservationDurationType::pluck('name', 'code')->all();
 
     $engagementDurationValue = $reservation->engagement_duration_value;
 

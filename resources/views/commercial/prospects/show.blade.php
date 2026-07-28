@@ -244,13 +244,7 @@
                             <div class="rounded-xl border border-gray-100 bg-white p-4">
                                 <p class="text-xs font-semibold uppercase text-gray-400">Durée souhaitée</p>
                                 <p class="mt-1 text-sm font-semibold text-gray-800">
-                                    @switch($prospect->desired_rental_period)
-                                    @case('hourly') À l’heure @break
-                                    @case('daily') À la journée @break
-                                    @case('monthly') Au mois @break
-                                    @case('custom') Personnalisée @break
-                                    @default Non précisée
-                                    @endswitch
+                                    {{ optional(\App\Models\ReservationDurationType::where('code', $prospect->desired_rental_period)->first())->name ?? 'Non précisée' }}
                                 </p>
                             </div>
                         </div>

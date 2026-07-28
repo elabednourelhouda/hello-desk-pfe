@@ -316,8 +316,16 @@ class ClientController extends Controller
                 }
             });
 
+        // Redirecting to risk_status=blocked only was the bug: whenever
+        // the scan produced watchlist hits but zero outright "blocked"
+        // clients, ClientController::index()'s `where('risk_status',
+        // 'blocked')` filter matched nothing and the list rendered
+        // empty — even though the flash message above correctly reports
+        // an "à vérifier" count > 0. 'risky' is the filter index() already
+        // understands as whereIn(['watchlist', 'blocked']), so it shows
+        // every client the scan just flagged, not just the blocked ones.
         return redirect()
-            ->route('admin.clients.index', ['risk_status' => 'blocked'])
+            ->route('admin.clients.index', ['risk_status' => 'risky'])
             ->with('success', "Analyse terminée : {$scanned} client(s) analysé(s), {$blocked} bloqué(s), {$watchlist} à vérifier.");
     }
 

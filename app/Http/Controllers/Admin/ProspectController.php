@@ -11,11 +11,12 @@ use App\Models\User;
 use App\Models\ActivitySector;
 use App\Models\ContactType;
 use App\Models\ProspectSource;
+use App\Models\ReservationDurationType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class ProspectController extends Controller
 {
@@ -89,7 +90,7 @@ class ProspectController extends Controller
             'campuses' => Campus::where('is_active', true)->orderBy('name')->get(),
             'activitySectors' => ActivitySector::where('is_active', true)->orderBy('name')->get(),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
-            'commercials' => User::where('role', 'commercial')->orderBy('name')->get(),
+            'commercials' => User::where('role', 'commercial')->where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->crmStatuses(),
             'sources' => $this->prospectSourceOptions(),
             'registered_at' => now()->toDateString(),
@@ -117,7 +118,7 @@ class ProspectController extends Controller
 
             'people_count' => ['nullable', 'integer', 'min:1', 'max:100'],
             'desired_start_date' => ['nullable', 'date'],
-            'desired_rental_period' => ['nullable', 'in:hourly,daily,monthly,custom'],
+            'desired_rental_period' => ['nullable', Rule::in(ReservationDurationType::where('is_active', true)->pluck('code'))],
 
             'source' => ['nullable', 'exists:prospect_sources,code'],
             'budget' => ['nullable', 'numeric', 'min:0'],
@@ -184,7 +185,7 @@ class ProspectController extends Controller
             'prospect' => $prospect,
             'campuses' => Campus::where('is_active', true)->orderBy('name')->get(),
             'spaceTypes' => SpaceType::where('is_active', true)->orderBy('name')->get(),
-            'commercials' => User::where('role', 'commercial')->orderBy('name')->get(),
+            'commercials' => User::where('role', 'commercial')->where('is_active', true)->orderBy('name')->get(),
             'statuses' => $this->editableCrmStatuses($prospect),
             'sources' => $this->prospectSourceOptions($prospect->source),
             'activitySectors' => ActivitySector::where('is_active', true)->orderBy('name')->get(),
@@ -207,7 +208,7 @@ class ProspectController extends Controller
             'people_count' => ['nullable', 'integer', 'min:1', 'max:100'],
             'budget' => ['nullable', 'numeric', 'min:0'],
             'desired_start_date' => ['nullable', 'date'],
-            'desired_rental_period' => ['nullable', 'in:hourly,daily,monthly,custom'],
+            'desired_rental_period' => ['nullable', Rule::in(ReservationDurationType::where('is_active', true)->pluck('code'))],
             'source' => ['nullable', 'exists:prospect_sources,code'],
             'origin' => ['nullable', 'in:local,etranger'],
             'customer_type' => ['nullable', 'in:physique,morale'],

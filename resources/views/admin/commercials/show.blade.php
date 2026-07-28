@@ -21,9 +21,23 @@
             </p>
         </div>
 
-        <span class="w-fit rounded-full bg-[#284625]/10 px-4 py-2 text-sm font-semibold text-[#284625]">
-            Personnel commercial
-        </span>
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="w-fit rounded-full bg-[#284625]/10 px-4 py-2 text-sm font-semibold text-[#284625]">
+                Personnel commercial
+            </span>
+
+            @if($commercial->is_active)
+                <span class="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-600/20">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                    Actif
+                </span>
+            @else
+                <span class="inline-flex w-fit items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 ring-1 ring-red-600/20">
+                    <span class="h-2 w-2 rounded-full bg-red-500"></span>
+                    Désactivé
+                </span>
+            @endif
+        </div>
     </div>
 
     @if(session('success'))
@@ -314,6 +328,26 @@
                         Réinitialiser le mot de passe
                     </button>
                 </form>
+
+                <form method="POST"
+                    action="{{ route('admin.commercials.toggleActive', $commercial) }}"
+                    class="mt-3 toggle-active-form"
+                    data-confirm="{{ $commercial->is_active ? 'Désactiver ce commercial ? Ses affectations seront retirées et ses prospects désassignés.' : 'Réactiver ce commercial ?' }}">
+                    @csrf
+                    @method('PATCH')
+
+                    @if($commercial->is_active)
+                        <button type="submit"
+                            class="w-full rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 hover:bg-red-100">
+                            Désactiver ce compte
+                        </button>
+                    @else
+                        <button type="submit"
+                            class="w-full rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 hover:bg-emerald-100">
+                            Réactiver ce compte
+                        </button>
+                    @endif
+                </form>
             </section>
         </aside>
     </div>
@@ -367,6 +401,16 @@
         campusSelect.addEventListener('change', updateAssignmentUi);
 
         updateAssignmentUi();
+    });
+
+    document.querySelectorAll('.toggle-active-form').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            const message = form.dataset.confirm;
+
+            if (message && ! window.confirm(message)) {
+                event.preventDefault();
+            }
+        });
     });
 </script>
 @endsection

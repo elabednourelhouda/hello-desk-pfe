@@ -215,6 +215,9 @@
                             <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">
                                 Créé le
                             </th>
+                            <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-gray-500">
+                                Statut
+                            </th>
                             <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wide text-gray-500">
                                 Action
                             </th>
@@ -265,7 +268,21 @@
                                 </td>
 
                                 <td class="px-6 py-4">
-                                    <div class="flex justify-end">
+                                    @if($commercial->is_active)
+                                        <span class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-600/20">
+                                            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                            Actif
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700 ring-1 ring-red-600/20">
+                                            <span class="h-2 w-2 rounded-full bg-red-500"></span>
+                                            Désactivé
+                                        </span>
+                                    @endif
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="flex justify-end gap-2">
                                         <a href="{{ route('admin.commercials.show', $commercial) }}"
                                            class="inline-flex h-9 items-center justify-center rounded-xl bg-sky-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700">
                                             Voir dossier
@@ -275,7 +292,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-14 text-center">
+                                <td colspan="6" class="px-6 py-14 text-center">
                                     <div class="mx-auto max-w-sm">
                                         <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-xl font-bold text-slate-400">
                                             +
