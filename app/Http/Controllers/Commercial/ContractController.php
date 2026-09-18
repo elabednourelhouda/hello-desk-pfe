@@ -149,13 +149,19 @@ class ContractController extends Controller
 
         unset($data['pdf_file']);
 
-        $contract->update($data);
+        $contract = DB::transaction(function () use ($contract, $data): Contract {
+            $contract = Contract::query()
+                ->with(['client', 'reservation.space'])
+                ->lockForUpdate()
+                ->findOrFail($contract->id);
 
-        if ($contract->status === 'active' && $contract->reservation) {
-            $contract->reservation->update([
-                'status' => 'confirmed',
-                'approved_by' => Auth::id(),
-            ]);
+            $contract->update($data);
+
+            if ($contract->status === 'active' && $contract->reservation) {
+                $contract->reservation->update([
+                    'status' => 'confirmed',
+                    'approved_by' => Auth::id(),
+                ]);
 
             // Note: this used to also run
             // $contract->reservation->space->update(['status' => 'reserved'])
@@ -171,18 +177,21 @@ class ContractController extends Controller
             // (available/maintenance/etc.) is intentionally left
             // untouched.
 
-            $alreadyHasPayments = Payment::where('contract_id', $contract->id)->exists();
+                $alreadyHasPayments = Payment::where('contract_id', $contract->id)->exists();
 
-            if (! $alreadyHasPayments) {
-                $this->generatePaymentSchedule($contract);
+                if (! $alreadyHasPayments) {
+                    $this->generatePaymentSchedule($contract);
+                }
             }
-        }
 
-        if ($contract->status === 'cancelled' && $contract->reservation) {
-            $contract->reservation->update([
-                'status' => 'cancelled',
-            ]);
-        }
+            if ($contract->status === 'cancelled' && $contract->reservation) {
+                $contract->reservation->update([
+                    'status' => 'cancelled',
+                ]);
+            }
+
+            return $contract;
+        });
 
         return redirect()
             ->route('commercial.contracts.show', $contract)
