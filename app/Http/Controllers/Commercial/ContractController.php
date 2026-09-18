@@ -208,18 +208,8 @@ class ContractController extends Controller
             return;
         }
 
-        $query->where(function (Builder $q) use ($scope) {
-            if (! empty($scope['campus_ids'])) {
-                $q->orWhereIn('campus_id', $scope['campus_ids']);
-            }
-
-            if (! empty($scope['floor_ids'])) {
-                $q->orWhereIn('floor_id', $scope['floor_ids']);
-            }
-
-            $q->orWhereHas('space', function (Builder $spaceQuery) use ($scope) {
-                $this->applySpaceScopeToSpaceQuery($spaceQuery, $scope);
-            });
+        $query->whereHas('space', function (Builder $spaceQuery) use ($scope) {
+            $this->applySpaceScopeToSpaceQuery($spaceQuery, $scope);
         });
     }
 
@@ -258,11 +248,14 @@ class ContractController extends Controller
 
     private function canManageReservation(Reservation $reservation, array $scope): bool
     {
-        $campusId = $reservation->campus_id ?? $reservation->space?->campus_id;
-        $floorId = $reservation->floor_id ?? $reservation->space?->floor_id;
+        $space = $reservation->space;
 
-        return in_array((int) $campusId, $scope['campus_ids'], true)
-            || in_array((int) $floorId, $scope['floor_ids'], true);
+        if (! $space) {
+            return false;
+        }
+
+        return in_array((int) $space->campus_id, $scope['campus_ids'], true)
+            || in_array((int) $space->floor_id, $scope['floor_ids'], true);
     }
 
     private function commercialScope(): array

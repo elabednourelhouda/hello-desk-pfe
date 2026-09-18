@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ReservationController extends Controller
 {
@@ -229,26 +230,30 @@ class ReservationController extends Controller
         $startsAt = Carbon::parse($data['starts_at']);
         $endsAt = Carbon::parse($data['ends_at']);
 
-        $hasOverlap = Reservation::where('space_id', $space->id)
-            ->whereIn('status', ['pending', 'confirmed', 'in_progress'])
-            ->where(function ($query) use ($startsAt, $endsAt) {
-                $query->where('starts_at', '<', $endsAt)
-                    ->where('ends_at', '>', $startsAt);
-            })
-            ->exists();
-
-        if ($hasOverlap) {
-            return back()
-                ->withInput()
-                ->with('error', 'Cet espace est déjà réservé pendant cette période.');
-        }
-
         $reservation = DB::transaction(function () use ($data, $client, $space, $startsAt, $endsAt) {
+            $lockedSpace = Space::query()
+                ->lockForUpdate()
+                ->findOrFail($space->id);
+
+            $hasOverlap = Reservation::where('space_id', $lockedSpace->id)
+                ->whereIn('status', ['pending', 'confirmed', 'in_progress'])
+                ->where(function ($query) use ($startsAt, $endsAt) {
+                    $query->where('starts_at', '<', $endsAt)
+                        ->where('ends_at', '>', $startsAt);
+                })
+                ->exists();
+
+            if ($hasOverlap) {
+                throw ValidationException::withMessages([
+                    'space_id' => 'Cet espace est déjà réservé pendant cette période.',
+                ]);
+            }
+
             $reservation = Reservation::create([
                 'client_id' => $client->id,
-                'space_id' => $space->id,
-                'campus_id' => $space->campus_id,
-                'floor_id' => $space->floor_id,
+                'space_id' => $lockedSpace->id,
+                'campus_id' => $lockedSpace->campus_id,
+                'floor_id' => $lockedSpace->floor_id,
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
                 'duration_type' => $data['duration_type'],

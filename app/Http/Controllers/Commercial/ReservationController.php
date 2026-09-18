@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ReservationController extends Controller
 {
@@ -282,26 +283,30 @@ class ReservationController extends Controller
         $startsAt = Carbon::parse($data['starts_at']);
         $endsAt = Carbon::parse($data['ends_at']);
 
-        $hasOverlap = Reservation::where('space_id', $space->id)
-            ->whereIn('status', ['pending', 'confirmed', 'in_progress'])
-            ->where(function ($query) use ($startsAt, $endsAt) {
-                $query->where('starts_at', '<', $endsAt)
-                    ->where('ends_at', '>', $startsAt);
-            })
-            ->exists();
-
-        if ($hasOverlap) {
-            return back()
-                ->withInput()
-                ->with('error', 'Cet espace est déjà réservé pendant cette période.');
-        }
-
         $reservation = DB::transaction(function () use ($data, $client, $space, $startsAt, $endsAt) {
+            $lockedSpace = Space::query()
+                ->lockForUpdate()
+                ->findOrFail($space->id);
+
+            $hasOverlap = Reservation::where('space_id', $lockedSpace->id)
+                ->whereIn('status', ['pending', 'confirmed', 'in_progress'])
+                ->where(function ($query) use ($startsAt, $endsAt) {
+                    $query->where('starts_at', '<', $endsAt)
+                        ->where('ends_at', '>', $startsAt);
+                })
+                ->exists();
+
+            if ($hasOverlap) {
+                throw ValidationException::withMessages([
+                    'space_id' => 'Cet espace est déjà réservé pendant cette période.',
+                ]);
+            }
+
             $reservation = Reservation::create([
                 'client_id' => $client->id,
-                'space_id' => $space->id,
-                'campus_id' => $space->campus_id,
-                'floor_id' => $space->floor_id,
+                'space_id' => $lockedSpace->id,
+                'campus_id' => $lockedSpace->campus_id,
+                'floor_id' => $lockedSpace->floor_id,
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
                 'duration_type' => $data['duration_type'],
@@ -474,18 +479,8 @@ class ReservationController extends Controller
             return;
         }
 
-        $query->where(function ($q) use ($scope) {
-            if (! empty($scope['campus_ids'])) {
-                $q->orWhereIn('campus_id', $scope['campus_ids']);
-            }
-
-            if (! empty($scope['floor_ids'])) {
-                $q->orWhereIn('floor_id', $scope['floor_ids']);
-            }
-
-            $q->orWhereHas('space', function ($spaceQuery) use ($scope) {
-                $this->applySpaceScopeToSpaceQuery($spaceQuery, $scope);
-            });
+        $query->whereHas('space', function ($spaceQuery) use ($scope) {
+            $this->applySpaceScopeToSpaceQuery($spaceQuery, $scope);
         });
     }
 
@@ -513,11 +508,14 @@ class ReservationController extends Controller
             return false;
         }
 
-        $campusId = $reservation->campus_id ?? $reservation->space?->campus_id;
-        $floorId = $reservation->floor_id ?? $reservation->space?->floor_id;
+        $space = $reservation->space;
 
-        return in_array((int) $campusId, $scope['campus_ids'], true)
-            || in_array((int) $floorId, $scope['floor_ids'], true);
+        if (! $space) {
+            return false;
+        }
+
+        return in_array((int) $space->campus_id, $scope['campus_ids'], true)
+            || in_array((int) $space->floor_id, $scope['floor_ids'], true);
     }
 
     private function canManageSpace(Space $space, array $scope): bool
