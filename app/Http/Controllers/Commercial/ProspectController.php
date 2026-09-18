@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProspectController extends Controller
 {
@@ -208,12 +209,6 @@ class ProspectController extends Controller
     {
         $prospect = $this->findScopedProspect($prospect);
 
-        if ($prospect->crm_status === 'converted' && $prospect->converted_client_id) {
-            return redirect()
-                ->route('commercial.prospects.show', $prospect)
-                ->with('info', 'Ce prospect est déjà converti en client.');
-        }
-
         $validated = $request->validate([
             'client_email' => ['required', 'email', 'max:255'],
         ], [
@@ -222,48 +217,56 @@ class ProspectController extends Controller
         ]);
 
         $temporaryPassword = null;
-        $usedExistingClient = false;
 
-        DB::transaction(function () use ($prospect, $validated, &$temporaryPassword, &$usedExistingClient) {
-            $existingUser = User::where('email', $validated['client_email'])->first();
+        DB::transaction(function () use ($prospect, $validated, &$temporaryPassword) {
+            $lockedProspect = $this->findScopedProspect($prospect->id, true);
 
-            if ($existingUser && $existingUser->role !== 'client') {
-                abort(422, 'Cet email est déjà utilisé par un autre type d’utilisateur.');
-            }
-
-            if ($existingUser) {
-                $clientUser = $existingUser;
-                $usedExistingClient = true;
-            } else {
-                $temporaryPassword = 'HD-' . Str::upper(Str::random(8));
-
-                $clientUser = User::create([
-                    'name' => $prospect->full_name,
-                    'email' => $validated['client_email'],
-                    'password' => Hash::make($temporaryPassword),
-                    'role' => 'client',
-                    'must_change_password' => true,
+            if ($lockedProspect->crm_status === 'converted' && $lockedProspect->converted_client_id) {
+                throw ValidationException::withMessages([
+                    'client_email' => 'Ce prospect a déjà été converti en client.',
                 ]);
             }
 
-            $client = Client::updateOrCreate(
-                ['user_id' => $clientUser->id],
-                [
-                    'prospect_id' => $prospect->id,
-                    'full_name' => $prospect->full_name,
-                    'email' => $validated['client_email'],
-                    'phone' => $prospect->phone,
-                    'company_name' => $prospect->company_name,
-                    'main_campus_id' => $prospect->preferred_campus_id,
-                    'joined_at' => now()->toDateString(),
-                    'status' => 'active',
-                    'notes' => $prospect->notes,
-                ]
-            );
+            $existingUser = User::where('email', $validated['client_email'])->first();
+
+            if ($existingUser && $existingUser->role !== 'client') {
+                throw ValidationException::withMessages([
+                    'client_email' => 'Cet email est déjà utilisé par un autre type d’utilisateur.',
+                ]);
+            }
+
+            if ($existingUser) {
+                throw ValidationException::withMessages([
+                    'client_email' => 'Cet email appartient déjà à un client existant.',
+                ]);
+            }
+
+            $temporaryPassword = 'HD-' . Str::upper(Str::random(8));
+
+            $clientUser = User::create([
+                'name' => $lockedProspect->full_name,
+                'email' => $validated['client_email'],
+                'password' => Hash::make($temporaryPassword),
+                'role' => 'client',
+                'must_change_password' => true,
+            ]);
+
+            $client = Client::create([
+                'user_id' => $clientUser->id,
+                'prospect_id' => $lockedProspect->id,
+                'full_name' => $lockedProspect->full_name,
+                'email' => $validated['client_email'],
+                'phone' => $lockedProspect->phone,
+                'company_name' => $lockedProspect->company_name,
+                'main_campus_id' => $lockedProspect->preferred_campus_id,
+                'joined_at' => now()->toDateString(),
+                'status' => 'active',
+                'notes' => $lockedProspect->notes,
+            ]);
 
             $this->attachCommercialToClient($client->id, (int) Auth::id());
 
-            $prospect->update([
+            $lockedProspect->update([
                 'email' => $validated['client_email'],
                 'crm_status' => 'converted',
                 'converted_client_id' => $client->id,
@@ -279,10 +282,6 @@ class ProspectController extends Controller
             $redirect
                 ->with('client_email', $validated['client_email'])
                 ->with('temporary_password', $temporaryPassword);
-        }
-
-        if ($usedExistingClient) {
-            $redirect->with('info', 'Ce client avait déjà un compte. Le profil client a été lié au prospect.');
         }
 
         return $redirect;
@@ -350,14 +349,19 @@ class ProspectController extends Controller
             ->with('success', 'Prospect réactivé avec succès.');
     }
 
-    private function findScopedProspect(int $prospectId): Prospect
+    private function findScopedProspect(int $prospectId, bool $lock = false): Prospect
     {
         $userId = (int) Auth::id();
         $assignedCampusIds = $this->assignedCampusIds($userId);
 
-        return $this->baseProspectQuery($userId, $assignedCampusIds)
-            ->where('id', $prospectId)
-            ->firstOrFail();
+        $query = $this->baseProspectQuery($userId, $assignedCampusIds)
+            ->where('id', $prospectId);
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->firstOrFail();
     }
 
     private function baseProspectQuery(int $userId, array $assignedCampusIds): EloquentBuilder

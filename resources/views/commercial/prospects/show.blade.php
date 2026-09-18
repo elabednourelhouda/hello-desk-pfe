@@ -43,6 +43,13 @@
                 </span>
             </p>
 
+            @if($prospect->convertedClient)
+            <a href="{{ route('commercial.clients.show', $prospect->convertedClient) }}"
+                class="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-[#284625] px-4 text-sm font-semibold text-white transition hover:bg-[#1f351d]">
+                Ouvrir le profil client
+            </a>
+            @endif
+
             <p class="mt-2 text-xs">
                 Pour l’instant, copiez ces informations. Plus tard, on pourra les envoyer automatiquement par email.
             </p>
@@ -289,6 +296,10 @@
                         <p class="font-semibold">Déjà converti en client</p>
                         <p class="mt-1">{{ $prospect->convertedClient->name }}</p>
                         <p>{{ $prospect->convertedClient->email }}</p>
+                        <a href="{{ route('commercial.clients.show', $prospect->convertedClient) }}"
+                            class="mt-3 inline-flex font-semibold text-[#284625] hover:underline">
+                            Ouvrir le profil client →
+                        </a>
                     </div>
 
                     <a href="{{ request('return_url', route('commercial.prospects.index', ['view' => 'active'])) }}"

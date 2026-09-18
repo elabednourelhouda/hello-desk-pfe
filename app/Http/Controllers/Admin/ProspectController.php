@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ProspectController extends Controller
 {
@@ -246,12 +247,6 @@ class ProspectController extends Controller
 
     public function convert(Request $request, Prospect $prospect)
     {
-        if ($prospect->crm_status === 'converted' && $prospect->converted_client_id) {
-            return redirect()
-                ->route('admin.prospects.show', $prospect)
-                ->with('info', 'Ce prospect est déjà converti en client.');
-        }
-
         $validated = $request->validate([
             'client_email' => ['required', 'email', 'max:255'],
         ], [
@@ -260,44 +255,54 @@ class ProspectController extends Controller
         ]);
 
         $temporaryPassword = null;
-        $usedExistingClient = false;
 
-        DB::transaction(function () use ($prospect, $validated, &$temporaryPassword, &$usedExistingClient) {
-            $existingUser = User::where('email', $validated['client_email'])->first();
+        DB::transaction(function () use ($prospect, $validated, &$temporaryPassword) {
+            $prospect = Prospect::query()
+                ->lockForUpdate()
+                ->findOrFail($prospect->id);
 
-            if ($existingUser && $existingUser->role !== 'client') {
-                abort(422, 'Cet email est déjà utilisé par un autre type d’utilisateur.');
-            }
-
-            if ($existingUser) {
-                $clientUser = $existingUser;
-                $usedExistingClient = true;
-            } else {
-                $temporaryPassword = 'HD-' . Str::upper(Str::random(8));
-
-                $clientUser = User::create([
-                    'name' => $prospect->full_name,
-                    'email' => $validated['client_email'],
-                    'password' => Hash::make($temporaryPassword),
-                    'role' => 'client',
-                    'must_change_password' => true,
+            if ($prospect->crm_status === 'converted' && $prospect->converted_client_id) {
+                throw ValidationException::withMessages([
+                    'client_email' => 'Ce prospect a déjà été converti en client.',
                 ]);
             }
 
-            $client = Client::updateOrCreate(
-                ['user_id' => $clientUser->id],
-                [
-                    'prospect_id' => $prospect->id,
-                    'full_name' => $prospect->full_name,
-                    'email' => $validated['client_email'],
-                    'phone' => $prospect->phone,
-                    'company_name' => $prospect->company_name,
-                    'main_campus_id' => $prospect->preferred_campus_id,
-                    'joined_at' => now()->toDateString(),
-                    'status' => 'active',
-                    'notes' => $prospect->notes,
-                ]
-            );
+            $existingUser = User::where('email', $validated['client_email'])->first();
+
+            if ($existingUser && $existingUser->role !== 'client') {
+                throw ValidationException::withMessages([
+                    'client_email' => 'Cet email est déjà utilisé par un autre type d’utilisateur.',
+                ]);
+            }
+
+            if ($existingUser) {
+                throw ValidationException::withMessages([
+                    'client_email' => 'Cet email appartient déjà à un client existant.',
+                ]);
+            }
+
+            $temporaryPassword = 'HD-' . Str::upper(Str::random(8));
+
+            $clientUser = User::create([
+                'name' => $prospect->full_name,
+                'email' => $validated['client_email'],
+                'password' => Hash::make($temporaryPassword),
+                'role' => 'client',
+                'must_change_password' => true,
+            ]);
+
+            $client = Client::create([
+                'user_id' => $clientUser->id,
+                'prospect_id' => $prospect->id,
+                'full_name' => $prospect->full_name,
+                'email' => $validated['client_email'],
+                'phone' => $prospect->phone,
+                'company_name' => $prospect->company_name,
+                'main_campus_id' => $prospect->preferred_campus_id,
+                'joined_at' => now()->toDateString(),
+                'status' => 'active',
+                'notes' => $prospect->notes,
+            ]);
 
             $prospect->update([
                 'email' => $validated['client_email'],
@@ -315,10 +320,6 @@ class ProspectController extends Controller
             $redirect
                 ->with('client_email', $validated['client_email'])
                 ->with('temporary_password', $temporaryPassword);
-        }
-
-        if ($usedExistingClient) {
-            $redirect->with('info', 'Ce client avait déjà un compte. Le profil client a été lié au prospect.');
         }
 
         return $redirect;
