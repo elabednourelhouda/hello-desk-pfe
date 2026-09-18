@@ -186,22 +186,7 @@
                         @foreach($spaces as $space)
                             @php
                                 $spaceStatus = mb_strtolower($space->status ?? 'available');
-
-                                $isNotReservable = in_array($spaceStatus, [
-                                    'occupied',
-                                    'reserved',
-                                    'unavailable',
-                                    'maintenance',
-                                    'in maintenance',
-
-                                    'occupé',
-                                    'occupe',
-                                    'réservé',
-                                    'reserve',
-                                    'réservée',
-                                    'indisponible',
-                                    'en maintenance',
-                                ], true);
+                                $isNotReservable = ! in_array($spaceStatus, ['available', 'disponible'], true);
                             @endphp
 
                             <option value="{{ $space->id }}"
