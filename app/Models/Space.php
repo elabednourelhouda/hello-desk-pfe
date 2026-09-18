@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 class Space extends Model
@@ -22,6 +23,10 @@ class Space extends Model
         'description',
         'notes',
         'is_active',
+        'grid_column',
+        'grid_row',
+        'grid_width',
+        'grid_height',
     ];
 
     protected $casts = [
@@ -31,7 +36,101 @@ class Space extends Model
         'price_per_day' => 'decimal:2',
         'price_per_month' => 'decimal:2',
         'is_active' => 'boolean',
+        'grid_column' => 'integer',
+        'grid_row' => 'integer',
+        'grid_width' => 'integer',
+        'grid_height' => 'integer',
     ];
+
+    /**
+     * Apply temporary grid coordinates to spaces without a valid saved
+     * layout. Existing valid, non-overlapping coordinates are preserved and
+     * no values are persisted by this method.
+     */
+    public static function withTemporaryGridLayout(Collection $spaces): Collection
+    {
+        $occupied = [];
+        $layoutSpaces = collect();
+        $unplacedSpaces = collect();
+
+        foreach ($spaces as $space) {
+            $savedColumn = (int) $space->grid_column;
+            $savedRow = (int) $space->grid_row;
+            $savedWidth = (int) $space->grid_width;
+            $savedHeight = (int) $space->grid_height;
+
+            $hasValidSize = $savedWidth >= 1 && $savedWidth <= 9
+                && $savedHeight >= 1 && $savedHeight <= 5;
+            $width = $hasValidSize ? $savedWidth : 1;
+            $height = $hasValidSize ? $savedHeight : 1;
+            $hasValidPosition = $savedColumn >= 1 && $savedColumn <= 9
+                && $savedRow >= 1 && $savedRow <= 5
+                && $savedColumn + $width - 1 <= 9
+                && $savedRow + $height - 1 <= 5;
+
+            if (! $hasValidPosition) {
+                $unplacedSpaces->push($space);
+                continue;
+            }
+
+            self::markGridCells($occupied, $savedColumn, $savedRow, $width, $height);
+            $layoutSpaces->push(self::withGridValues($space, $savedColumn, $savedRow, $width, $height));
+        }
+
+        foreach ($unplacedSpaces as $space) {
+            $width = (int) $space->grid_width;
+            $height = (int) $space->grid_height;
+            $width = $width >= 1 && $width <= 9 ? $width : 1;
+            $height = $height >= 1 && $height <= 5 ? $height : 1;
+            $positionFound = false;
+
+            for ($row = 1; $row <= 5 && ! $positionFound; $row++) {
+                for ($column = 1; $column <= 9; $column++) {
+                    if ($column + $width - 1 > 9 || $row + $height - 1 > 5) {
+                        continue;
+                    }
+
+                    $fits = true;
+                    for ($candidateRow = $row; $candidateRow < $row + $height; $candidateRow++) {
+                        for ($candidateColumn = $column; $candidateColumn < $column + $width; $candidateColumn++) {
+                            if (isset($occupied[$candidateRow][$candidateColumn])) {
+                                $fits = false;
+                                break 2;
+                            }
+                        }
+                    }
+
+                    if ($fits) {
+                        self::markGridCells($occupied, $column, $row, $width, $height);
+                        $layoutSpaces->push(self::withGridValues($space, $column, $row, $width, $height));
+                        $positionFound = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $layoutSpaces;
+    }
+
+    private static function markGridCells(array &$occupied, int $column, int $row, int $width, int $height): void
+    {
+        for ($currentRow = $row; $currentRow < $row + $height; $currentRow++) {
+            for ($currentColumn = $column; $currentColumn < $column + $width; $currentColumn++) {
+                $occupied[$currentRow][$currentColumn] = true;
+            }
+        }
+    }
+
+    private static function withGridValues(self $space, int $column, int $row, int $width, int $height): self
+    {
+        $space->grid_column = $column;
+        $space->grid_row = $row;
+        $space->grid_width = $width;
+        $space->grid_height = $height;
+
+        return $space;
+    }
 
     /**
      * Which `reservations.duration_type` values are bookable for this

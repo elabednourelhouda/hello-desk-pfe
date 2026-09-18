@@ -117,6 +117,14 @@ Route::middleware(['auth', 'password.changed', 'role:admin'])
         Route::get('/interactive-map', [InteractiveMapController::class, 'index'])
             ->name('interactive-map.index');
 
+        Route::get('/interactive-map/configure', [InteractiveMapController::class, 'configure'])
+            ->name('interactive-map.configure');
+
+        Route::patch('/interactive-map/spaces/{space}/layout', [InteractiveMapController::class, 'saveLayout'])
+            ->name('interactive-map.layout');
+        Route::patch('/interactive-map/layout', [InteractiveMapController::class, 'saveLayoutBatch'])
+            ->name('interactive-map.layout.batch');
+
         Route::get('/map', [InteractiveMapController::class, 'index'])
             ->name('map.index');
 

@@ -69,7 +69,7 @@ class InteractiveMapController extends Controller
                 ->orderBy('name')
                 ->get();
 
-            $defaultFloor = $floors->firstWhere('map_key', 'centre_ville_2') ?? $floors->first();
+            $defaultFloor = $floors->first();
 
             $requestedFloorId = $request->integer('floor_id');
 
@@ -138,6 +138,8 @@ class InteractiveMapController extends Controller
 
                         return $space;
                     });
+
+                $spaces = Space::withTemporaryGridLayout($spaces);
             }
         }
 

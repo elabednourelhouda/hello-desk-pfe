@@ -9,6 +9,9 @@ use App\Models\Space;
 use App\Models\SpaceStatus;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class InteractiveMapController extends Controller
 {
@@ -45,9 +48,7 @@ class InteractiveMapController extends Controller
                 ->orderBy('name')
                 ->get();
 
-            $defaultFloor = $floors->firstWhere('map_key', 'centre_ville_2') ?? $floors->first();
-
-            $defaultFloor = $floors->firstWhere('map_key', 'centre_ville_2') ?? $floors->first();
+            $defaultFloor = $floors->first();
 
             $selectedFloorId = $request->integer('floor_id') ?: $defaultFloor?->id;
 
@@ -103,6 +104,8 @@ class InteractiveMapController extends Controller
 
                         return $space;
                     });
+
+                $spaces = Space::withTemporaryGridLayout($spaces);
             }
         }
 
@@ -135,6 +138,183 @@ class InteractiveMapController extends Controller
             'statusLegend'
         ));
     }
+
+    public function saveLayout(Request $request, Space $space): JsonResponse
+    {
+        $validated = $request->validate([
+            'grid_column' => ['required', 'integer', 'min:1', 'max:9'],
+            'grid_row' => ['required', 'integer', 'min:1', 'max:5'],
+            'grid_width' => ['required', 'integer', 'min:1', 'max:9'],
+            'grid_height' => ['required', 'integer', 'min:1', 'max:5'],
+            'status' => ['sometimes', 'nullable', 'string', Rule::in(SpaceStatus::query()->pluck('code')->all())],
+        ]);
+
+        if (
+            $validated['grid_column'] + $validated['grid_width'] - 1 > 9
+            || $validated['grid_row'] + $validated['grid_height'] - 1 > 5
+        ) {
+            return response()->json(['message' => 'La disposition doit rester dans la grille 9×5.'], 422);
+        }
+
+        DB::transaction(function () use ($space, $validated) {
+            $overlaps = Space::query()
+                ->where('campus_id', $space->campus_id)
+                ->where('floor_id', $space->floor_id)
+                ->where('spaces.id', '<>', $space->getKey())
+                ->whereNotNull('grid_column')
+                ->whereNotNull('grid_row')
+                ->lockForUpdate()
+                ->get()
+                ->contains(function (Space $other) use ($validated): bool {
+                    return ! (
+                        $validated['grid_column'] + $validated['grid_width'] <= $other->grid_column
+                        || $other->grid_column + ($other->grid_width ?: 1) <= $validated['grid_column']
+                        || $validated['grid_row'] + $validated['grid_height'] <= $other->grid_row
+                        || $other->grid_row + ($other->grid_height ?: 1) <= $validated['grid_row']
+                    );
+                });
+
+            if ($overlaps) {
+                abort(422, 'La disposition chevauche un autre espace.');
+            }
+
+            $space->update($validated);
+        });
+
+        return response()->json(['message' => 'Disposition enregistrée.']);
+    }
+
+    public function saveLayoutBatch(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'spaces' => ['required', 'array', 'min:1'],
+            'spaces.*.id' => ['required', 'integer', 'distinct', 'exists:spaces,id'],
+            'spaces.*.grid_column' => ['required', 'integer', 'min:1', 'max:9'],
+            'spaces.*.grid_row' => ['required', 'integer', 'min:1', 'max:5'],
+            'spaces.*.grid_width' => ['required', 'integer', 'min:1', 'max:9'],
+            'spaces.*.grid_height' => ['required', 'integer', 'min:1', 'max:5'],
+            'spaces.*.status' => ['sometimes', 'nullable', 'string', Rule::in(SpaceStatus::query()->pluck('code')->all())],
+        ]);
+
+        $requestedSpaces = collect($validated['spaces']);
+        $spaceModels = Space::query()
+            ->whereIn('id', $requestedSpaces->pluck('id'))
+            ->lockForUpdate()
+            ->get()
+            ->keyBy('id');
+
+        if ($spaceModels->count() !== $requestedSpaces->count()) {
+            return response()->json(['message' => 'Un espace de la disposition est introuvable.'], 422);
+        }
+
+        $firstSpace = $spaceModels->first();
+        if ($spaceModels->contains(fn (Space $space): bool =>
+            $space->campus_id !== $firstSpace->campus_id
+            || $space->floor_id !== $firstSpace->floor_id
+        )) {
+            return response()->json(['message' => 'Les espaces doivent appartenir au même étage.'], 422);
+        }
+
+        $positions = $requestedSpaces->mapWithKeys(fn (array $layout): array => [
+            $layout['id'] => $layout,
+        ]);
+
+        foreach ($positions as $layout) {
+            if (
+                $layout['grid_column'] + $layout['grid_width'] - 1 > 9
+                || $layout['grid_row'] + $layout['grid_height'] - 1 > 5
+            ) {
+                return response()->json(['message' => 'La disposition doit rester dans la grille 9×5.'], 422);
+            }
+        }
+
+        $layoutValues = $positions->values()->all();
+        for ($index = 0; $index < count($layoutValues); $index++) {
+            for ($otherIndex = $index + 1; $otherIndex < count($layoutValues); $otherIndex++) {
+                if ($this->layoutsOverlap($layoutValues[$index], $layoutValues[$otherIndex])) {
+                    return response()->json(['message' => 'La disposition chevauche un autre espace.'], 422);
+                }
+            }
+        }
+
+        DB::transaction(function () use ($firstSpace, $spaceModels, $positions): void {
+            $otherSpaces = Space::query()
+                ->where('campus_id', $firstSpace->campus_id)
+                ->where('floor_id', $firstSpace->floor_id)
+                ->whereNotIn('id', $spaceModels->keys())
+                ->whereNotNull('grid_column')
+                ->whereNotNull('grid_row')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($otherSpaces as $otherSpace) {
+                $otherLayout = [
+                    'grid_column' => (int) $otherSpace->grid_column,
+                    'grid_row' => (int) $otherSpace->grid_row,
+                    'grid_width' => max(1, (int) $otherSpace->grid_width),
+                    'grid_height' => max(1, (int) $otherSpace->grid_height),
+                ];
+
+                foreach ($positions as $layout) {
+                    if ($this->layoutsOverlap($layout, $otherLayout)) {
+                        abort(422, 'La disposition chevauche un autre espace.');
+                    }
+                }
+            }
+
+            foreach ($positions as $layout) {
+                $spaceModels[$layout['id']]->update([
+                    'grid_column' => $layout['grid_column'],
+                    'grid_row' => $layout['grid_row'],
+                    'grid_width' => $layout['grid_width'],
+                    'grid_height' => $layout['grid_height'],
+                    ...(array_key_exists('status', $layout) ? ['status' => $layout['status']] : []),
+                ]);
+            }
+        });
+
+        return response()->json(['message' => 'Disposition enregistrée.']);
+    }
+
+    private function layoutsOverlap(array $first, array $second): bool
+    {
+        return ! (
+            $first['grid_column'] + $first['grid_width'] <= $second['grid_column']
+            || $second['grid_column'] + $second['grid_width'] <= $first['grid_column']
+            || $first['grid_row'] + $first['grid_height'] <= $second['grid_row']
+            || $second['grid_row'] + $second['grid_height'] <= $first['grid_row']
+        );
+    }
+
+    public function configure(Request $request)
+    {
+        $campuses = Campus::orderBy('name')->get();
+        $selectedCampusId = $request->integer('campus_id') ?: $campuses->first()?->id;
+        $floors = $selectedCampusId
+            ? Floor::where('campus_id', $selectedCampusId)->orderBy('name')->get()
+            : collect();
+        $selectedFloorId = $request->integer('floor_id') ?: $floors->first()?->id;
+        $selectedFloor = $floors->firstWhere('id', $selectedFloorId);
+        $spaces = $selectedFloor
+            ? Space::where('campus_id', $selectedCampusId)
+                ->where('floor_id', $selectedFloor->id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+            : collect();
+        $spaces = Space::withTemporaryGridLayout($spaces);
+
+        return view('admin.interactive-map.configure', [
+            'campuses' => $campuses,
+            'floors' => $floors,
+            'selectedCampusId' => $selectedCampusId,
+            'selectedFloorId' => $selectedFloorId,
+            'selectedFloor' => $selectedFloor,
+            'spaces' => $spaces,
+            'statuses' => SpaceStatus::orderBy('name')->get(),
+        ]);
+    }
+
 
     /**
      * Resolves the period the map should check reservations against.

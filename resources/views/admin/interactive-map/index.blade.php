@@ -4,37 +4,33 @@
 
 @section('content')
 @php
-    $currentFloor = $selectedFloor ?? $floors->firstWhere('id', $selectedFloorId);
-    $currentCampus = $campuses->firstWhere('id', $selectedCampusId);
+$currentFloor = $selectedFloor ?? $floors->firstWhere('id', $selectedFloorId);
+$currentCampus = $campuses->firstWhere('id', $selectedCampusId);
 
-    $mapView = $currentFloor?->map_key
-        ? 'admin.interactive-map.maps.' . $currentFloor->map_key
-        : null;
+$statusCounts = [
+'available' => 0,
+'reserved' => 0,
+'occupied' => 0,
+'unavailable' => 0,
+'maintenance' => 0,
+];
 
-    $statusCounts = [
-        'available' => 0,
-        'reserved' => 0,
-        'occupied' => 0,
-        'unavailable' => 0,
-        'maintenance' => 0,
-    ];
+foreach ($spaces as $space) {
+$displayStatus = $space->display_status ?? $space->status ?? 'Disponible';
+$status = mb_strtolower($displayStatus);
 
-    foreach ($spaces as $space) {
-        $displayStatus = $space->display_status ?? $space->status ?? 'Disponible';
-        $status = mb_strtolower($displayStatus);
-
-        if (in_array($status, ['disponible', 'available'])) {
-            $statusCounts['available']++;
-        } elseif (in_array($status, ['réservé', 'reserve', 'reserved'])) {
-            $statusCounts['reserved']++;
-        } elseif (in_array($status, ['occupé', 'occupe', 'occupied'])) {
-            $statusCounts['occupied']++;
-        } elseif (in_array($status, ['indisponible', 'unavailable'])) {
-            $statusCounts['unavailable']++;
-        } elseif (in_array($status, ['maintenance', 'en maintenance'])) {
-            $statusCounts['maintenance']++;
-        }
-    }
+if (in_array($status, ['disponible', 'available'])) {
+$statusCounts['available']++;
+} elseif (in_array($status, ['réservé', 'reserve', 'reserved'])) {
+$statusCounts['reserved']++;
+} elseif (in_array($status, ['occupé', 'occupe', 'occupied'])) {
+$statusCounts['occupied']++;
+} elseif (in_array($status, ['indisponible', 'unavailable'])) {
+$statusCounts['unavailable']++;
+} elseif (in_array($status, ['maintenance', 'en maintenance'])) {
+$statusCounts['maintenance']++;
+}
+}
 @endphp
 
 <div class="min-h-screen bg-[#f6f8f6]">
@@ -60,12 +56,12 @@
 
                 <div class="flex flex-wrap gap-3">
                     <a href="{{ route('admin.reservations.index') }}"
-                    class="inline-flex h-11 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 px-5 text-sm font-bold text-sky-700 transition hover:bg-sky-100">
+                        class="inline-flex h-11 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 px-5 text-sm font-bold text-sky-700 transition hover:bg-sky-100">
                         Réservations
                     </a>
 
                     <a href="#map-zone"
-                    class="inline-flex h-11 items-center justify-center rounded-xl bg-[#284625] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1f351d]">
+                        class="inline-flex h-11 items-center justify-center rounded-xl bg-[#284625] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1f351d]">
                         Voir le plan
                     </a>
                 </div>
@@ -84,12 +80,12 @@
                     </label>
 
                     <select name="campus_id"
-                            onchange="this.form.submit()"
-                            class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                        onchange="this.form.submit()"
+                        class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                         @foreach($campuses as $campus)
-                            <option value="{{ $campus->id }}" @selected($selectedCampusId == $campus->id)>
-                                {{ $campus->name }}
-                            </option>
+                        <option value="{{ $campus->id }}" @selected($selectedCampusId==$campus->id)>
+                            {{ $campus->name }}
+                        </option>
                         @endforeach
                     </select>
                 </div>
@@ -100,14 +96,14 @@
                     </label>
 
                     <select name="floor_id"
-                            onchange="this.form.submit()"
-                            class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
+                        onchange="this.form.submit()"
+                        class="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm shadow-sm focus:border-[#284625] focus:ring-[#284625]">
                         @forelse($floors as $floor)
-                            <option value="{{ $floor->id }}" @selected($selectedFloorId == $floor->id)>
-                                {{ $floor->name }}
-                            </option>
+                        <option value="{{ $floor->id }}" @selected($selectedFloorId==$floor->id)>
+                            {{ $floor->name }}
+                        </option>
                         @empty
-                            <option value="">Aucun étage</option>
+                        <option value="">Aucun étage</option>
                         @endforelse
                     </select>
                 </div>
@@ -134,13 +130,13 @@
 
                 <div class="flex items-end gap-2">
                     <button type="submit"
-                            class="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#284625] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1f351d]">
+                        class="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#284625] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1f351d]">
                         Afficher
                     </button>
 
                     @if($filterFrom || $filterTo)
                     <a href="{{ route('admin.interactive-map.index', ['campus_id' => $selectedCampusId, 'floor_id' => $selectedFloorId]) }}#map-zone"
-                       class="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 px-4 text-sm font-bold text-gray-700 transition hover:bg-gray-100">
+                        class="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 px-4 text-sm font-bold text-gray-700 transition hover:bg-gray-100">
                         ✕
                     </a>
                     @endif
@@ -171,77 +167,25 @@
                         </p>
                     </div>
 
-                    <div class="flex flex-wrap gap-2 text-xs">
-                        @foreach($statusLegend as $legendStatus)
+                    <div class="flex flex-col items-start gap-3 xl:items-end">
+                        <a href="{{ route('admin.interactive-map.configure', ['campus_id' => $selectedCampusId, 'floor_id' => $selectedFloorId]) }}"
+                            class="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-700">
+                            Configurer la disposition
+                        </a>
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            @foreach($statusLegend as $legendStatus)
                             <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 font-bold"
-                                  data-style="border-color: {{ $legendStatus->toRgba(0.4) }}; background-color: {{ $legendStatus->toRgba(0.12) }}; color: {{ $legendStatus->color }};">
+                                data-style="border-color: {{ $legendStatus->toRgba(0.4) }}; background-color: {{ $legendStatus->toRgba(0.12) }}; color: {{ $legendStatus->color }};">
                                 <span class="h-2 w-2 rounded-full" data-style="background-color: {{ $legendStatus->color }};"></span>
                                 {{ $legendStatus->name }}
                             </span>
-                        @endforeach
+                            @endforeach
+                        </div>
                     </div>
                 </div>
 
                 <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-inner">
-                    @if($mapView && view()->exists($mapView))
-                        @include($mapView, ['spaces' => $spaces])
-                    @elseif($spaces->count())
-                        <div class="grid min-h-[460px] grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-                            @foreach($spaces as $space)
-                                @php
-                                    $displayStatus = $space->display_status ?? 'Disponible';
-                                    $tileStyle = 'background-color: ' . ($space->display_status_color ? $space->display_status_color . '1a' : '#f9fafb')
-                                        . '; border-color: ' . ($space->display_status_color ?? '#e5e7eb') . ';';
-
-                                    $canReserve = in_array(mb_strtolower($displayStatus), ['disponible', 'available'], true);
-                                @endphp
-
-                                <button type="button"
-                                        onclick="selectSpace(this)"
-                                        data-id="{{ $space->id }}"
-                                        data-name="{{ $space->name }}"
-                                        data-code="{{ $space->code ?? '' }}"
-                                        data-status="{{ $displayStatus }}"
-                                        data-capacity="{{ $space->capacity ?? 'Non précisée' }}"
-                                        data-price-hour="{{ $space->price_per_hour ?? '' }}"
-                                        data-price-day="{{ $space->price_per_day ?? '' }}"
-                                        data-price-month="{{ $space->price_per_month ?? '' }}"
-                                        data-reserve-url="{{ $canReserve ? route('admin.reservations.create', ['space_id' => $space->id]) : '' }}"
-                                        data-style="{{ $tileStyle }}"
-                                        class="space-tile flex min-h-[120px] flex-col justify-between rounded-2xl border p-4 text-left text-sm shadow-sm transition hover:-translate-y-0.5 hover:shadow-md text-gray-800">
-                                    <div>
-                                        <p class="font-bold">{{ $space->name }}</p>
-
-                                        <p class="mt-1 text-xs opacity-80">
-                                            {{ $space->code ?? 'Code non défini' }}
-                                        </p>
-                                    </div>
-
-                                    <div class="mt-4">
-                                        <span class="rounded-full bg-white/80 px-2.5 py-1 text-xs font-bold">
-                                            {{ $displayStatus }}
-                                        </span>
-                                    </div>
-                                </button>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="flex min-h-[460px] items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white">
-                            <div class="text-center">
-                                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-xl font-bold text-slate-400">
-                                    +
-                                </div>
-
-                                <p class="mt-4 text-sm font-bold text-gray-700">
-                                    Aucun espace trouvé
-                                </p>
-
-                                <p class="mt-1 text-sm text-gray-500">
-                                    Ajoutez des espaces pour ce site et cet étage.
-                                </p>
-                            </div>
-                        </div>
-                    @endif
+                    @include('interactive-map.floor-plan', ['spaces' => $spaces, 'floor' => $currentFloor, 'admin' => true])
                 </div>
             </section>
 
@@ -259,7 +203,7 @@
                     </div>
 
                     <span id="detail-status-pill"
-                          class="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+                        class="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
                     </span>
                 </div>
 
@@ -307,13 +251,13 @@
                     </div>
 
                     <a id="reserve-button"
-                       href="#"
-                       class="hidden w-full rounded-xl bg-[#284625] px-5 py-3 text-center text-sm font-bold text-white shadow-sm transition hover:bg-[#1f351d]">
+                        href="#"
+                        class="hidden w-full rounded-xl bg-[#284625] px-5 py-3 text-center text-sm font-bold text-white shadow-sm transition hover:bg-[#1f351d]">
                         Réserver cet espace
                     </a>
 
                     <div id="cannot-reserve-message"
-                         class="hidden rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
+                        class="hidden rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">
                         Cet espace ne peut pas être réservé actuellement.
                     </div>
                 </div>
@@ -324,7 +268,8 @@
 
 <script>
     document.querySelectorAll('[data-style]').forEach(el => {
-        el.style.cssText = el.dataset.style;
+        el.style.backgroundColor = el.dataset.style.match(/background-color:\s*([^;]+)/)?.[1] || '';
+        el.style.borderColor = el.dataset.style.match(/border-color:\s*([^;]+)/)?.[1] || '';
     });
 
     function selectSpace(button) {
@@ -347,17 +292,17 @@
         statusPill.textContent = status;
         statusPill.classList.remove('hidden');
 
-        document.getElementById('detail-price-hour').textContent = button.dataset.priceHour
-            ? `${button.dataset.priceHour} DH`
-            : '—';
+        document.getElementById('detail-price-hour').textContent = button.dataset.priceHour ?
+            `${button.dataset.priceHour} DH` :
+            '—';
 
-        document.getElementById('detail-price-day').textContent = button.dataset.priceDay
-            ? `${button.dataset.priceDay} DH`
-            : '—';
+        document.getElementById('detail-price-day').textContent = button.dataset.priceDay ?
+            `${button.dataset.priceDay} DH` :
+            '—';
 
-        document.getElementById('detail-price-month').textContent = button.dataset.priceMonth
-            ? `${button.dataset.priceMonth} DH`
-            : '—';
+        document.getElementById('detail-price-month').textContent = button.dataset.priceMonth ?
+            `${button.dataset.priceMonth} DH` :
+            '—';
 
         const reserveButton = document.getElementById('reserve-button');
         const cannotReserveMessage = document.getElementById('cannot-reserve-message');

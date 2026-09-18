@@ -51,58 +51,7 @@ class SpaceController extends Controller
 
     public function map(Request $request)
     {
-        $campuses = Campus::where('is_active', true)
-            ->orderBy('name')
-            ->get();
-
-        $selectedCampus = null;
-        $selectedFloor = null;
-
-        if ($request->filled('campus_id')) {
-            $selectedCampus = Campus::where('is_active', true)
-                ->where('id', $request->campus_id)
-                ->first();
-        }
-
-        if (!$selectedCampus) {
-            $selectedCampus = $campuses->first();
-        }
-
-        $floors = collect();
-
-        if ($selectedCampus) {
-            $floors = Floor::where('is_active', true)
-                ->where('campus_id', $selectedCampus->id)
-                ->orderBy('level')
-                ->get();
-
-            if ($request->filled('floor_id')) {
-                $selectedFloor = $floors->where('id', (int) $request->floor_id)->first();
-            }
-
-            if (!$selectedFloor) {
-                $selectedFloor = $floors->first();
-            }
-        }
-
-        $spaces = collect();
-
-        if ($selectedCampus && $selectedFloor) {
-            $spaces = Space::with(['campus', 'floor', 'spaceType', 'accessories'])
-                ->where('campus_id', $selectedCampus->id)
-                ->where('floor_id', $selectedFloor->id)
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get();
-        }
-
-        return view('admin.map.index', [
-            'campuses' => $campuses,
-            'floors' => $floors,
-            'spaces' => $spaces,
-            'selectedCampus' => $selectedCampus,
-            'selectedFloor' => $selectedFloor,
-        ]);
+        return redirect()->route('admin.interactive-map.index', $request->only(['campus_id', 'floor_id']));
     }
 
     /**
@@ -233,6 +182,10 @@ class SpaceController extends Controller
             ],
             'capacity' => ['nullable', 'integer', 'min:1'],
             'surface' => ['nullable', 'numeric', 'min:0'],
+            'grid_column' => ['nullable', 'integer', 'min:1', 'max:9'],
+            'grid_row' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'grid_width' => ['nullable', 'integer', 'min:1', 'max:9'],
+            'grid_height' => ['nullable', 'integer', 'min:1', 'max:5'],
             'price_per_hour' => ['nullable', 'numeric', 'min:0'],
             'price_per_half_day' => ['nullable', 'numeric', 'min:0'],
             'price_per_day' => ['nullable', 'numeric', 'min:0'],
@@ -259,6 +212,8 @@ class SpaceController extends Controller
         if (! $floorBelongsToCampus) {
             abort(422, 'L’étage sélectionné n’appartient pas au site sélectionné.');
         }
+
+        $this->validateGridLayout($validated, $ignoreId);
 
         // The half-day rate defaults to exactly 50% of the daily rate
         // whenever the admin leaves it blank, so existing spaces (and
@@ -330,5 +285,49 @@ class SpaceController extends Controller
     private function assignableStatusCodes(?string $currentCode = null): array
     {
         return array_keys($this->spaceStatusOptions($currentCode));
+    }
+
+    private function validateGridLayout(array $validated, ?int $ignoreId = null): void
+    {
+        $space = $ignoreId ? Space::find($ignoreId) : null;
+        $provided = array_filter([
+            $validated['grid_column'] ?? null,
+            $validated['grid_row'] ?? null,
+            $validated['grid_width'] ?? null,
+            $validated['grid_height'] ?? null,
+        ], fn ($value) => $value !== null);
+
+        if ($provided === [] && ! $space?->grid_column) {
+            return;
+        }
+
+        $column = (int) ($validated['grid_column'] ?? $space?->grid_column ?? 1);
+        $row = (int) ($validated['grid_row'] ?? $space?->grid_row ?? 1);
+        $width = (int) ($validated['grid_width'] ?? $space?->grid_width ?? 1);
+        $height = (int) ($validated['grid_height'] ?? $space?->grid_height ?? 1);
+
+        if ($column + $width - 1 > 9 || $row + $height - 1 > 5) {
+            abort(422, 'Le bureau ne peut pas sortir des limites de la grille 9×5.');
+        }
+
+        $overlaps = Space::query()
+            ->where('campus_id', $validated['campus_id'])
+            ->where('floor_id', $validated['floor_id'])
+            ->when($ignoreId, fn ($query) => $query->where('spaces.id', '<>', $ignoreId))
+            ->whereNotNull('grid_column')
+            ->whereNotNull('grid_row')
+            ->get()
+            ->contains(function (Space $other) use ($column, $row, $width, $height): bool {
+                return ! (
+                    $column + $width <= $other->grid_column
+                    || $other->grid_column + ($other->grid_width ?: 1) <= $column
+                    || $row + $height <= $other->grid_row
+                    || $other->grid_row + ($other->grid_height ?: 1) <= $row
+                );
+            });
+
+        if ($overlaps) {
+            abort(422, 'La disposition chevauche un autre espace sur la grille.');
+        }
     }
 }

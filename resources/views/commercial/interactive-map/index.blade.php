@@ -7,10 +7,6 @@
     $currentFloor = $selectedFloor ?? $floors->firstWhere('id', $selectedFloorId);
     $currentCampus = $campuses->firstWhere('id', $selectedCampusId);
 
-    $mapView = $currentFloor?->map_key
-        ? 'commercial.interactive-map.maps.' . $currentFloor->map_key
-        : null;
-
     $statusCounts = [
         'available' => 0,
         'reserved' => 0,
@@ -197,73 +193,7 @@
                 </div>
 
                 <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-inner">
-                    @if($mapView && view()->exists($mapView))
-                        @include($mapView, ['spaces' => $spaces])
-                    @elseif($spaces->count())
-                        <div class="grid min-h-[460px] grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-                            @foreach($spaces as $space)
-                                @php
-                                    $displayStatus = $space->display_status ?? 'Disponible';
-                                    $tileStyle = 'background-color: ' . ($space->display_status_color ? $space->display_status_color . '1a' : '#f9fafb')
-                                        . '; border-color: ' . ($space->display_status_color ?? '#e5e7eb') . ';';
-
-                                    $canManage = (bool) ($space->can_manage ?? false);
-                                    $canReserve = (bool) ($space->can_reserve ?? false);
-                                @endphp
-
-                                <button type="button"
-                                    onclick="selectSpace(this)"
-                                    data-id="{{ $space->id }}"
-                                    data-name="{{ $space->name }}"
-                                    data-code="{{ $space->code ?? '' }}"
-                                    data-status="{{ $displayStatus }}"
-                                    data-capacity="{{ $space->capacity ?? 'Non précisée' }}"
-                                    data-price-hour="{{ $space->price_per_hour ?? '' }}"
-                                    data-price-day="{{ $space->price_per_day ?? '' }}"
-                                    data-price-month="{{ $space->price_per_month ?? '' }}"
-                                    data-can-manage="{{ $canManage ? '1' : '0' }}"
-                                    data-reserve-url="{{ $space->reserve_url ?? '' }}"
-                                    data-style="{{ $tileStyle }}"
-                                    class="space-tile flex min-h-[120px] flex-col justify-between rounded-2xl border p-4 text-left text-sm shadow-sm transition hover:-translate-y-0.5 hover:shadow-md text-gray-800">
-                                    <div>
-                                        <p class="font-bold">{{ $space->name }}</p>
-
-                                        <p class="mt-1 text-xs opacity-80">
-                                            {{ $space->code ?? 'Code non défini' }}
-                                        </p>
-                                    </div>
-
-                                    <div class="mt-4">
-                                        <span class="rounded-full bg-white/80 px-2.5 py-1 text-xs font-bold">
-                                            {{ $displayStatus }}
-                                        </span>
-
-                                        @if(! $canManage)
-                                            <span class="mt-2 inline-flex rounded-full bg-white/80 px-2.5 py-1 text-xs font-bold text-gray-600">
-                                                Lecture seule
-                                            </span>
-                                        @endif
-                                    </div>
-                                </button>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="flex min-h-[460px] items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white">
-                            <div class="text-center">
-                                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-xl font-bold text-slate-400">
-                                    +
-                                </div>
-
-                                <p class="mt-4 text-sm font-bold text-gray-700">
-                                    Aucun espace trouvé
-                                </p>
-
-                                <p class="mt-1 text-sm text-gray-500">
-                                    Aucun espace actif n’est disponible pour ce site et cet étage.
-                                </p>
-                            </div>
-                        </div>
-                    @endif
+                    @include('interactive-map.floor-plan', ['spaces' => $spaces, 'floor' => $currentFloor, 'admin' => false])
                 </div>
             </section>
 
@@ -346,7 +276,8 @@
 
 <script>
     document.querySelectorAll('[data-style]').forEach(el => {
-        el.style.cssText = el.dataset.style;
+        el.style.backgroundColor = el.dataset.style.match(/background-color:\s*([^;]+)/)?.[1] || '';
+        el.style.borderColor = el.dataset.style.match(/border-color:\s*([^;]+)/)?.[1] || '';
     });
 
     function selectSpace(button) {

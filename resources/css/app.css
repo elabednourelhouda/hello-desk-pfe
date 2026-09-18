@@ -55,6 +55,13 @@
         @apply bg-red-100 text-red-700;
     }
 
+    .interactive-map-grid {
+        grid-template-columns: repeat(9, minmax(0, 1fr));
+        grid-template-rows: repeat(5, minmax(0, 1fr));
+        aspect-ratio: 9 / 5;
+        min-height: 460px;
+    }
+
     .hd-input {
         @apply w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 outline-none transition focus:border-hd-green focus:ring-2 focus:ring-hd-green/20;
     }
