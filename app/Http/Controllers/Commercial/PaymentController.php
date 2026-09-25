@@ -375,8 +375,24 @@ class PaymentController extends Controller
         ]);
 
         $this->ensureReceiptNumber($payment);
+        $this->completeSettledContract($payment);
 
         return back()->with('success', 'Échéance marquée comme payée avec succès.');
+    }
+
+    private function completeSettledContract(Payment $payment): void
+    {
+        $contract = $payment->contract()->with(['reservation', 'payments'])->first();
+
+        if (! $contract || $contract->status !== 'active' || $contract->paymentSummary()['overall_status'] !== 'paid') {
+            return;
+        }
+
+        $contract->update(['status' => 'expired']);
+
+        if ($contract->reservation && $contract->reservation->status !== 'cancelled') {
+            $contract->reservation->update(['status' => 'completed']);
+        }
     }
 
     /**

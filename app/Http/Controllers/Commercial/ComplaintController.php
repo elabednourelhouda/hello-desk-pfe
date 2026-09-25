@@ -170,8 +170,13 @@ class ComplaintController extends Controller
             });
 
             if (! empty($scope['client_campus_ids'])) {
-                $q->orWhereHas('client', function (Builder $clientQuery) use ($scope) {
-                    $clientQuery->whereIn('main_campus_id', $scope['client_campus_ids']);
+                $q->orWhere(function (Builder $clientOnlyQuery) use ($scope) {
+                    $clientOnlyQuery
+                        ->whereDoesntHave('reservation')
+                        ->whereDoesntHave('contract.reservation')
+                        ->whereHas('client', function (Builder $clientQuery) use ($scope) {
+                            $clientQuery->whereIn('main_campus_id', $scope['client_campus_ids']);
+                        });
                 });
             }
         });
@@ -205,12 +210,12 @@ class ComplaintController extends Controller
             return false;
         }
 
-        if ($complaint->reservation && $this->canManageReservation($complaint->reservation, $scope)) {
-            return true;
+        if ($complaint->reservation) {
+            return $this->canManageReservation($complaint->reservation, $scope);
         }
 
-        if ($complaint->contract?->reservation && $this->canManageReservation($complaint->contract->reservation, $scope)) {
-            return true;
+        if ($complaint->contract?->reservation) {
+            return $this->canManageReservation($complaint->contract->reservation, $scope);
         }
 
         if (

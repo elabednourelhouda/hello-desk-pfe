@@ -157,7 +157,11 @@ class ContractController extends Controller
 
             $contract->update($data);
 
-            if ($contract->status === 'active' && $contract->reservation) {
+            if (
+                $contract->status === 'active'
+                && $contract->reservation
+                && $contract->reservation->status !== 'cancelled'
+            ) {
                 $contract->reservation->update([
                     'status' => 'confirmed',
                     'approved_by' => Auth::id(),
