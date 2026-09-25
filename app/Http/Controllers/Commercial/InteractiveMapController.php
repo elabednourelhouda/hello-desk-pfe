@@ -86,8 +86,8 @@ class InteractiveMapController extends Controller
                     'spaceType',
                     'reservations' => function ($query) use ($rangeStart, $rangeEnd) {
                         $query->whereIn('status', ['pending', 'confirmed', 'in_progress'])
-                            ->where('starts_at', '<=', $rangeEnd)
-                            ->where('ends_at', '>=', $rangeStart)
+                            ->where('starts_at', '<', $rangeEnd)
+                            ->where('ends_at', '>', $rangeStart)
                             ->orderBy('starts_at');
                     },
                 ])
@@ -195,7 +195,7 @@ class InteractiveMapController extends Controller
 
         $now = Carbon::now();
 
-        return [$now, $now, null, null];
+        return [$now, $now->copy()->addSecond(), null, null];
     }
 
     private function parseDate(?string $value): ?Carbon
