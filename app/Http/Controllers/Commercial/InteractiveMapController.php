@@ -96,7 +96,7 @@ class InteractiveMapController extends Controller
                     ->where('is_active', true)
                     ->orderBy('name')
                     ->get()
-                    ->map(function ($space) use ($user, $statusPalette, $reservedStatus) {
+                    ->map(function ($space) use ($user, $statusPalette, $reservedStatus, $rangeStart, $rangeEnd) {
                         $space->code = $space->internal_code ?? $space->code ?? null;
                         $space->surface = $space->area_m2 ?? $space->surface ?? null;
 
@@ -111,7 +111,12 @@ class InteractiveMapController extends Controller
                         // any other manually-assigned status always takes
                         // priority, driven entirely by the space_statuses
                         // table instead of a fixed list of known codes.
-                        if (in_array($savedCode, ['available', 'disponible'], true) && $space->reservations->count() > 0) {
+                        $hasOverlappingReservation = $space->reservations->contains(
+                            fn ($reservation) => $reservation->starts_at->lt($rangeEnd)
+                                && $reservation->ends_at->gt($rangeStart)
+                        );
+
+                        if (in_array($savedCode, ['available', 'disponible'], true) && $hasOverlappingReservation) {
                             $resolvedStatus = $reservedStatus;
                         } else {
                             $resolvedStatus = $statusPalette->get($savedCode)
@@ -191,6 +196,24 @@ class InteractiveMapController extends Controller
             }
 
             return [$rangeStart, $rangeEnd, $from->toDateString(), $to->toDateString()];
+        }
+
+        if ($from) {
+            return [
+                $from->copy()->startOfDay(),
+                $from->copy()->endOfDay(),
+                $from->toDateString(),
+                null,
+            ];
+        }
+
+        if ($to) {
+            return [
+                $to->copy()->startOfDay(),
+                $to->copy()->endOfDay(),
+                null,
+                $to->toDateString(),
+            ];
         }
 
         $now = Carbon::now();

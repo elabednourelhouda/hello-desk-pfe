@@ -151,7 +151,7 @@
                     @if($filterFrom || $filterTo)
                     <a href="{{ route('commercial.interactive-map.index', ['campus_id' => $selectedCampusId, 'floor_id' => $selectedFloorId]) }}#map-zone"
                        class="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 px-4 text-sm font-bold text-gray-700 transition hover:bg-gray-100">
-                        ✕
+                        Réinitialiser
                     </a>
                     @endif
                 </div>
